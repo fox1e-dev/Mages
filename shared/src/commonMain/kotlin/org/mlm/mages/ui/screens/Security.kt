@@ -23,6 +23,7 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import io.github.mlmgames.settings.core.SettingsSchema
 import io.github.mlmgames.settings.core.annotations.SettingAction
+import io.github.mlmgames.settings.core.remote.RemoteFieldState
 import io.github.mlmgames.settings.ui.AutoSettingsScreen
 import io.github.mlmgames.settings.ui.ProvideStringResources
 import org.koin.compose.koinInject
@@ -56,6 +57,7 @@ fun SecurityScreen(
     viewModel: SecurityViewModel,
     backStack: NavBackStack<NavKey>,
     onOpenAccountSwitcher: () -> Unit,
+    remoteStates: Map<String, RemoteFieldState> = emptyMap(),
 ) {
     val state by viewModel.state.collectAsState()
     val settings by viewModel.settings.collectAsState()
@@ -194,7 +196,8 @@ fun SecurityScreen(
                     schema = viewModel.settingsSchema,
                     onSettingChange = viewModel::updateSetting,
                     onSettingAction = viewModel::executeSettingAction,
-                    snackbarHostState = settingsSnackbarHostState
+                    snackbarHostState = settingsSnackbarHostState,
+                    remoteStates = remoteStates,
                 )
             }
         }
@@ -746,7 +749,8 @@ private fun SettingsTab(
     schema: SettingsSchema<AppSettings>,
     onSettingChange: (String, Any?) -> Unit,
     onSettingAction: suspend (KClass<out SettingAction>) -> Unit,
-    snackbarHostState: SnackbarHostState
+    snackbarHostState: SnackbarHostState,
+    remoteStates: Map<String, RemoteFieldState> = emptyMap(),
 ) {
     val stringResourceProvider = rememberSettingsStringResourceProvider()
     ProvideStringResources(stringResourceProvider) {
@@ -757,7 +761,8 @@ private fun SettingsTab(
                 onSet = onSettingChange,
                 onAction = onSettingAction,
                 modifier = Modifier.fillMaxSize(),
-                snackbarHostState = snackbarHostState
+                snackbarHostState = snackbarHostState,
+                remoteStates = remoteStates,
             )
         }
     }

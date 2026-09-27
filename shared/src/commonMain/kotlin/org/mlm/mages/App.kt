@@ -44,9 +44,9 @@ import org.mlm.mages.calls.CALL_END_GRACE_MS
 import org.mlm.mages.calls.IncomingCallTracker
 import org.mlm.mages.calls.answerIncomingCall
 import org.mlm.mages.calls.declineIncomingCall
-import org.mlm.mages.matrix.MediaPreviewMode
 import org.mlm.mages.matrix.Presence
 import org.mlm.mages.matrix.SasPhase
+import org.mlm.mages.matrix.mediaPreviewSettingsSync
 import org.mlm.mages.matrix.MatrixPort.CallDeclineObserver
 import org.mlm.mages.matrix.RoomCallState
 import org.mlm.mages.matrix.MatrixPort.RoomCallStateObserver
@@ -67,7 +67,6 @@ import org.mlm.mages.platform.platformEmbeddedElementCallUrlOrNull
 import org.mlm.mages.platform.rememberFileOpener
 import org.mlm.mages.platform.rememberQuitApp
 import org.mlm.mages.settings.AppSettings
-import org.mlm.mages.settings.MediaPreviewsMode
 import org.mlm.mages.settings.PresenceMode
 import org.mlm.mages.settings.ThemeMode
 import org.mlm.mages.settings.appLanguageTagOrNull
@@ -315,34 +314,19 @@ private fun AppContent(
                     }
             }
 
-            // MSC4278. No account data change notification, so a change made on another
-            // client lands the next time this account is opened. A null remote value means
-            // none was ever set and must not override the local one.
+            // MSC4278. The sync adopts the account data preference if another client ever set
+            // one, then keeps account data in step with the local setting. There is no account
+            // data change notification, so a change made elsewhere is picked up the next time
+            // this account is opened.
+            val remoteSettings = remember { mediaPreviewSettingsSync(settingsRepository) { service.port } }
+            val remoteStates by remoteSettings.states.collectAsState()
             LaunchedEffect(activeId) {
                 if (activeId == null || !service.isLoggedInSuspend()) return@LaunchedEffect
-                val remote = runCatching { service.port.mediaPreviewConfig() }.getOrNull()
-                if (remote != null) {
-                    val local = when (remote) {
-                        MediaPreviewMode.On -> MediaPreviewsMode.On
-                        MediaPreviewMode.Private -> MediaPreviewsMode.Private
-                        MediaPreviewMode.Off -> MediaPreviewsMode.Off
-                    }
-                    if (settings.mediaPreviews != local) {
-                        settingsRepository.update { it.copy(mediaPreviews = local) }
-                    }
-                }
-
-                settingsRepository.flow
-                    .map { it.mediaPreviews }
-                    .distinctUntilChanged()
-                    .collect { mode ->
-                        val previews = when (mode) {
-                            MediaPreviewsMode.On -> MediaPreviewMode.On
-                            MediaPreviewsMode.Private -> MediaPreviewMode.Private
-                            MediaPreviewsMode.Off -> MediaPreviewMode.Off
-                        }
-                        runCatching { service.port.setMediaPreviewConfig(previews) }
-                    }
+                remoteSettings.attach(this)
+                awaitCancellation()
+            }
+            DisposableEffect(activeId) {
+                onDispose { remoteSettings.detach() }
             }
 
             LaunchedEffect(activeId) {
@@ -617,7 +601,8 @@ private fun AppContent(
                             SecurityScreen(
                                 viewModel = viewModel,
                                 backStack = backStack,
-                                onOpenAccountSwitcher = { showAccountSwitcher = true }
+                                onOpenAccountSwitcher = { showAccountSwitcher = true },
+                                remoteStates = remoteStates,
                             )
 
                             if (showAccountSwitcher) {
