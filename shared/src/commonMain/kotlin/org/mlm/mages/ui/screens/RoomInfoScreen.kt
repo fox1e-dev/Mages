@@ -240,19 +240,6 @@ fun RoomInfoScreen(
                     }
                 }
 
-                state.parentSpace?.let { space ->
-                    item {
-                        SettingsGroup {
-                            SettingsAvatarNavRow(
-                                avatarPath = space.avatarUrl,
-                                avatarName = space.name ?: space.spaceId,
-                                title = space.name ?: space.spaceId,
-                                onClick = { onOpenSpace(space.spaceId) }
-                            )
-                        }
-                    }
-                }
-
                 item {
                     QuickActions(
                         isFavourite = state.isFavourite,
@@ -288,6 +275,24 @@ fun RoomInfoScreen(
                                     enabled = true,
                                     isSaving = state.isSaving,
                                     singleLine = false
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (state.parentSpaces.isNotEmpty()) {
+                    item {
+                        SettingsGroup {
+                            state.parentSpaces.forEachIndexed { index, space ->
+                                if (index > 0) {
+                                    HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
+                                }
+                                SettingsAvatarNavRow(
+                                    avatarPath = space.avatarUrl,
+                                    avatarName = space.name ?: space.spaceId,
+                                    title = space.name ?: space.spaceId,
+                                    onClick = { onOpenSpace(space.spaceId) }
                                 )
                             }
                         }

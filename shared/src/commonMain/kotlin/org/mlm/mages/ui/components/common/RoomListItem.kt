@@ -134,8 +134,9 @@ fun RoomListItem(
                         )
                     }
 
-                    if (!item.parentSpaceId.isNullOrBlank()) {
+                    if (item.parentSpaces.isNotEmpty()) {
                         Spacer(Modifier.width(Spacing.sm))
+                        val first = item.parentSpaces.first()
                         Box(
                             modifier = Modifier
                                 .size(18.dp)
@@ -147,10 +148,18 @@ fun RoomListItem(
                             contentAlignment = Alignment.Center
                         ) {
                             Avatar(
-                                name = item.parentSpaceName ?: item.parentSpaceId,
-                                avatarPath = item.parentSpaceAvatarUrl,
+                                name = first.name ?: first.spaceId,
+                                avatarPath = first.avatarUrl,
                                 size = 16.dp,
                                 shape = CircleShape
+                            )
+                        }
+                        if (item.parentSpaces.size > 1) {
+                            Spacer(Modifier.width(2.dp))
+                            Text(
+                                text = "+${item.parentSpaces.size - 1}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

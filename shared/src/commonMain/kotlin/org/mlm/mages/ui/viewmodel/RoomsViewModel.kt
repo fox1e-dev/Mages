@@ -22,6 +22,7 @@ import org.mlm.mages.ui.LastMessageType
 import org.mlm.mages.ui.RoomListItemUi
 import org.mlm.mages.ui.RoomTypeFilter
 import org.mlm.mages.ui.RoomsUiState
+import org.mlm.mages.ui.SpaceBadgeUi
 
 class RoomsViewModel(
     private val service: MatrixService
@@ -266,7 +267,7 @@ class RoomsViewModel(
         val lastEvent = entry.latestEvent
         val lastType = determineMessageType(lastEvent)
         val lastBody = formatBodyForPreview(lastEvent, lastType)
-        val space = currentState.parentSpaces[entry.roomId]
+        val spaces = currentState.parentSpaces[entry.roomId].orEmpty()
 
         return RoomListItemUi(
             roomId = entry.roomId,
@@ -284,9 +285,17 @@ class RoomsViewModel(
             lastMessageType = lastType,
             lastMessageTs = lastEvent?.timestamp,
             isSharingLocation = LiveLocationSharingCoordinator.isSharing(entry.roomId),
-            parentSpaceId = space?.spaceId.takeIf { settings.value.showSpaceBadgeInRoomList },
-            parentSpaceName = space?.name,
-            parentSpaceAvatarUrl = space?.spaceId?.let { currentState.parentSpaceAvatarPath[it] }
+            parentSpaces = if (settings.value.showSpaceBadgeInRoomList) {
+                spaces.map { space ->
+                    SpaceBadgeUi(
+                        spaceId = space.spaceId,
+                        name = space.name,
+                        avatarUrl = currentState.parentSpaceAvatarPath[space.spaceId]
+                    )
+                }
+            } else {
+                emptyList()
+            }
         )
     }
 
@@ -302,23 +311,27 @@ class RoomsViewModel(
         launch {
             val byRoom = buildMap {
                 for (roomId in roomIds) {
-                    val space = runSafe { service.roomParentSpaces(roomId) }?.firstOrNull()
-                    if (space != null) put(roomId, space)
+                    val spaces = runSafe { service.roomParentSpaces(roomId) }.orEmpty()
+                    if (spaces.isNotEmpty()) put(roomId, spaces)
                 }
             }
             updateState {
                 fun List<RoomListItemUi>.withBadgeVisibility() = map { item ->
                     if (settings.value.showSpaceBadgeInRoomList) item
-                    else item.copy(parentSpaceId = null)
+                    else item.copy(parentSpaces = emptyList())
                 }
 
                 fun List<RoomListItemUi>.withSpaces() = map { item ->
-                    val space = byRoom[item.roomId]
-                    if (space == null) item
+                    val spaces = byRoom[item.roomId]
+                    if (spaces == null) item
                     else item.copy(
-                        parentSpaceId = space.spaceId,
-                        parentSpaceName = space.name,
-                        parentSpaceAvatarUrl = parentSpaceAvatarPath[space.spaceId]
+                        parentSpaces = spaces.map { space ->
+                            SpaceBadgeUi(
+                                spaceId = space.spaceId,
+                                name = space.name,
+                                avatarUrl = parentSpaceAvatarPath[space.spaceId]
+                            )
+                        }
                     )
                 }.withBadgeVisibility()
                 copy(
@@ -330,7 +343,7 @@ class RoomsViewModel(
                     inviteItems = inviteItems.withSpaces()
                 )
             }
-            byRoom.values.forEach { space ->
+            byRoom.values.flatten().distinctBy { it.spaceId }.forEach { space ->
                 maybePrefetchParentSpaceAvatar(space.spaceId, space.avatarUrl)
             }
         }
@@ -564,7 +577,12 @@ class RoomsViewModel(
         resolveAvatar(service, avatarMxc, 64) { path ->
             val updated = copy(parentSpaceAvatarPath = parentSpaceAvatarPath + (spaceId to path))
             fun List<RoomListItemUi>.withSpacePath() = map { item ->
-                if (item.parentSpaceId == spaceId) item.copy(parentSpaceAvatarUrl = path) else item
+                if (item.parentSpaces.none { it.spaceId == spaceId }) item
+                else item.copy(
+                    parentSpaces = item.parentSpaces.map { badge ->
+                        if (badge.spaceId == spaceId) badge.copy(avatarUrl = path) else badge
+                    }
+                )
             }
             updated.copy(
                 allItems = updated.allItems.withSpacePath(),

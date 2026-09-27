@@ -649,12 +649,9 @@ private fun AppContent(
                                 onLeaveSuccess = { backStack.popUntil { it is Route.Rooms } },
                                 onOpenMediaGallery = { backStack.add(Route.MediaGallery(key.roomId)) },
                                 onOpenSpace = { spaceId ->
-                                    backStack.add(
-                                        Route.SpaceDetail(
-                                            spaceId,
-                                            viewModel.state.value.parentSpace?.name.orEmpty()
-                                        )
-                                    )
+                                    val name = viewModel.state.value.parentSpaces
+                                        .firstOrNull { it.spaceId == spaceId }?.name.orEmpty()
+                                    backStack.add(Route.SpaceDetail(spaceId, name))
                                 }
                             )
                         }

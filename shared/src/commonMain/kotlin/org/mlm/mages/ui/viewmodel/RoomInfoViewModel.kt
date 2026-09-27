@@ -46,7 +46,7 @@ data class RoomInfoUiState(
     val showJoinRuleSpacePicker: Boolean = false,
     val pendingJoinRule: RoomJoinRule? = null,
     val selectableSpaces: List<SpaceInfo> = emptyList(),
-    val parentSpace: SpaceParentInfo? = null,
+    val parentSpaces: List<SpaceParentInfo> = emptyList(),
     val isAdminBusy: Boolean = false,
     val successor: RoomUpgradeInfo? = null,
     val predecessor: RoomPredecessorInfo? = null,
@@ -282,11 +282,19 @@ class RoomInfoViewModel(
 
     private fun resolveParentSpace() {
         launch {
-            val space = runSafe { service.roomParentSpaces(roomId) }?.firstOrNull() ?: return@launch
-            updateState { copy(parentSpace = space) }
-            val path = space.avatarUrl?.let { runSafe { service.avatars.resolve(it, px = 64) } }
-            if (path != null) {
-                updateState { copy(parentSpace = this.parentSpace?.copy(avatarUrl = path)) }
+            val spaces = runSafe { service.roomParentSpaces(roomId) }.orEmpty()
+            if (spaces.isEmpty()) return@launch
+            updateState { copy(parentSpaces = spaces) }
+            spaces.forEach { space ->
+                val path = space.avatarUrl?.let { runSafe { service.avatars.resolve(it, px = 64) } }
+                if (path == null) return@forEach
+                updateState {
+                    copy(
+                        parentSpaces = parentSpaces.map { current ->
+                            if (current.spaceId == space.spaceId) current.copy(avatarUrl = path) else current
+                        }
+                    )
+                }
             }
         }
     }

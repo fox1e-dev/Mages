@@ -75,7 +75,7 @@ data class RoomsUiState(
     val isDecliningInvite: Boolean = false,
 
     val roomAvatarPath: Map<String, String> = emptyMap(),
-    val parentSpaces: Map<String, SpaceParentInfo> = emptyMap(),
+    val parentSpaces: Map<String, List<SpaceParentInfo>> = emptyMap(),
     val parentSpaceAvatarPath: Map<String, String> = emptyMap(),
     val parentSpacesResolvedKey: String = "",
 
@@ -630,9 +630,13 @@ data class RoomListItemUi(
 
     val isSharingLocation: Boolean = false,
 
-    val parentSpaceId: String? = null,
-    val parentSpaceName: String? = null,
-    val parentSpaceAvatarUrl: String? = null,
+    val parentSpaces: List<SpaceBadgeUi> = emptyList(),
+)
+
+data class SpaceBadgeUi(
+    val spaceId: String,
+    val name: String? = null,
+    val avatarUrl: String? = null,
 )
 
 data class SearchUiState(
