@@ -1,0 +1,185 @@
+name: Publish Nix Flake
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: "Version tag (e.g., 4.11.9 or v4.11.9)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nix-publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.system }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            system: x86_64-linux
+            runner: ubuntu-26.04
+          - arch: aarch64
+            system: aarch64-linux
+            runner: ubuntu-26.04-arm
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.version_tag }}
+          SYSTEM: ${{ matrix.system }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$TAG" ]; then
+            echo "version_tag is required" >&2
+            exit 1
+          fi
+
+          VERSION="${TAG#v}"
+
+          mkdir -p appimage
+          gh release download "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "mages-*-${ARCH}.AppImage" \
+            --dir appimage \
+            --clobber
+
+          FILE=$(find appimage -type f -name "*-${ARCH}.AppImage" | head -n 1)
+          if [ -z "$FILE" ]; then
+            echo "no AppImage on release $TAG" >&2
+            exit 1
+          fi
+
+          HASH=$(nix store prefetch-file --json "$FILE" | jq -r .hash)
+          case "$HASH" in
+            sha256-*) ;;
+            *) echo "unexpected hash: $HASH" >&2; exit 1 ;;
+          esac
+
+          ASSET="${FILE##*/}"
+
+          WORK="$RUNNER_TEMP/nixpkg"
+          rm -rf "$WORK"
+          mkdir -p "$WORK"
+          cp "$GITHUB_WORKSPACE/nix/flake.nix" "$WORK/flake.nix"
+
+          cat > "$WORK/hashes.json" <<JSON
+          {
+            "$VERSION": {
+              "tag": "$TAG",
+              "$SYSTEM": { "file": "$ASSET", "hash": "$HASH" }
+            }
+          }
+          JSON
+
+          cat > "$WORK/hash-${ARCH}.json" <<JSON
+          {
+            "tag": "$TAG",
+            "version": "$VERSION",
+            "hash": { "$SYSTEM": { "file": "$ASSET", "hash": "$HASH" } }
+          }
+          JSON
+
+          echo "version=${VERSION} tag=${TAG} asset=${ASSET} hash=${HASH}"
+
+      - name: Build and verify
+        env:
+          SYSTEM: ${{ matrix.system }}
+        run: |
+          set -euo pipefail
+
+          cd "$RUNNER_TEMP/nixpkg"
+
+          nix build --print-build-logs --out-link result ".#packages.${SYSTEM}.mages"
+
+          test -x result/bin/mages
+          test -f result/share/icons/hicolor/512x512/apps/io.github.mlm_games.mages.png
+          test -f result/share/metainfo/io.github.mlm_games.mages.metainfo.xml
+          grep -qx 'Exec=mages %U' result/share/applications/io.github.mlm_games.mages.desktop
+          grep -qx 'Icon=io.github.mlm_games.mages' result/share/applications/io.github.mlm_games.mages.desktop
+
+      - name: Upload hash
+        uses: actions/upload-artifact@v4
+        with:
+          name: nix-${{ matrix.arch }}
+          path: ${{ runner.temp }}/nixpkg/hash-${{ matrix.arch }}.json
+
+  publish:
+    name: Commit hashes
+    needs: build
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download hashes
+        uses: actions/download-artifact@v4
+        with:
+          pattern: nix-*
+          merge-multiple: true
+          path: hashes
+
+      - name: Commit hashes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          VERSION=$(jq -s -r 'map(.version) | unique | if length == 1 then .[0] else error("legs disagree on version") end' hashes/hash-*.json)
+          TAG=$(jq -s -r 'map(.tag) | unique | if length == 1 then .[0] else error("legs disagree on tag") end' hashes/hash-*.json)
+
+          jq -s 'reduce .[] as $l ({}; . + $l.hash)' hashes/hash-*.json > arch-hashes.json
+
+          [ -f nix/hashes.json ] || echo '{}' > nix/hashes.json
+
+          jq -n \
+            --arg v "$VERSION" \
+            --arg t "$TAG" \
+            --slurpfile a arch-hashes.json \
+            '{($v): ({tag: $t} + $a[0])}' > entry.json
+
+          jq -s '.[0] * .[1]' nix/hashes.json entry.json > merged.json
+          mv merged.json nix/hashes.json
+          rm -f arch-hashes.json entry.json
+
+          jq -e --arg v "$VERSION" \
+            '.[$v] | (keys | sort) == ["aarch64-linux", "tag", "x86_64-linux"]' \
+            nix/hashes.json >/dev/null
+
+          cat nix/hashes.json
+
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add nix/hashes.json
+          git commit -m "chore: update Nix hashes for v$VERSION [skip ci]" || echo "nothing to commit"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+          {
+            echo "### Nix hashes updated"
+            echo
+            echo "- version: \`$VERSION\` (tag \`$TAG\`)"
+            echo "- install: \`nix profile install github:$GITHUB_REPOSITORY#mages\`"
+            echo "- pin: \`nix profile install github:$GITHUB_REPOSITORY/$GITHUB_SHA#mages\`"
+          } >> "$GITHUB_STEP_SUMMARY"

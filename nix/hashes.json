@@ -1,0 +1,13 @@
+{
+  "4.11.9": {
+    "tag": "4.11.9",
+    "aarch64-linux": {
+      "file": "mages-4.11.9-aarch64.AppImage",
+      "hash": "sha256-Q1rADnZ8c7LBJeG95tSZblPurD02X6knBF5xTCnI8Q8="
+    },
+    "x86_64-linux": {
+      "file": "mages-4.11.9-x86_64.AppImage",
+      "hash": "sha256-67+Q3zu2ETIhWZtWHYhcBSt8nMokatsW6sFHDG70fb0="
+    }
+  }
+}
