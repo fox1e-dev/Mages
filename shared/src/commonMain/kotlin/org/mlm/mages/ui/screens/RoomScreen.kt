@@ -1699,7 +1699,8 @@ private fun MessageItem(
                         onOpenThread = onOpenThread,
                         onSenderClick = if (!isMine && !state.isSelectionMode) {
                             { viewModel.selectMemberForAction(event.sender) }
-                        } else null
+                        } else null,
+                        emotePaths = state.emotePathByMxc
                     )
                 }
             }

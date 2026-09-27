@@ -74,6 +74,7 @@ kotlin {
             implementation(libs.multiplatform.markdown.renderer)
             implementation(libs.multiplatform.markdown.renderer.m3)
             implementation(libs.markdown)
+            implementation(libs.ksoup)
             implementation(libs.kmp.settings.ui.compose)
             implementation(libs.kmp.settings.core)
             implementation(libs.koin.core)

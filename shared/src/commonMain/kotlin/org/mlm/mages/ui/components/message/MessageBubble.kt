@@ -44,6 +44,7 @@ import org.mlm.mages.ReplyPreview
 import org.mlm.mages.ReplyPreviewKind
 import org.mlm.mages.matrix.SendState
 import org.mlm.mages.ui.components.core.Avatar
+import org.mlm.mages.ui.components.core.FormattedBodyText
 import org.mlm.mages.ui.components.core.MarkdownText
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.components.voice.VoiceMessageBubble
@@ -80,6 +81,7 @@ fun MessageBubble(
     onSenderClick: (() -> Unit)? = null,
     headerContent: (@Composable ColumnScope.() -> Unit)? = null,
     footerContent: (@Composable ColumnScope.() -> Unit)? = null,
+    emotePaths: Map<String, String> = emptyMap(),
 ) {
     val isMine = model.isMine
     val horizontalAlignment = if (isMine) Alignment.End else Alignment.Start
@@ -105,7 +107,6 @@ fun MessageBubble(
             )
     val showSenderAvatar = showSenderInfo && showMessageAvatars && !model.sender.id.isNullOrBlank()
 
-    val renderedBody = model.formattedBody.toMarkdownMentionsOrNull() ?: model.body
     val bubbleTextColor = if (isMine) {
         MaterialTheme.colorScheme.onPrimaryContainer
     } else {
@@ -297,8 +298,10 @@ fun MessageBubble(
                                     position = TimestampPosition.Aligned,
                                     timestamp = timestampContent,
                                 ) {
-                                    MarkdownText(
-                                        text = renderedBody,
+                                    FormattedBodyText(
+                                        formattedBody = model.formattedBody,
+                                        fallbackBody = model.body,
+                                        emotePaths = emotePaths,
                                         color = bubbleTextColor
                                     )
                                 }
@@ -391,31 +394,6 @@ fun MessageBubble(
             }
         }
     }
-}
-
-private fun String?.toMarkdownMentionsOrNull(): String? {
-    if (this.isNullOrBlank()) return null
-    val mentionRegex = Regex("""<a\s+href="(https://matrix\.to/#/@[^"]+)">(.*?)</a>""", RegexOption.IGNORE_CASE)
-    if (!mentionRegex.containsMatchIn(this)) return null
-
-    val markdown = mentionRegex.replace(this) { match ->
-        val href = match.groupValues[1]
-        val label = match.groupValues[2]
-            .replace("&amp;", "&")
-            .replace("&lt;", "<")
-            .replace("&gt;", ">")
-            .replace("&quot;", "\"")
-        "[$label]($href)"
-    }
-
-    return markdown
-        .replace("<br>", "\n", ignoreCase = true)
-        .replace("<br/>", "\n", ignoreCase = true)
-        .replace("<br />", "\n", ignoreCase = true)
-        .replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", "\"")
 }
 
 private fun bubbleShape(isMine: Boolean, groupedWithPrev: Boolean, groupedWithNext: Boolean) = RoundedCornerShape(

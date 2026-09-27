@@ -283,6 +283,16 @@ class RoomViewModel(
         const val JUMP_SNAPSHOT_TIMEOUT_MS = 15_000L
         const val JUMP_PAGE_SETTLE_TIMEOUT_MS = 10_000L
         const val JUMP_PAGINATE_POLL_MS = 50L
+
+        /** Custom emotes render at 32dp, so this covers high-density screens. */
+        const val EMOTE_PX = 128
+
+        /** Bounds the work a single hostile message can ask for. */
+        const val MAX_EMOTES_PER_MESSAGE = 32
+
+        val EMOTE_MARKER = "data-mx-emoticon"
+        val EMOTE_TAG = Regex("""<img[^>]*data-mx-emoticon[^>]*>""", RegexOption.IGNORE_CASE)
+        val SRC_ATTR = Regex("""\ssrc\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
     }
 
     private fun filteredVisibleEvents(items: List<MessageEvent>): List<MessageEvent> =
@@ -2789,6 +2799,7 @@ class RoomViewModel(
 
     fun ensureThumbnail(event: MessageEvent) {
         ensureReplyThumbnail(event)
+        ensureEmotes(event)
         if (!mediaPreviewsAllowed()) return
         if (event.eventId.isBlank()) return
         if (currentState.thumbByEvent.containsKey(event.eventId)) return
@@ -2819,6 +2830,40 @@ class RoomViewModel(
             } finally {
                 thumbnailFetchInFlight.remove(event.eventId)
             }
+        }
+    }
+
+    /**
+     * Discovers the custom emotes in a `formatted_body` and caches them locally.
+     *
+     * The tag scan is only a cheap pre-filter; `parseFormattedBody` performs the
+     * authoritative parse and repeats the scheme check, so a message crafted to
+     * fool this regex still cannot cause a non-mxc fetch.
+     */
+    private fun ensureEmotes(event: MessageEvent) {
+        if (!mediaPreviewsAllowed()) return
+        val html = event.formattedBody?.takeIf { it.contains(EMOTE_MARKER) } ?: return
+
+        val wanted = LinkedHashSet<String>()
+        for (match in EMOTE_TAG.findAll(html)) {
+            val src = SRC_ATTR.find(match.value)?.groupValues?.get(1)?.trim() ?: continue
+            if (!src.startsWith("mxc://")) continue
+            wanted += src
+            if (wanted.size >= MAX_EMOTES_PER_MESSAGE) break
+        }
+        if (wanted.isEmpty()) return
+
+        val missing = wanted.filterNot { currentState.emotePathByMxc.containsKey(it) }
+        if (missing.isEmpty()) return
+
+        launch {
+            val resolved = missing.mapNotNull { mxc ->
+                runCatching { service.port.mxcThumbnailToCache(mxc, EMOTE_PX, EMOTE_PX, false) }
+                    .getOrNull()
+                    ?.let { mxc to it }
+            }.toMap()
+            if (resolved.isEmpty()) return@launch
+            updateState { copy(emotePathByMxc = emotePathByMxc + resolved) }
         }
     }
 
