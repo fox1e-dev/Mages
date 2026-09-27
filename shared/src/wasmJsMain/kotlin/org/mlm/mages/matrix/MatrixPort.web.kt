@@ -1628,6 +1628,13 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
             requireClient().listImagePacks(roomId).await<JsAny?>().toJsonElement()
         )
 
+    override suspend fun setImagePackEnabled(
+        roomId: String,
+        stateKey: String,
+        enabled: Boolean
+    ): Result<Unit> =
+        requireClient().setImagePackEnabled(roomId, stateKey, enabled).awaitUnitResult()
+
     override suspend fun packImageToCache(
         mxcUrl: String,
         width: Int,

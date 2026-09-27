@@ -178,6 +178,7 @@ pub struct StickerInfo {
     pub thumbnail_mxc_uri: Option<String>,
     pub encrypted: Option<EncFile>,
     pub thumbnail_encrypted: Option<EncFile>,
+    pub is_animated: Option<bool>,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Enum)]
@@ -541,6 +542,7 @@ pub struct ImagePackImageEntry {
     pub body: Option<String>,
     pub info_json: Option<String>,
     pub thumbnail_mxc_uri: Option<String>,
+    pub is_animated: Option<bool>,
 }
 
 /// An `m.room.image_pack` visible from some room, with its images resolved.
@@ -556,6 +558,10 @@ pub struct ImagePackSummary {
     /// Empty means both stickers and emoticons, per the spec's default.
     pub usage: Vec<String>,
     pub attribution: Option<String>,
+    /// True when the user has this pack enabled globally through
+    /// `m.image_pack.rooms`, which is what makes it reachable outside its
+    /// source room.
+    pub is_global: bool,
     pub images: Vec<ImagePackImageEntry>,
 }
 

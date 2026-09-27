@@ -1123,6 +1123,23 @@ impl WasmClient {
         webffi_unit(s.core.set_media_preview_config(mode).await)
     }
 
+    #[wasm_bindgen(js_name = setImagePackEnabled)]
+    pub async fn set_image_pack_enabled(
+        &self,
+        room_id: String,
+        state_key: String,
+        enabled: bool,
+    ) -> JsValue {
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        webffi_unit(
+            s.core
+                .set_image_pack_enabled(room_id, state_key, enabled)
+                .await,
+        )
+    }
+
     #[wasm_bindgen(js_name = isEventReadBy)]
     pub async fn is_event_read_by(
         &self,

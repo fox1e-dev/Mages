@@ -9,6 +9,9 @@ import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,6 +31,8 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import mages.shared.generated.resources.Res
 import mages.shared.generated.resources.picker_no_sticker_packs
+import mages.shared.generated.resources.sticker_pack_enable_globally
+import mages.shared.generated.resources.sticker_pack_disable_globally
 import mages.shared.generated.resources.sticker_pack_unencrypted_notice
 import org.jetbrains.compose.resources.stringResource
 import org.mlm.mages.matrix.ImagePackImageEntry
@@ -47,8 +52,10 @@ fun StickerPickerSheet(
     packs: List<ImagePackSummary>,
     isLoading: Boolean,
     isEncryptedRoom: Boolean,
+    packIdsBeingUpdated: Set<String>,
     requestPreview: suspend (thumbnailMxcUri: String?, mxcUrl: String) -> String?,
     onSelect: (ImagePackImageEntry) -> Unit,
+    onSetPackEnabled: (ImagePackSummary, Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val stickerPacks = remember(packs) { packs.filter { it.servesStickers() } }
@@ -103,7 +110,11 @@ fun StickerPickerSheet(
                     }
 
                     stickerPacks.forEach { pack ->
-                        packHeader(pack)
+                        packHeader(
+                            pack = pack,
+                            isUpdating = pack.packId in packIdsBeingUpdated,
+                            onSetPackEnabled = onSetPackEnabled
+                        )
                         items(
                             items = pack.images,
                             key = { "${pack.packId}:${it.shortcode}" }
@@ -121,7 +132,11 @@ fun StickerPickerSheet(
     }
 }
 
-private fun LazyGridScope.packHeader(pack: ImagePackSummary) {
+private fun LazyGridScope.packHeader(
+    pack: ImagePackSummary,
+    isUpdating: Boolean,
+    onSetPackEnabled: (ImagePackSummary, Boolean) -> Unit,
+) {
     item(key = "header:${pack.packId}", span = { GridItemSpan(maxLineSpan) }) {
         Row(
             modifier = Modifier.padding(top = Spacing.sm),
@@ -132,7 +147,8 @@ private fun LazyGridScope.packHeader(pack: ImagePackSummary) {
                 text = pack.displayName ?: pack.sourceRoom,
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
             )
             pack.attribution?.let { attribution ->
                 Text(
@@ -140,8 +156,36 @@ private fun LazyGridScope.packHeader(pack: ImagePackSummary) {
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
+            }
+            Spacer(Modifier.weight(1f))
+            IconButton(
+                onClick = { onSetPackEnabled(pack, !pack.isGlobal) },
+                enabled = !isUpdating,
+                modifier = Modifier.size(28.dp)
+            ) {
+                if (isUpdating) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (pack.isGlobal) Icons.Filled.Public else Icons.Outlined.Public,
+                        contentDescription = stringResource(
+                            if (pack.isGlobal) Res.string.sticker_pack_disable_globally
+                            else Res.string.sticker_pack_enable_globally
+                        ),
+                        tint = if (pack.isGlobal) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }

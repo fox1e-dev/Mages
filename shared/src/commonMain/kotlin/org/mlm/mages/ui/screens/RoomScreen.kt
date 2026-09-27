@@ -912,8 +912,10 @@ fun RoomScreen(
             packs = state.imagePacks,
             isLoading = state.isLoadingImagePacks,
             isEncryptedRoom = state.isRoomEncrypted,
+            packIdsBeingUpdated = state.packIdsBeingUpdated,
             requestPreview = viewModel::packImagePreview,
             onSelect = viewModel::sendPackSticker,
+            onSetPackEnabled = viewModel::setPackEnabled,
             onDismiss = viewModel::hideStickerPicker
         )
     }

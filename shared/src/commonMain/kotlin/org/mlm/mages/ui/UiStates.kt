@@ -308,6 +308,7 @@ data class RoomUiState(
     val imagePacksLoaded: Boolean = false,
     val isLoadingImagePacks: Boolean = false,
     val imagePacks: List<ImagePackSummary> = emptyList(),
+    val packIdsBeingUpdated: Set<String> = emptySet(),
     val showPollCreator: Boolean = false,
     val showLiveLocation: Boolean = false,
     val showShareLocation: Boolean = false,

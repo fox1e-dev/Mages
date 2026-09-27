@@ -458,16 +458,33 @@ class RoomViewModel(
         if (currentState.imagePacksLoaded) return
         launch {
             val roomId = currentState.roomId
-            val packs = service.port.listImagePacks(roomId)
             val encrypted = service.port.roomProfile(roomId)?.isEncrypted == true
-            updateState {
-                copy(
-                    imagePacks = packs,
-                    imagePacksLoaded = true,
-                    isLoadingImagePacks = false,
-                    isRoomEncrypted = encrypted
-                )
+            updateState { copy(isRoomEncrypted = encrypted) }
+            loadImagePacks()
+        }
+    }
+
+    private suspend fun loadImagePacks() {
+        val packs = service.port.listImagePacks(currentState.roomId)
+        updateState {
+            copy(
+                imagePacks = packs,
+                imagePacksLoaded = true,
+                isLoadingImagePacks = false
+            )
+        }
+    }
+
+    fun setPackEnabled(pack: ImagePackSummary, enabled: Boolean) {
+        val packId = pack.packId
+        updateState { copy(packIdsBeingUpdated = packIdsBeingUpdated + packId) }
+        launch {
+            val result = service.port.setImagePackEnabled(pack.sourceRoom, pack.stateKey, enabled)
+            if (result.isFailure) {
+                _events.send(Event.ShowError("Failed to update sticker pack"))
             }
+            loadImagePacks()
+            updateState { copy(packIdsBeingUpdated = packIdsBeingUpdated - packId) }
         }
     }
 

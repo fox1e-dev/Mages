@@ -143,4 +143,5 @@ data class StickerInfo(
     val thumbnailMxcUri: String? = null,
     val encrypted: EncFile? = null,
     val thumbnailEncrypted: EncFile? = null,
+    val isAnimated: Boolean? = null,
 )

@@ -2681,6 +2681,18 @@ impl CoreClient {
         Ok(crate::image_packs::list_image_packs(&self.sdk, rid).await)
     }
 
+    pub async fn set_image_pack_enabled(
+        &self,
+        room_id: String,
+        state_key: String,
+        enabled: bool,
+    ) -> Result<(), FfiError> {
+        let rid = Self::parse_rid(&room_id)?;
+        crate::image_packs::set_image_pack_enabled(&self.sdk, rid, state_key, enabled)
+            .await
+            .ffi()
+    }
+
     /// Downloads a pack image as a thumbnail into the media cache.
     pub async fn pack_image_bytes(
         &self,

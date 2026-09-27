@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use matrix_sdk::{
     Client,
@@ -10,7 +10,7 @@ use matrix_sdk::{
         },
         events::{
             StateEventType,
-            image_pack::rooms::ImagePackRoomsEventContent,
+            image_pack::rooms::{ImagePackRoomsEventContent, RoomImagePackMeta},
             room::{
                 MediaSource,
                 image_pack::{ImagePackImage, PackUsage, RoomImagePackEventContent},
@@ -143,7 +143,7 @@ pub(crate) async fn list_image_packs(
     let mut cache = StateCache::new(client);
     // A `None` key list means "every pack in this room"; a `Some` list is the
     // exact set of state keys the user enabled.
-    let mut targets: Vec<(OwnedRoomId, Option<Vec<String>>)> = Vec::new();
+    let mut targets: Vec<(OwnedRoomId, Option<Vec<String>>, bool)> = Vec::new();
 
     // Account data is user-writable, so a malformed blob must not take the
     // whole picker down; the other tiers still resolve.
@@ -179,18 +179,18 @@ pub(crate) async fn list_image_packs(
     subscribed_rooms.sort();
     for room in subscribed_rooms {
         let keys = subscribed_by_room.remove(&room).unwrap_or_default();
-        targets.push((room, Some(keys)));
+        targets.push((room, Some(keys), true));
     }
 
-    targets.push((room_id.clone(), None));
+    targets.push((room_id.clone(), None, false));
     for space in canonical_space_ancestors(&mut cache, &room_id).await {
-        targets.push((space, None));
+        targets.push((space, None, false));
     }
 
     let mut seen: HashSet<(OwnedRoomId, String)> = HashSet::new();
     let mut out: Vec<ImagePackSummary> = Vec::new();
 
-    for (source_room, wanted_keys) in targets {
+    for (source_room, wanted_keys, is_global) in targets {
         let found: Vec<(String, RoomImagePackEventContent)> = match &wanted_keys {
             // A single non-empty key is cheaper to address directly than to
             // pull the room's whole state for.
@@ -214,7 +214,7 @@ pub(crate) async fn list_image_packs(
             if content.images.is_empty() {
                 continue;
             }
-            out.push(summary_from(source_room.to_string(), key, content));
+            out.push(summary_from(source_room.to_string(), key, content, is_global));
         }
     }
 
@@ -225,6 +225,7 @@ fn summary_from(
     source_room: String,
     state_key: String,
     content: RoomImagePackEventContent,
+    is_global: bool,
 ) -> ImagePackSummary {
     let mut images: Vec<ImagePackImageEntry> = content
         .images
@@ -242,6 +243,7 @@ fn summary_from(
         avatar_url: pack.avatar_url.map(|m| m.to_string()),
         usage: usage_strings(&pack.usage),
         attribution: pack.attribution,
+        is_global,
         images,
     }
 }
@@ -266,9 +268,57 @@ fn entry_from(shortcode: String, image: ImagePackImage) -> ImagePackImageEntry {
         shortcode,
         mxc_url: image.url.to_string(),
         body: image.body,
-        info_json: image.info.map(|info| serde_json::to_string(&info).unwrap_or_default()),
+        info_json: image.info.as_ref().map(|info| serde_json::to_string(info).unwrap_or_default()),
         thumbnail_mxc_uri,
+        is_animated: image.info.as_ref().and_then(|info| info.is_animated),
     }
+}
+
+/// Add or remove one pack from `m.image_pack.rooms`, making its images available
+/// in every room.
+pub(crate) async fn set_image_pack_enabled(
+    client: &Client,
+    room_id: OwnedRoomId,
+    state_key: String,
+    enabled: bool,
+) -> Result<(), matrix_sdk::Error> {
+    let account = client.account();
+
+    let mut rooms = match account
+        .account_data::<ImagePackRoomsEventContent>()
+        .await?
+    {
+        Some(raw) => match raw.deserialize() {
+            Ok(content) => content.rooms,
+            Err(e) => {
+                // The blob is user-writable, so it can be unreadable. There is
+                // nothing to preserve if it cannot be parsed, but overwriting
+                // it silently would drop every other subscription.
+                warn!("image pack: account data unparseable, rewriting: {e}");
+                BTreeMap::new()
+            }
+        },
+        None => BTreeMap::new(),
+    };
+
+    if enabled {
+        rooms
+            .entry(room_id)
+            .or_default()
+            .insert(state_key, RoomImagePackMeta::new());
+    } else if let Some(packs) = rooms.get_mut(&room_id) {
+        packs.remove(&state_key);
+        // An empty inner object has no defined meaning per the spec, so drop the
+        // room entirely rather than leave a dangling key.
+        if packs.is_empty() {
+            rooms.remove(&room_id);
+        }
+    }
+
+    account
+        .set_account_data(ImagePackRoomsEventContent::new(rooms))
+        .await
+        .map(|_| ())
 }
 
 /// Walk `m.space.parent` edges upwards, keeping only canonical parents the user

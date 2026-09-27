@@ -549,7 +549,8 @@ data class ImagePackImageEntry(
     val body: String? = null,
     /** The pack's own `info` object, forwarded verbatim when sending. */
     val infoJson: String? = null,
-    val thumbnailMxcUri: String? = null
+    val thumbnailMxcUri: String? = null,
+    val isAnimated: Boolean? = null
 )
 
 @Serializable
@@ -562,9 +563,12 @@ data class ImagePackSummary(
     /** Empty means the pack serves both stickers and emoticons. */
     val usage: List<String> = emptyList(),
     val attribution: String? = null,
+    /** True when enabled globally via `m.image_pack.rooms`. */
+    val isGlobal: Boolean = false,
     val images: List<ImagePackImageEntry> = emptyList()
 ) {
     fun servesStickers(): Boolean = usage.isEmpty() || "sticker" in usage
+    fun servesEmoticons(): Boolean = usage.isEmpty() || "emoticon" in usage
 }
 
 @Serializable
@@ -977,6 +981,17 @@ interface MatrixPort {
     suspend fun roomParentSpaces(roomId: String): List<SpaceParentInfo>
 
     suspend fun listImagePacks(roomId: String): List<ImagePackSummary>
+
+    /**
+     * Adds or removes one pack from `m.image_pack.rooms`, so its images become
+     * available in every room. Disabling the last pack of a room also drops
+     * that room's now-empty entry.
+     */
+    suspend fun setImagePackEnabled(
+        roomId: String,
+        stateKey: String,
+        enabled: Boolean
+    ): Result<Unit>
 
     /** Downloads a pack image into the media cache and returns a local path. */
     suspend fun packImageToCache(

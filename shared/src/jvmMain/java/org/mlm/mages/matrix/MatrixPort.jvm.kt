@@ -545,13 +545,15 @@ class RustMatrixPort : MatrixPort, VerificationService {
         avatarUrl = avatarUrl,
         usage = usage,
         attribution = attribution,
+        isGlobal = isGlobal,
         images = images.map { entry ->
             ImagePackImageEntry(
                 shortcode = entry.shortcode,
                 mxcUrl = entry.mxcUrl,
                 body = entry.body,
                 infoJson = entry.infoJson,
-                thumbnailMxcUri = entry.thumbnailMxcUri
+                thumbnailMxcUri = entry.thumbnailMxcUri,
+                isAnimated = entry.isAnimated
             )
         }
     )
@@ -1315,6 +1317,16 @@ class RustMatrixPort : MatrixPort, VerificationService {
                 .getOrElse { emptyList() }
                 .map { it.toModel() }
         }
+
+    override suspend fun setImagePackEnabled(
+        roomId: String,
+        stateKey: String,
+        enabled: Boolean
+    ): Result<Unit> = withContext(matrixDispatcher) {
+        runWithFfiResult {
+            withClient { it.setImagePackEnabled(roomId, stateKey, enabled) }
+        }
+    }
 
     override suspend fun packImageToCache(
         mxcUrl: String,
@@ -2167,6 +2179,7 @@ private fun StickerInfo.toFfi() = mages.StickerInfo(
     thumbnailMxcUri = thumbnailMxcUri,
     encrypted = encrypted?.toFfi(),
     thumbnailEncrypted = thumbnailEncrypted?.toFfi(),
+    isAnimated = isAnimated,
 )
 
 private fun mages.StickerInfo.toModel() = StickerInfo(
@@ -2178,6 +2191,7 @@ private fun mages.StickerInfo.toModel() = StickerInfo(
     thumbnailMxcUri = thumbnailMxcUri,
     encrypted = encrypted?.toModel(),
     thumbnailEncrypted = thumbnailEncrypted?.toModel(),
+    isAnimated = isAnimated,
 )
 
 private fun RoomNotificationMode.toFfi(): FfiRoomNotificationMode = when (this) {

@@ -921,6 +921,15 @@ impl Client {
         RT.block_on(self.core.list_image_packs(room_id))
     }
 
+    pub fn set_image_pack_enabled(
+        &self,
+        room_id: String,
+        state_key: String,
+        enabled: bool,
+    ) -> Result<(), FfiError> {
+        RT.block_on(self.core.set_image_pack_enabled(room_id, state_key, enabled))
+    }
+
     pub fn pack_image_to_cache(
         &self,
         mxc_url: String,
@@ -3869,6 +3878,7 @@ fn extract_sticker_info(sticker_event: &matrix_sdk_ui::timeline::Sticker) -> Sti
         thumbnail_mxc_uri,
         encrypted,
         thumbnail_encrypted,
+        is_animated: info.is_animated,
     }
 }
 
@@ -4202,6 +4212,7 @@ fn map_timeline_event(
                         thumbnail_mxc_uri,
                         encrypted,
                         thumbnail_encrypted,
+                        is_animated: info.is_animated,
                     });
                 }
                 MsgLikeKind::LiveLocation(ll_state) => {
