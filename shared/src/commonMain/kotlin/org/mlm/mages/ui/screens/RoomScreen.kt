@@ -50,6 +50,7 @@ import org.mlm.mages.ui.components.RoomUpgradeBanner
 import org.mlm.mages.ui.components.attachment.AttachmentPicker
 import org.mlm.mages.ui.components.attachment.AttachmentProgress
 import org.mlm.mages.ui.components.composer.ActionBanner
+import org.mlm.mages.ui.components.composer.EmoteSuggestion
 import org.mlm.mages.ui.components.composer.MessageComposer
 import org.mlm.mages.ui.components.core.*
 import org.mlm.mages.ui.components.dialogs.ReportContentDialog
@@ -571,6 +572,8 @@ fun RoomScreen(
                         onStartVoiceRecording = viewModel::startVoiceRecording,
                         onCancelVoiceRecording = viewModel::cancelVoiceRecording,
                         onVoiceRecordingComplete = viewModel::onVoiceRecordingComplete,
+                        emoteSuggestions = viewModel.emoteSuggestions,
+                        resolveEmotePreview = viewModel::packImagePreview,
                     )
                 }
             }
@@ -1376,6 +1379,8 @@ private fun RoomBottomBar(
     onStartVoiceRecording: () -> Unit = {},
     onCancelVoiceRecording: () -> Unit = {},
     onVoiceRecordingComplete: (filePath: String, durationMs: Long, waveform: List<Float>) -> Unit = { _, _, _ -> },
+    emoteSuggestions: List<EmoteSuggestion> = emptyList(),
+    resolveEmotePreview: suspend (thumbnailMxcUri: String?, mxcUrl: String) -> String? = { _, _ -> null },
 ) {
     Column(modifier = Modifier.navigationBarsPadding().imePadding()) {
         ActionBanner(
@@ -1419,6 +1424,8 @@ private fun RoomBottomBar(
             onStartVoiceRecording = onStartVoiceRecording,
             onCancelVoiceRecording = onCancelVoiceRecording,
             onVoiceRecordingComplete = onVoiceRecordingComplete,
+            emoteSuggestions = emoteSuggestions,
+            resolveEmotePreview = resolveEmotePreview,
         )
     }
 }

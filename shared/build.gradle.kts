@@ -176,11 +176,32 @@ tasks.named("compileKotlinWasmJs") {
     dependsOn(checkWasmInteropTypes)
 }
 
+kotlin {
+    sourceSets {
+        // The settings processor only runs for commonMain metadata, so this is
+        // the single declaration and every compilation resolves it.
+        commonMain {
+            kotlin.srcDir(layout.buildDirectory.dir("generated/ksp/metadata/commonMain/kotlin"))
+            kotlin.srcDir(layout.buildDirectory.dir("generated/ksp/metadata/commonMain/java"))
+        }
+    }
+}
+
+// commonMain now reads the metadata output, so every other KSP task must be
+// ordered after the one that produces it.
+tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
+    mustRunAfter("kspCommonMainKotlinMetadata")
+}
+
+tasks.matching { it.name.startsWith("compile") && it.name.contains("Kotlin") }.configureEach {
+    dependsOn("kspCommonMainKotlinMetadata")
+}
+
 dependencies {
+    // Only the commonMain metadata run. Generating per target as well put a copy
+    // in each platform source set, which commonMain could not see, and made the
+    // processor report a collision once the metadata copy was wired in.
     add("kspCommonMainMetadata", libs.kmp.settings.ksp)
-    add("kspAndroid", libs.kmp.settings.ksp)
-    add("kspJvm", libs.kmp.settings.ksp)
-    add("kspWasmJs", libs.kmp.settings.ksp)
 }
 
 // The rust/uniffi tasks (cargoBuildDesktop, cargoBuildAndroid, cargoBuildWasm, genUniFFIAndroid,

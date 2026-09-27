@@ -59,6 +59,8 @@ fun MessageComposer(
     onStartVoiceRecording: (() -> Unit)? = null,
     onCancelVoiceRecording: (() -> Unit)? = null,
     onVoiceRecordingComplete: ((filePath: String, durationMs: Long, waveform: List<Float>) -> Unit)? = null,
+    emoteSuggestions: List<EmoteSuggestion> = emptyList(),
+    resolveEmotePreview: suspend (thumbnailMxcUri: String?, mxcUrl: String) -> String? = { _, _ -> null },
 ) {
     val scope = rememberCoroutineScope()
     var fieldValue by remember { mutableStateOf(TextFieldValue(value)) }
@@ -72,6 +74,11 @@ fun MessageComposer(
     val mentionQuery = remember(fieldValue) { findMentionQueryInternal(fieldValue) }
     val mentionSuggestions = remember(mentionQuery, roomMembers) {
         if (mentionQuery == null) emptyList() else filterMentionSuggestionsInternal(roomMembers, mentionQuery.query)
+    }
+
+    val emoteQuery = remember(fieldValue) { findEmoteQueryInternal(fieldValue) }
+    val visibleEmotes = remember(emoteQuery, emoteSuggestions) {
+        if (emoteQuery == null) emptyList() else filterEmoteSuggestionsInternal(emoteSuggestions, emoteQuery.query)
     }
 
     if (isRecordingVoice && onStartVoiceRecording != null && onCancelVoiceRecording != null && onVoiceRecordingComplete != null) {
@@ -105,6 +112,23 @@ fun MessageComposer(
                     onMemberSelected = { member ->
                         val query = mentionQuery ?: return@ComposerMentionPopup
                         val updated = insertMentionInternal(fieldValue, member, query)
+                        fieldValue = updated
+                        onValueChange(updated.text)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.lg)
+                        .padding(top = Spacing.xs)
+                )
+            }
+
+            AnimatedVisibility(visible = visibleEmotes.isNotEmpty()) {
+                ComposerEmotePopup(
+                    suggestions = visibleEmotes,
+                    resolvePreview = resolveEmotePreview,
+                    onEmoteSelected = { suggestion ->
+                        val query = emoteQuery ?: return@ComposerEmotePopup
+                        val updated = insertEmoteInternal(fieldValue, suggestion, query)
                         fieldValue = updated
                         onValueChange(updated.text)
                     },
@@ -335,5 +359,68 @@ private fun insertMentionInternal(current: TextFieldValue, member: MemberSummary
         append(current.text.substring(mentionQuery.end))
     }
     val newCursor = mentionQuery.start + mentionText.length
+    return TextFieldValue(newText, selection = TextRange(newCursor))
+}
+
+private data class EmoteQueryInternal(
+    val start: Int,
+    val end: Int,
+    val query: String,
+)
+
+/**
+ * Shortcodes may only contain the characters the spec's grammar allows, so a
+ * query is bounded by anything outside `ALPHA / DIGIT / "-" / "_"`. The colon
+ * must start a word, which is what keeps a time such as `12:30` or a URL from
+ * opening the picker.
+ */
+private fun findEmoteQueryInternal(value: TextFieldValue): EmoteQueryInternal? {
+    val text = value.text
+    val cursor = value.selection.start
+    if (cursor < 1 || cursor > text.length) return null
+
+    var start = cursor
+    while (start > 0 && isShortcodeChar(text[start - 1])) {
+        start--
+    }
+    if (start >= text.length || text[start] != ':') return null
+    if (start > 0 && !text[start - 1].isWhitespace()) return null
+
+    var end = cursor
+    while (end < text.length && isShortcodeChar(text[end])) {
+        end++
+    }
+
+    return EmoteQueryInternal(start = start, end = end, query = text.substring(start + 1, cursor))
+}
+
+private fun isShortcodeChar(c: Char): Boolean = c.isLetterOrDigit() || c == '-' || c == '_'
+
+private fun filterEmoteSuggestionsInternal(
+    suggestions: List<EmoteSuggestion>,
+    query: String
+): List<EmoteSuggestion> {
+    val normalized = query.lowercase()
+    return suggestions
+        .asSequence()
+        .filter {
+            normalized.isEmpty() || it.shortcode.lowercase().startsWith(normalized)
+        }
+        .take(24)
+        .toList()
+}
+
+private fun insertEmoteInternal(
+    current: TextFieldValue,
+    suggestion: EmoteSuggestion,
+    query: EmoteQueryInternal
+): TextFieldValue {
+    val emoteText = suggestion.markdown + " "
+    val newText = buildString {
+        append(current.text.substring(0, query.start))
+        append(emoteText)
+        append(current.text.substring(query.end))
+    }
+    val newCursor = query.start + emoteText.length
     return TextFieldValue(newText, selection = TextRange(newCursor))
 }

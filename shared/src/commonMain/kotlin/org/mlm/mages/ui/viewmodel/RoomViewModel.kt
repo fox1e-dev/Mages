@@ -42,6 +42,9 @@ import org.mlm.mages.ui.RoomUiState
 import org.mlm.mages.ui.components.AttachmentData
 import org.mlm.mages.ui.mediaCaption
 import org.mlm.mages.ui.components.OutgoingMediaMode
+import org.mlm.mages.ui.components.composer.EmoteSuggestion
+import org.mlm.mages.ui.components.core.EmoteRef
+import org.mlm.mages.matrix.ImagePackSummary
 import org.mlm.mages.ui.util.mimeToExtension
 import org.mlm.mages.ui.util.nowMs
 import org.mlm.mages.ui.viewmodel.RoomViewModel.Event.*
@@ -293,6 +296,14 @@ class RoomViewModel(
         val EMOTE_MARKER = "data-mx-emoticon"
         val EMOTE_TAG = Regex("""<img[^>]*data-mx-emoticon[^>]*>""", RegexOption.IGNORE_CASE)
         val SRC_ATTR = Regex("""\ssrc\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
+
+        /** The composer stands an emote in as a markdown image. */
+        val EMOTE_MARKDOWN = Regex("""!\[([^\]]*)]\([^)]*\)""")
+
+        val MENTION_MARKDOWN = Regex("""\[([^\]]+)]\(https://matrix\.to/#/(@[^)]+)\)""")
+
+        val IMG_TAG = Regex("""<img\b[^>]*>""", RegexOption.IGNORE_CASE)
+        val IMG_SRC = Regex("""\ssrc\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
     }
 
     private fun filteredVisibleEvents(items: List<MessageEvent>): List<MessageEvent> =
@@ -325,6 +336,9 @@ class RoomViewModel(
     private fun initialize() {
         launch {
             observeTimeline()
+        }
+        launch {
+            loadImagePacks()
         }
         launch {
             runCatching { service.portOrNull?.enterForeground() }
@@ -786,18 +800,61 @@ class RoomViewModel(
         caption.ifBlank { event.attachment?.fileName ?: event.body }
 
     private fun String.toPlainComposerText(): String =
-        Regex("\\[([^]]+)]\\(https://matrix\\.to/#/(@[^)]+)\\)")
-            .replace(this) { matchResult ->
-                val label = matchResult.groupValues[1]
+        MENTION_MARKDOWN
+            .replace(this) { match ->
+                val label = match.groupValues[1]
                 if (label.startsWith("@")) label else "@$label"
             }
+            .replace(EMOTE_MARKDOWN) { it.groupValues[1] }
 
     private val markdownFlavour = CommonMarkFlavourDescriptor()
 
+    private var emoteCacheKey: List<ImagePackSummary>? = null
+    private var emoteCache: List<EmoteSuggestion> = emptyList()
+
+    /**
+     * Emote-servicing images from every visible pack, ordered by shortcode. The
+     * pack name is kept only where the same shortcode is defined more than
+     * once, which is the disambiguation the spec asks clients to provide.
+     *
+     * Memoised on the pack list's identity: `updateState` only replaces it when
+     * the packs actually change, so this is stable across recompositions.
+     */
+    val emoteSuggestions: List<EmoteSuggestion>
+        get() {
+            val packs = currentState.imagePacks
+            if (packs === emoteCacheKey) return emoteCache
+
+            val byShortcode = LinkedHashMap<String, MutableList<EmoteSuggestion>>()
+            for (pack in packs) {
+                if (!pack.servesEmoticons()) continue
+                val packName = pack.displayName ?: pack.sourceRoom
+                for (image in pack.images) {
+                    byShortcode.getOrPut(image.shortcode) { mutableListOf() } += EmoteSuggestion(
+                        shortcode = image.shortcode,
+                        packName = packName,
+                        ref = EmoteRef(
+                            mxcUri = image.mxcUrl,
+                            alt = image.body ?: image.shortcode,
+                            title = image.shortcode
+                        )
+                    )
+                }
+            }
+
+            val resolved = byShortcode.keys.sorted().flatMap { key ->
+                val siblings = byShortcode.getValue(key)
+                if (siblings.size > 1) siblings else siblings.map { it.copy(packName = null) }
+            }
+
+            emoteCacheKey = packs
+            emoteCache = resolved
+            return resolved
+        }
+
     private fun String.toFormattedBodyOrNull(): String? {
         if (isBlank()) return null
-        val matrixMentionRegex = Regex("""\[([^\]]+)\]\(https://matrix\.to/#/(@[^)]+)\)""")
-        val processedText = matrixMentionRegex.replace(this) { match ->
+        val processedText = MENTION_MARKDOWN.replace(this) { match ->
             val label = match.groupValues[1]
             val userId = match.groupValues[2]
             val escapedUserId = escapeHtmlAttribute(userId)
@@ -808,7 +865,58 @@ class RoomViewModel(
         var html = HtmlGenerator(processedText, parsedTree, markdownFlavour, false).generateHtml()
         html = html.removeSurrounding("<body>", "</body>")
         html = html.removeSurrounding("<p>", "</p>")
-        return html.ifBlank { null }
+        return markEmoteImages(html)?.ifBlank { null } ?: html.ifBlank { null }
+    }
+
+    /**
+     * Rewrites the `<img>` elements the markdown pass produced for emote
+     * placeholders into the form the spec defines for custom emotes.
+     *
+     * The attribute's presence is what marks an image as an emote, so only
+     * images whose `src` resolves to a known pack image are touched; anything
+     * else is left alone. The rewritten tag always quotes the pack's own URI
+     * rather than the parsed one, so nothing from the message reaches the
+     * output verbatim. `height` is set because the spec makes it mandatory for
+     * clients that do not understand custom emotes.
+     */
+    private fun markEmoteImages(html: String): String? {
+        val known = currentState.imagePacks
+            .flatMap { it.images }
+            .associateBy({ it.mxcUrl }, { it })
+        if (known.isEmpty()) return null
+
+        var changed = false
+        val out = IMG_TAG.replace(html) { match ->
+            val tag = match.value
+            val raw = IMG_SRC.find(tag)?.groupValues?.get(1) ?: return@replace tag
+            val image = known[raw] ?: known[raw.decodePercentEscapes()] ?: return@replace tag
+            changed = true
+            val src = escapeHtmlAttribute(image.mxcUrl)
+            val alt = escapeHtmlAttribute(image.body ?: image.shortcode)
+            "<img data-mx-emoticon src=\"$src\" alt=\"$alt\" " +
+                "title=\"${escapeHtmlAttribute(image.shortcode)}\" height=\"32\">"
+        }
+        return if (changed) out else null
+    }
+
+    private fun String.decodePercentEscapes(): String {
+        if (!contains('%')) return this
+        val out = StringBuilder(length)
+        var i = 0
+        while (i < length) {
+            val c = this[i]
+            if (c == '%' && i + 2 < length) {
+                val hex = substring(i + 1, i + 3).toIntOrNull(16)
+                if (hex != null) {
+                    out.append(hex.toChar())
+                    i += 3
+                    continue
+                }
+            }
+            out.append(c)
+            i++
+        }
+        return out.toString()
     }
 
     private fun escapeHtml(text: String): String = text

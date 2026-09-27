@@ -18,7 +18,6 @@ import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -90,10 +89,10 @@ fun parseFormattedBody(
 }
 
 private class Builder(private val emotePaths: Map<String, String>) {
-    private val text = buildAnnotatedString()
+    private val text = AnnotatedString.Builder()
     private val inlineContent = mutableMapOf<String, InlineTextContent>()
 
-    fun build() = FormattedBody(text, inlineContent)
+    fun build() = FormattedBody(text.toAnnotatedString(), inlineContent)
 
     fun walk(node: Node) {
         when (node) {
