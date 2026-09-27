@@ -627,7 +627,7 @@ impl WasmClient {
                 }
             }
         }
-        let core = Rc::new(CoreClient::new(client));
+        let core = Rc::new(CoreClient::new(client).await);
         let state = Rc::new(WasmAsyncState {
             core,
             store_name,

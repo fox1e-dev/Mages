@@ -1,8 +1,6 @@
 package org.mlm.mages
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -228,17 +226,10 @@ class MatrixService(
         childRoomId: String,
         order: String? = null,
         suggested: Boolean? = null
-    ): Result<Unit> {
-        val result = port.spaceAddChild(spaceId, childRoomId, order, suggested)
-        forgetParentSpaces(childRoomId)
-        return result
-    }
+    ): Result<Unit> = port.spaceAddChild(spaceId, childRoomId, order, suggested)
 
-    suspend fun spaceRemoveChild(spaceId: String, childRoomId: String): Result<Unit> {
-        val result = port.spaceRemoveChild(spaceId, childRoomId)
-        forgetParentSpaces(childRoomId)
-        return result
-    }
+    suspend fun spaceRemoveChild(spaceId: String, childRoomId: String): Result<Unit> =
+        port.spaceRemoveChild(spaceId, childRoomId)
 
     suspend fun spaceHierarchy(
         spaceId: String,
@@ -254,31 +245,8 @@ class MatrixService(
     suspend fun spaceInviteUser(spaceId: String, userId: String): Result<Unit> =
         port.spaceInviteUser(spaceId, userId)
 
-    // A room's parent space only changes when it is added to or removed from one, so the
-    // lookup is cached and invalidated by those two calls above.
-    private val parentSpacesByRoom = LinkedHashMap<String, List<SpaceParentInfo>>()
-    private val parentSpacesLock = Mutex()
-
-    private suspend fun forgetParentSpaces(roomId: String) {
-        parentSpacesLock.withLock { parentSpacesByRoom.remove(roomId) }
-    }
-
-    suspend fun roomParentSpaces(roomId: String): List<SpaceParentInfo> {
-        parentSpacesLock.withLock { parentSpacesByRoom[roomId] }?.let { return it }
-
-        val result = port.roomParentSpaces(roomId)
-
-        parentSpacesLock.withLock {
-            parentSpacesByRoom.remove(roomId)
-            parentSpacesByRoom[roomId] = result
-            while (parentSpacesByRoom.size > PARENT_SPACE_CACHE_LIMIT) {
-                parentSpacesByRoom.remove(parentSpacesByRoom.keys.first())
-            }
-        }
-        return result
-    }
-
-    private companion object {
-        const val PARENT_SPACE_CACHE_LIMIT = 512
-    }
+    // The SDK keeps the space graph live, so this is a cheap in-memory lookup and needs no
+    // caching of its own.
+    suspend fun roomParentSpaces(roomId: String): List<SpaceParentInfo> =
+        port.roomParentSpaces(roomId)
 }

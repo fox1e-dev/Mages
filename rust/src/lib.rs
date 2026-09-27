@@ -608,7 +608,7 @@ impl Client {
             })
             .map_err(|e| FfiError::Msg(format!("failed to build client: {e}")))?;
 
-        let core = Arc::new(CoreClient::new(inner.clone()));
+        let core = Arc::new(RT.block_on(CoreClient::new(inner.clone())));
         let (send_tx, mut send_rx) = tokio::sync::mpsc::unbounded_channel::<SendUpdate>();
 
         let this = Self {

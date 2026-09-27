@@ -53,6 +53,7 @@ use matrix_sdk::{
 use matrix_sdk_ui::{
     eyeball_im::{Vector, VectorDiff},
     room_list_service::RoomListItem,
+    spaces::SpaceService,
     sync_service::SyncService,
     timeline::{RoomExt as _, Timeline, TimelineEventFocusThreadMode, TimelineFocus},
 };
@@ -107,6 +108,34 @@ where
         Either::Left((v, _)) => Ok(v),
         Either::Right((_, _)) => Err(()),
     }
+}
+
+/// The power level to treat `user_id` as having in `room`.
+///
+/// From room version 12 the creator is given infinite power and must not appear in the
+/// `users` map, so a plain lookup there reports 0 for the creator of a modern room.
+pub(crate) fn effective_user_level(
+    room: &matrix_sdk::Room,
+    power_levels: &matrix_sdk::ruma::events::room::power_levels::RoomPowerLevels,
+    user_id: &matrix_sdk::ruma::UserId,
+) -> i64 {
+    let is_creator = room
+        .creators()
+        .is_some_and(|creators| creators.iter().any(|creator| creator == user_id));
+    let is_modern_version = room
+        .version()
+        .is_some_and(|version| version >= matrix_sdk::ruma::RoomVersionId::V12);
+
+    if is_creator && is_modern_version {
+        return i64::MAX;
+    }
+
+    power_levels
+        .users
+        .get(user_id)
+        .copied()
+        .map(i64::from)
+        .unwrap_or(0)
 }
 
 pub fn room_list_membership(room: &matrix_sdk::Room) -> RoomListMembership {
@@ -275,15 +304,18 @@ pub struct CoreClient {
     pub sdk: SdkClient,
     pub timeline_mgr: TimelineManager,
     pub sync_service: Arc<Mutex<Option<Arc<SyncService>>>>,
+    pub space_service: Arc<SpaceService>,
 }
 
 impl CoreClient {
-    pub fn new(sdk: SdkClient) -> Self {
+    pub async fn new(sdk: SdkClient) -> Self {
         let timeline_mgr = TimelineManager::new(sdk.clone());
+        let space_service = Arc::new(SpaceService::new(sdk.clone()).await);
         Self {
             sdk,
             timeline_mgr,
             sync_service: Arc::new(Mutex::new(None)),
+            space_service,
         }
     }
 
@@ -1174,15 +1206,9 @@ impl CoreClient {
         let me = self.sdk.user_id();
 
         let power_levels = room.power_levels().await.ffi()?;
-        let my_level: i64 = if let Some(uid) = me.as_ref() {
-            power_levels
-                .users
-                .get(uid.as_ref() as &matrix_sdk::ruma::UserId)
-                .copied()
-                .map(|v| v.into())
-                .unwrap_or(0)
-        } else {
-            0
+        let my_level: i64 = match me.as_ref() {
+            Some(uid) => effective_user_level(room, &power_levels, uid.as_ref()),
+            None => 0,
         };
 
         let events_default: i64 = power_levels.events_default.into();
@@ -1330,21 +1356,12 @@ impl CoreClient {
         let is_dm = room.is_direct().await.unwrap_or(false);
 
         let power_levels = room.power_levels().await.ffi()?;
-        let my_level: i64 = power_levels
-            .users
-            .get(me.as_ref() as &matrix_sdk::ruma::UserId)
-            .copied()
-            .map(|v| v.into())
-            .unwrap_or(0);
+        let my_level: i64 = effective_user_level(room, &power_levels, me.as_ref());
 
         let target_user_id = matrix_sdk::ruma::OwnedUserId::try_from(&*user_id)
             .map_err(|_| FfiError::Msg("invalid target user id".into()))?;
-        let target_level: i64 = power_levels
-            .users
-            .get(target_user_id.as_ref() as &matrix_sdk::ruma::UserId)
-            .copied()
-            .map(|v| v.into())
-            .unwrap_or(0);
+        let target_level: i64 =
+            effective_user_level(room, &power_levels, target_user_id.as_ref());
 
         let direct_message = if me.as_str() == user_id {
             ActionAvailability::disabled("You cannot start a direct message with yourself.")
@@ -1498,23 +1515,13 @@ impl CoreClient {
             .ok_or_else(|| FfiError::Msg("not logged in".into()))?;
 
         let power_levels = room.power_levels().await.ffi()?;
-        let my_level: i64 = power_levels
-            .users
-            .get(me.as_ref() as &matrix_sdk::ruma::UserId)
-            .copied()
-            .map(|v| v.into())
-            .unwrap_or(0);
+        let my_level: i64 = effective_user_level(room, &power_levels, me.as_ref());
 
         let sender_id = matrix_sdk::ruma::OwnedUserId::try_from(&*sender_user_id)
             .map_err(|_| FfiError::Msg("invalid user id".into()))?;
         let is_me = me.as_str() == sender_user_id;
 
-        let sender_level: i64 = power_levels
-            .users
-            .get(sender_id.as_ref() as &matrix_sdk::ruma::UserId)
-            .copied()
-            .map(|v| v.into())
-            .unwrap_or(0);
+        let sender_level: i64 = effective_user_level(room, &power_levels, sender_id.as_ref());
 
         let events_default: i64 = power_levels.events_default.into();
         let state_default: i64 = power_levels.state_default.into();
@@ -3302,50 +3309,21 @@ impl CoreClient {
         Ok(())
     }
 
-    // Parent spaces are a claim made by the child room, so per spec they are only honoured
-    // when the sender could have added the room to that space, and never for spaces the
-    // user is not in (otherwise a hidden room would leak into their space UI).
+    // Delegates to the SDK's SpaceService graph, which unions m.space.parent and m.space.child
+    // edges across joined spaces and strips cycles. The graph is otherwise only refreshed by a
+    // background task on syncs that carry room updates, so it is still empty right after login;
+    // top_level_joined_spaces() recomputes it on demand before the lookup.
     pub async fn room_parent_spaces(&self, room_id: String) -> Result<Vec<SpaceParentInfo>, FfiError> {
-        use matrix_sdk::ruma::events::{
-            space::{child::SpaceChildEventContent, parent::SpaceParentEventContent},
-            StateEventType,
-        };
-
         let rid = Self::parse_rid(&room_id)?;
-        let room = self.sdk.get_room(&rid).or_ffi("room not found")?;
+        self.space_service.top_level_joined_spaces().await;
 
         let mut out = Vec::new();
-        for raw in room.get_state_events_static::<SpaceParentEventContent>().await.ffi()? {
-            let Ok(event) = raw.deserialize() else {
-                continue;
-            };
-            let Some(sync) = event.as_sync() else {
-                continue;
-            };
-
-            let space_id = sync.state_key().clone();
-            let Some(space) = self.sdk.get_room(&space_id) else {
-                continue;
-            };
-
-            let has_child_event = space
-                .get_state_event_static_for_key::<SpaceChildEventContent, _>(&rid)
-                .await
-                .map(|found| found.is_some())
-                .unwrap_or(false);
-            if !has_child_event {
-                let Ok(power_levels) = space.power_levels().await else {
-                    continue;
-                };
-                if !power_levels.user_can_send_state(sync.sender(), StateEventType::SpaceChild) {
-                    continue;
-                }
-            }
-
+        for space in self.space_service.joined_parents_of_child(rid.as_ref()).await {
+            let room = self.sdk.get_room(&space.room_id);
             out.push(SpaceParentInfo {
-                space_id: space_id.to_string(),
-                name: space.display_name().await.ok().map(|d| d.to_string()),
-                avatar_url: space.avatar_url().map(|m| m.to_string()),
+                space_id: space.room_id.to_string(),
+                name: space.name.map(|n| n.to_string()),
+                avatar_url: room.as_ref().and_then(|room| room.avatar_url()).map(|m| m.to_string()),
             });
         }
         Ok(out)
