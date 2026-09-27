@@ -554,11 +554,8 @@
     <string name="timeline_shared_location">megosztott egy helyet</string>
     <string name="space_child_suggested">Javasolt</string>
     <string name="space_child_not_joined">Nem csatlakozott</string>
-    <string name="status_message">Állapotüzenet</string>
-    <string name="status_message_description">A jelenléted mellett jelenik meg</string>
-    <string name="status_message_placeholder">Ma otthonról dolgozom</string>
-    <string name="save_status">Állapot frissítése</string>
-    <string name="saving">Mentés…</string>
+    <string name="setting_status_message">Állapotüzenet</string>
+    <string name="setting_status_message_description">A jelenléted mellett jelenik meg</string>
     <string name="live_location_desktop_desc">A helyfrissítések folytatódnak, amíg a Mages fut, amíg le nem állítja a megosztást vagy le nem jár az időzítő.</string>
     <string name="live_location_web_foreground_desc">Hagyja nyitva a Mages alkalmazást a megosztás folytatásához. A böngészős helyfrissítések csak akkor érhetők el, amíg a Mages látható.</string>
     <string-array name="setting_media_previews_options">

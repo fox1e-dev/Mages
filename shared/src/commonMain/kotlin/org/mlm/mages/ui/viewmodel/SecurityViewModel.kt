@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.MatrixPort
-import org.mlm.mages.matrix.Presence
 import org.mlm.mages.settings.AppSettings
 import org.mlm.mages.settings.CopyUnifiedPushEndpointAction
 import org.mlm.mages.settings.OpenBubbleSettingsAction
@@ -82,7 +81,6 @@ class SecurityViewModel(
         if (recoveryStateSub == null) subscribeRecoveryState()
         refreshDevices()
         refreshIgnored()
-        loadPresence()
         loadAccountManagementUrl()
         refreshKeyStorageState(forceFetch = true)
         updateShareHistoryState()
@@ -102,7 +100,6 @@ class SecurityViewModel(
         subscribeRecoveryState()
         refreshDevices()
         refreshIgnored()
-        loadPresence()
         loadAccountManagementUrl()
         refreshKeyStorageState(forceFetch = true)
     }
@@ -417,51 +414,6 @@ class SecurityViewModel(
             } else {
                 _events.send(Event.ShowError(result.toUserMessage("Failed to unignore user")))
             }
-        }
-    }
-
-    fun loadPresence() {
-        val version = accountDataVersion
-
-        launch {
-            val port = service.portOrNull ?: return@launch
-            val myId = port.whoami() ?: return@launch
-            val result = port.getPresence(myId)
-            if (result != null) {
-                updateStateIfCurrent(version) {
-                    copy(
-                        presence = presence.copy(
-                            currentPresence = result.first,
-                            statusMessage = result.second ?: ""
-                        )
-                    )
-                }
-            }
-        }
-    }
-
-    fun setPresence(presence: Presence) {
-        updateState { copy(presence = this.presence.copy(currentPresence = presence)) }
-    }
-
-    fun setStatusMessage(message: String) {
-        updateState { copy(presence = presence.copy(statusMessage = message)) }
-    }
-
-    fun savePresence() {
-        launch {
-            val port = service.portOrNull ?: return@launch
-            updateState { copy(presence = presence.copy(isSaving = true)) }
-
-            val result = port.setPresence(
-                currentState.presence.currentPresence,
-                currentState.presence.statusMessage.ifBlank { null }
-            )
-
-            updateState { copy(presence = presence.copy(isSaving = false)) }
-
-            if (result.isSuccess) _events.send(Event.ShowSuccess("Status updated"))
-            else _events.send(Event.ShowError(result.toUserMessage("Failed to update status")))
         }
     }
 

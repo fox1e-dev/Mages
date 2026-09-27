@@ -554,11 +554,8 @@
     <string name="timeline_shared_location">поделился местоположением</string>
     <string name="space_child_suggested">Рекомендуемое</string>
     <string name="space_child_not_joined">Не присоединено</string>
-    <string name="status_message">Сообщение о статусе</string>
-    <string name="status_message_description">Отображается рядом с вашим присутствием</string>
-    <string name="status_message_placeholder">Сегодня работаю из дома</string>
-    <string name="save_status">Обновить статус</string>
-    <string name="saving">Сохранение…</string>
+    <string name="setting_status_message">Сообщение о статусе</string>
+    <string name="setting_status_message_description">Отображается рядом с вашим присутствием</string>
     <string name="live_location_desktop_desc">Обновления местоположения продолжаются, пока работает Mages, до тех пор, пока вы не остановите передачу или не закончится таймер.</string>
     <string name="live_location_web_foreground_desc">Не закрывайте Mages, чтобы продолжить передачу. Обновления местоположения в браузере доступны только пока Mages видна.</string>
     <string-array name="setting_media_previews_options">

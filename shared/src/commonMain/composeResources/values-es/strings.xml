@@ -670,11 +670,8 @@
     <string name="media_cache_clear_confirm_body">Se eliminarán los medios almacenados en caché local. Sus mensajes permanecen en sus chats y los medios pueden descargarse nuevamente cuando sea necesario.</string>
     <string name="space_child_suggested">Sugerido</string>
     <string name="space_child_not_joined">No te has unido</string>
-    <string name="status_message">Mensaje de estado</string>
-    <string name="status_message_description">Se muestra junto a tu presencia</string>
-    <string name="status_message_placeholder">Hoy trabajo desde casa</string>
-    <string name="save_status">Actualizar estado</string>
-    <string name="saving">Guardando…</string>
+    <string name="setting_status_message">Mensaje de estado</string>
+    <string name="setting_status_message_description">Se muestra junto a tu presencia</string>
     <string name="live_location_desktop_desc">Las actualizaciones de ubicación continúan mientras Mages esté en ejecución, hasta que detengas el compartir o termine el temporizador.</string>
     <string name="live_location_web_foreground_desc">Mantén Mages abierto para seguir compartiendo. Las actualizaciones de ubicación del navegador solo están disponibles mientras Mages sea visible.</string>
     <string-array name="setting_media_previews_options">

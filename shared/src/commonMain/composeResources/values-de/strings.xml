@@ -554,11 +554,8 @@
     <string name="timeline_shared_location">hat einen Standort geteilt</string>
     <string name="space_child_suggested">Vorgeschlagen</string>
     <string name="space_child_not_joined">Nicht beigetreten</string>
-    <string name="status_message">Statusnachricht</string>
-    <string name="status_message_description">Wird neben Ihrer Anwesenheit angezeigt</string>
-    <string name="status_message_placeholder">Heute von zu Hause</string>
-    <string name="save_status">Status aktualisieren</string>
-    <string name="saving">Speichern…</string>
+    <string name="setting_status_message">Statusnachricht</string>
+    <string name="setting_status_message_description">Wird neben Ihrer Anwesenheit angezeigt</string>
     <string name="live_location_desktop_desc">Standortupdates laufen weiter, solange Mages ausgeführt wird, bis Sie die Freigabe stoppen oder der Timer abläuft.</string>
     <string name="live_location_web_foreground_desc">Lassen Sie Mages geöffnet, um die Freigabe fortzusetzen. Standortupdates im Browser sind nur verfügbar, solange Mages sichtbar ist.</string>
     <string-array name="setting_media_previews_options">

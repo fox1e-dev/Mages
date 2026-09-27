@@ -597,6 +597,16 @@ data class AppSettings(
     val presence: PresenceMode = PresenceMode.Online,
 
     @Setting(
+        title = "Status message",
+        titleKey = MagesSettingsKeys.STATUS_MESSAGE,
+        description = "Shown next to your presence",
+        descriptionKey = MagesSettingsKeys.STATUS_MESSAGE_DESCRIPTION,
+        category = Privacy::class,
+        type = TextInput::class,
+    )
+    val statusMessage: String = "",
+
+    @Setting(
         title = "App lock",
         titleKey = MagesSettingsKeys.APP_LOCK,
         description = "Require biometrics or device PIN to open",

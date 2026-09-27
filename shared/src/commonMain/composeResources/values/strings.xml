@@ -153,12 +153,8 @@
     <string name="security_settings">Security &amp; Settings</string>
     <string name="devices">Devices</string>
     <string name="privacy">Privacy</string>
-    <string name="status_message">Status message</string>
-    <string name="status_message_description">Shown next to your presence</string>
-    <string name="status_message_placeholder">On work today</string>
-    <string name="status_message_length">Up to %1$d bytes</string>
-    <string name="save_status">Update status</string>
-    <string name="saving">Saving…</string>
+    <string name="setting_status_message">Status message</string>
+    <string name="setting_status_message_description">Shown next to your presence</string>
     <string name="settings_tab">Settings</string>
     <string name="account">Account</string>
     <string name="manage_account">Manage Account</string>

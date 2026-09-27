@@ -554,11 +554,8 @@
     <string name="timeline_shared_location">delade en plats</string>
     <string name="space_child_suggested">Föreslagen</string>
     <string name="space_child_not_joined">Inte ansluten</string>
-    <string name="status_message">Statusmeddelande</string>
-    <string name="status_message_description">Visas bredvid din närvaro</string>
-    <string name="status_message_placeholder">Jag jobbar hemifrån idag</string>
-    <string name="save_status">Uppdatera status</string>
-    <string name="saving">Sparar…</string>
+    <string name="setting_status_message">Statusmeddelande</string>
+    <string name="setting_status_message_description">Visas bredvid din närvaro</string>
     <string name="live_location_desktop_desc">Platsuppdateringar fortsätter medan Mages körs, tills du stoppar delningen eller timern tar slut.</string>
     <string name="live_location_web_foreground_desc">Håll Mages öppet för att fortsätta dela. Platsuppdateringar i webbläsaren är bara tillgängliga medan Mages är synligt.</string>
     <string-array name="setting_media_previews_options">

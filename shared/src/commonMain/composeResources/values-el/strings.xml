@@ -554,11 +554,8 @@
     <string name="timeline_shared_location">μοιράστηκε μια τοποθεσία</string>
     <string name="space_child_suggested">Προτεινόμενο</string>
     <string name="space_child_not_joined">Μη μέλος</string>
-    <string name="status_message">Μήνυμα κατάστασης</string>
-    <string name="status_message_description">Εμφανίζεται δίπλα στην παρουσία σας</string>
-    <string name="status_message_placeholder">Σήμερα εργάζομαι από το σπίτι</string>
-    <string name="save_status">Ενημέρωση κατάστασης</string>
-    <string name="saving">Αποθήκευση…</string>
+    <string name="setting_status_message">Μήνυμα κατάστασης</string>
+    <string name="setting_status_message_description">Εμφανίζεται δίπλα στην παρουσία σας</string>
     <string name="live_location_desktop_desc">Οι ενημερώσεις τοποθεσίας συνεχίζονται όσο εκτελείται το Mages, μέχρι να σταματήσετε την κοινή χρήση ή να λήξει το χρονόμετρο.</string>
     <string name="live_location_web_foreground_desc">Διατηρήστε το Mages ανοιχτό για να συνεχίσει η κοινή χρήση. Οι ενημερώσεις τοποθεσίας στον περιηγητή είναι διαθέσιμες μόνο όσο το Mages είναι ορατό.</string>
     <string-array name="setting_media_previews_options">

@@ -554,11 +554,8 @@
     <string name="timeline_shared_location">đã chia sẻ một vị trí</string>
     <string name="space_child_suggested">Đề xuất</string>
     <string name="space_child_not_joined">Chưa tham gia</string>
-    <string name="status_message">Tin nhắn trạng thái</string>
-    <string name="status_message_description">Hiển thị bên cạnh trạng thái hiện diện của bạn</string>
-    <string name="status_message_placeholder">Hôm nay tôi làm việc ở nhà</string>
-    <string name="save_status">Cập nhật trạng thái</string>
-    <string name="saving">Đang lưu…</string>
+    <string name="setting_status_message">Tin nhắn trạng thái</string>
+    <string name="setting_status_message_description">Hiển thị bên cạnh trạng thái hiện diện của bạn</string>
     <string name="live_location_desktop_desc">Cập nhật vị trí tiếp tục diễn ra khi Mages đang chạy, cho đến khi bạn dừng chia sẻ hoặc hết giờ.</string>
     <string name="live_location_web_foreground_desc">Hãy để Mages mở để tiếp tục chia sẻ. Cập nhật vị trí trong trình duyệt chỉ khả dụng khi Mages hiển thị.</string>
     <string-array name="setting_media_previews_options">

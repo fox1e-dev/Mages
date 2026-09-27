@@ -554,11 +554,8 @@
     <string name="timeline_shared_location">compartilhou um local</string>
     <string name="space_child_suggested">Sugerido</string>
     <string name="space_child_not_joined">Não entrou</string>
-    <string name="status_message">Mensagem de status</string>
-    <string name="status_message_description">Mostrada ao lado da sua presença</string>
-    <string name="status_message_placeholder">Trabalhando de casa hoje</string>
-    <string name="save_status">Atualizar status</string>
-    <string name="saving">Salvando…</string>
+    <string name="setting_status_message">Mensagem de status</string>
+    <string name="setting_status_message_description">Mostrada ao lado da sua presença</string>
     <string name="live_location_desktop_desc">As atualizações de localização continuam enquanto o Mages estiver em execução, até você interromper o compartilhamento ou o cronômetro terminar.</string>
     <string name="live_location_web_foreground_desc">Mantenha o Mages aberto para continuar compartilhando. As atualizações de localização do navegador só estão disponíveis enquanto o Mages estiver visível.</string>
     <string-array name="setting_media_previews_options">

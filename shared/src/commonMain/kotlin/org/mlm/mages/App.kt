@@ -298,19 +298,34 @@ private fun AppContent(
                 localDeepLinks.emit(DeepLinkAction(roomId = resolved.first, eventId = resolved.second))
             }
 
+            // Presence and status message go out together, so the status is read back once
+            // first. Pushing before that read would send the default empty setting and clear
+            // whatever the server already has.
             LaunchedEffect(activeId) {
                 if (activeId == null || !service.isLoggedInSuspend()) return@LaunchedEffect
+                val port = service.portOrNull ?: return@LaunchedEffect
+                val current = port.whoami()?.let { port.getPresence(it) }
+                if (current != null && settingsRepository.get<String>("statusMessage").isNullOrBlank()) {
+                    settingsRepository.update { it.copy(statusMessage = current.second.orEmpty()) }
+                }
+
                 settingsRepository.flow
                     .map { s ->
-                        when (s.presence) {
+                        val presence = when (s.presence) {
                             PresenceMode.Online -> Presence.Online
                             PresenceMode.Offline -> Presence.Offline
                             PresenceMode.Unavailable -> Presence.Unavailable
                         }
+                        presence to s.statusMessage
                     }
                     .distinctUntilChanged()
-                    .collect { presence ->
-                        service.port.applySyncPresence(presence)
+                    .collect { (presence, status) ->
+                        val text = status.ifBlank { null }
+                        if (text != null && text.encodeToByteArray().size > STATUS_MESSAGE_MAX_BYTES) {
+                            Logger.w { "Status message over $STATUS_MESSAGE_MAX_BYTES bytes, not sending" }
+                            return@collect
+                        }
+                        runCatching { port.setPresence(presence, text) }
                     }
             }
 
@@ -1100,3 +1115,5 @@ private fun AppContent(
         }
     }
 }
+
+private const val STATUS_MESSAGE_MAX_BYTES = 255

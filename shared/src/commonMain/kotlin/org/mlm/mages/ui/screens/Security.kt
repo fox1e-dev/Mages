@@ -49,8 +49,6 @@ private sealed interface SecuritySheet {
     data object EnterRecoveryKey : SecuritySheet
 }
 
-private const val STATUS_MESSAGE_MAX_BYTES = 255
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SecurityScreen(
@@ -183,10 +181,6 @@ fun SecurityScreen(
                 )
 
                 1 -> PrivacyTab(
-                    statusMessage = state.presence.statusMessage,
-                    isSavingPresence = state.presence.isSaving,
-                    onStatusChange = viewModel::setStatusMessage,
-                    onSavePresence = viewModel::savePresence,
                     ignoredUsers = state.ignoredUsers,
                     onUnignore = viewModel::unignoreUser
                 )
@@ -641,10 +635,6 @@ private fun DeviceCard(
 
 @Composable
 private fun PrivacyTab(
-    statusMessage: String,
-    isSavingPresence: Boolean,
-    onStatusChange: (String) -> Unit,
-    onSavePresence: () -> Unit,
     ignoredUsers: List<String>,
     onUnignore: (String) -> Unit
 ) {
@@ -653,59 +643,6 @@ private fun PrivacyTab(
         contentPadding = PaddingValues(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
-        item {
-            Text(
-                stringResource(Res.string.status_message),
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-
-        item {
-            Text(
-                stringResource(Res.string.status_message_description),
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-
-        item {
-            val overLimit = statusMessage.encodeToByteArray().size > STATUS_MESSAGE_MAX_BYTES
-            OutlinedTextField(
-                value = statusMessage,
-                onValueChange = { next ->
-                    if (next.encodeToByteArray().size <= STATUS_MESSAGE_MAX_BYTES) {
-                        onStatusChange(next)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                isError = overLimit,
-                supportingText = {
-                    Text(stringResource(Res.string.status_message_length, STATUS_MESSAGE_MAX_BYTES))
-                },
-                placeholder = { Text(stringResource(Res.string.status_message_placeholder)) }
-            )
-        }
-
-        item {
-            Button(
-                onClick = onSavePresence,
-                enabled = !isSavingPresence,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    if (isSavingPresence) {
-                        stringResource(Res.string.saving)
-                    } else {
-                        stringResource(Res.string.save_status)
-                    }
-                )
-            }
-        }
-
-        item {
-            HorizontalDivider(Modifier.padding(vertical = Spacing.sm))
-        }
-
         item {
             Text(
                 stringResource(Res.string.ignored_users),

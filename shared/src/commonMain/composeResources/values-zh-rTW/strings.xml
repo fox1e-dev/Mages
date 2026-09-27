@@ -554,11 +554,8 @@
     <string name="timeline_shared_location">共享位置</string>
     <string name="space_child_suggested">建議</string>
     <string name="space_child_not_joined">未加入</string>
-    <string name="status_message">狀態訊息</string>
-    <string name="status_message_description">顯示在你的在線狀態旁</string>
-    <string name="status_message_placeholder">今天在家辦公</string>
-    <string name="save_status">更新狀態</string>
-    <string name="saving">儲存中…</string>
+    <string name="setting_status_message">狀態訊息</string>
+    <string name="setting_status_message_description">顯示在你的在線狀態旁</string>
     <string name="live_location_desktop_desc">只要 Mages 正在執行，位置更新就會持續，直到你停止分享或計時器結束。</string>
     <string name="live_location_web_foreground_desc">請保持 Mages 開啟以繼續分享。瀏覽器位置更新僅在 Mages 可見時可用。</string>
     <string-array name="setting_media_previews_options">

@@ -554,11 +554,8 @@
     <string name="timeline_shared_location">partagé un emplacement</string>
     <string name="space_child_suggested">Suggéré</string>
     <string name="space_child_not_joined">Pas rejoint</string>
-    <string name="status_message">Message de statut</string>
-    <string name="status_message_description">Affiché à côté de votre présence</string>
-    <string name="status_message_placeholder">Je travaille de la maison aujourd'hui</string>
-    <string name="save_status">Mettre à jour le statut</string>
-    <string name="saving">Enregistrement…</string>
+    <string name="setting_status_message">Message de statut</string>
+    <string name="setting_status_message_description">Affiché à côté de votre présence</string>
     <string name="live_location_desktop_desc">Les mises à jour de la position continuent tant que Mages est en cours d'exécution, jusqu'à ce que vous arrêtiez le partage ou que le minuteur se termine.</string>
     <string name="live_location_web_foreground_desc">Gardez Mages ouvert pour continuer le partage. Les mises à jour de position du navigateur ne sont disponibles que tant que Mages est visible.</string>
     <string-array name="setting_media_previews_options">

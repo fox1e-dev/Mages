@@ -16,7 +16,6 @@ import org.mlm.mages.matrix.LiveLocationShare
 import org.mlm.mages.matrix.SpaceParentInfo
 import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.matrix.MatrixPort
-import org.mlm.mages.matrix.Presence
 import org.mlm.mages.matrix.RoomNotificationMode
 import org.mlm.mages.matrix.RoomPowerLevels
 import org.mlm.mages.matrix.RoomJoinRule
@@ -286,6 +285,7 @@ data class RoomUiState(
     val lastOutgoingRead: Boolean = false,
 
     val thumbByEvent: Map<String, String> = emptyMap(),
+    val emotePathByMxc: Map<String, String> = emptyMap(),
     val replyThumbByEvent: Map<String, String> = emptyMap(),
     val avatarByUserId: Map<String, String> = emptyMap(),
     val roomMembers: List<MemberSummary> = emptyList(),
@@ -419,12 +419,6 @@ data class ForwardableRoom(
     val lastActivity: Long,
 )
 
-data class PresenceUiState(
-    val currentPresence: Presence = Presence.Online,
-    val statusMessage: String = "",
-    val isSaving: Boolean = false,
-)
-
 data class VerificationRequestUi(
     val flowId: String,
     val fromUser: String,
@@ -467,7 +461,6 @@ data class SecurityUiState(
 
     // Misc
     val ignoredUsers: List<String> = emptyList(),
-    val presence: PresenceUiState = PresenceUiState(),
     val enableShareHistoryOnInvite: Boolean = true,
 )
 

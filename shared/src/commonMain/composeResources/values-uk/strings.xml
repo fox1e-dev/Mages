@@ -554,11 +554,8 @@
     <string name="timeline_shared_location">поділився місцем розташування</string>
     <string name="space_child_suggested">Рекомендовано</string>
     <string name="space_child_not_joined">Не приєднано</string>
-    <string name="status_message">Повідомлення про статус</string>
-    <string name="status_message_description">Показується поруч із вашою присутністю</string>
-    <string name="status_message_placeholder">Сьогодні працюю з дому</string>
-    <string name="save_status">Оновити статус</string>
-    <string name="saving">Збереження…</string>
+    <string name="setting_status_message">Повідомлення про статус</string>
+    <string name="setting_status_message_description">Показується поруч із вашою присутністю</string>
     <string name="live_location_desktop_desc">Оновлення розташування тривають, поки працює Mages, доки ви не зупините передавання або не завершиться таймер.</string>
     <string name="live_location_web_foreground_desc">Не закривайте Mages, щоб продовжити передавання. Оновлення розташування в браузері доступні лише поки Mages видима.</string>
     <string-array name="setting_media_previews_options">

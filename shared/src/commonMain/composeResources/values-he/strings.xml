@@ -554,11 +554,8 @@
     <string name="timeline_shared_location">שיתף מיקום</string>
     <string name="space_child_suggested">מוצע</string>
     <string name="space_child_not_joined">לא הצטרפת</string>
-    <string name="status_message">הודעת סטטוס</string>
-    <string name="status_message_description">מוצג לצד נוכחותך</string>
-    <string name="status_message_placeholder">עובד היום מהבית</string>
-    <string name="save_status">עדכון סטטוס</string>
-    <string name="saving">שומר…</string>
+    <string name="setting_status_message">הודעת סטטוס</string>
+    <string name="setting_status_message_description">מוצג לצד נוכחותך</string>
     <string name="live_location_desktop_desc">עדכוני המיקום ממשיכים כל עוד Mages פועל, עד שתפסיק את השיתוף או שהטיימר יסתיים.</string>
     <string name="live_location_web_foreground_desc">השאר את Mages פתוח כדי להמשיך לשתף. עדכוני מיקום בדפדפן זמינים רק כאשר Mages גלוי.</string>
     <string-array name="setting_media_previews_options">
