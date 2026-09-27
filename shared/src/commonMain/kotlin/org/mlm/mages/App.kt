@@ -298,9 +298,23 @@ private fun AppContent(
                 localDeepLinks.emit(DeepLinkAction(roomId = resolved.first, eventId = resolved.second))
             }
 
-            // Presence and status message go out together, so the status is read back once
-            // first. Pushing before that read would send the default empty setting and clear
-            // whatever the server already has.
+            // Presence is tracked and pushed on its own. applySyncPresence sets the status
+            // flag to false, which is what keeps a presence change from rewriting the status
+            // message below.
+            LaunchedEffect(activeId) {
+                if (activeId == null || !service.isLoggedInSuspend()) return@LaunchedEffect
+                val port = service.portOrNull ?: return@LaunchedEffect
+                settingsRepository.flow
+                    .map { it.presence }
+                    .distinctUntilChanged()
+                    .collect { mode -> port.applySyncPresence(mode.toPresence()) }
+            }
+
+            // The CS API carries presence and status in one request, so this supplies the
+            // current presence to fill that field in. Only the status decides when to send, so
+            // a presence change does not rewrite the status. The status is read back once up
+            // front: pushing the default empty setting before that read would clear whatever
+            // the server already has.
             LaunchedEffect(activeId) {
                 if (activeId == null || !service.isLoggedInSuspend()) return@LaunchedEffect
                 val port = service.portOrNull ?: return@LaunchedEffect
@@ -308,24 +322,20 @@ private fun AppContent(
                 if (current != null && settingsRepository.get<String>("statusMessage").isNullOrBlank()) {
                     settingsRepository.update { it.copy(statusMessage = current.second.orEmpty()) }
                 }
+                var sent = current?.second
 
                 settingsRepository.flow
-                    .map { s ->
-                        val presence = when (s.presence) {
-                            PresenceMode.Online -> Presence.Online
-                            PresenceMode.Offline -> Presence.Offline
-                            PresenceMode.Unavailable -> Presence.Unavailable
-                        }
-                        presence to s.statusMessage
-                    }
-                    .distinctUntilChanged()
-                    .collect { (presence, status) ->
+                    .map { it.presence to it.statusMessage }
+                    .distinctUntilChanged { old, new -> old.second == new.second }
+                    .collect { (mode, status) ->
                         val text = status.ifBlank { null }
+                        if (text == sent) return@collect
                         if (text != null && text.encodeToByteArray().size > STATUS_MESSAGE_MAX_BYTES) {
                             Logger.w { "Status message over $STATUS_MESSAGE_MAX_BYTES bytes, not sending" }
                             return@collect
                         }
-                        runCatching { port.setPresence(presence, text) }
+                        runCatching { port.setPresence(mode.toPresence(), text) }
+                            .onSuccess { sent = text }
                     }
             }
 
@@ -1117,3 +1127,9 @@ private fun AppContent(
 }
 
 private const val STATUS_MESSAGE_MAX_BYTES = 255
+
+private fun PresenceMode.toPresence(): Presence = when (this) {
+    PresenceMode.Online -> Presence.Online
+    PresenceMode.Offline -> Presence.Offline
+    PresenceMode.Unavailable -> Presence.Unavailable
+}
