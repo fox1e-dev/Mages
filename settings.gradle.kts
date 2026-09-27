@@ -20,6 +20,9 @@ plugins {
 
 dependencyResolutionManagement {
     repositories {
+        if (providers.gradleProperty("localKmpSettings").isPresent) {
+            mavenLocal()
+        }
         google {
             mavenContent {
                 includeGroupAndSubgroups("androidx")
@@ -37,10 +40,14 @@ include(":androidApp")
 include(":desktopApp")
 include(":webApp")
 
-//includeBuild("../kmp-settings") {
-//    dependencySubstitution {
-//        substitute(module("io.github.mlm-games:kmp-settings-core")).using(project(":settings-core"))
-//        substitute(module("io.github.mlm-games:kmp-settings-ui-compose")).using(project(":settings-ui-compose"))
-//        substitute(module("io.github.mlm-games:kmp-settings-ksp")).using(project(":settings-ksp"))
-//    }
-//}
+// Local development against the kmp-settings checkout.
+//
+// A composite build is not an option here: dependencySubstitution has to satisfy every target
+// Mages declares, and settings-ui-compose ships no linuxX64 variant, so commonMain fails to
+// resolve. Publishing to the local Maven repository sidesteps that, because a module resolved
+// from a repository may simply lack a target.
+//
+//   ./gradlew -p ../kmp-settings publishToMavenLocal
+//   ./gradlew -PlocalKmpSettings <task>
+//
+// Off unless the flag is passed, so a release build always resolves Maven Central.
