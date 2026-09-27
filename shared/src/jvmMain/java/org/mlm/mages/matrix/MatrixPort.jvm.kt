@@ -537,6 +537,25 @@ class RustMatrixPort : MatrixPort, VerificationService {
         withClient { it.unobserveRoomInfo(token) }
     }
 
+    private fun mages.ImagePackSummary.toModel() = ImagePackSummary(
+        packId = packId,
+        sourceRoom = sourceRoom,
+        stateKey = stateKey,
+        displayName = displayName,
+        avatarUrl = avatarUrl,
+        usage = usage,
+        attribution = attribution,
+        images = images.map { entry ->
+            ImagePackImageEntry(
+                shortcode = entry.shortcode,
+                mxcUrl = entry.mxcUrl,
+                body = entry.body,
+                infoJson = entry.infoJson,
+                thumbnailMxcUri = entry.thumbnailMxcUri
+            )
+        }
+    )
+
     private fun mages.ForwardResult.toModel() = ForwardResult(
         sent = sent,
         failed = failed
@@ -1289,6 +1308,37 @@ class RustMatrixPort : MatrixPort, VerificationService {
                     MemberSummary(it.userId, it.displayName, it.avatarUrl, it.isMe, it.membership)
                 }
         }
+
+    override suspend fun listImagePacks(roomId: String): List<ImagePackSummary> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.listImagePacks(roomId) } }
+                .getOrElse { emptyList() }
+                .map { it.toModel() }
+        }
+
+    override suspend fun packImageToCache(
+        mxcUrl: String,
+        width: Int,
+        height: Int
+    ): Result<String> = withContext(mediaDispatcher) {
+        runWithFfiResult {
+            withClient { it.packImageToCache(mxcUrl, width.toUInt(), height.toUInt()) }
+        }
+    }
+
+    override suspend fun sendStickerMxc(
+        roomId: String,
+        mxcUrl: String,
+        body: String,
+        infoJson: String?,
+        threadRootEventId: String?
+    ): Boolean = withContext(matrixDispatcher) {
+        runWithFfiResult {
+            withClient {
+                it.sendStickerMxc(roomId, mxcUrl, body, infoJson, threadRootEventId)
+            }
+        }.isSuccess
+    }
 
     override suspend fun listKnockRequests(roomId: String): List<KnockRequestSummary> =
         withContext(matrixDispatcher) {

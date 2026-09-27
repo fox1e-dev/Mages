@@ -11,6 +11,7 @@ import org.mlm.mages.RoomSummary
 import org.mlm.mages.matrix.DeviceSummary
 import org.mlm.mages.matrix.EventType
 import org.mlm.mages.matrix.HomeserverLoginDetails
+import org.mlm.mages.matrix.ImagePackSummary
 import org.mlm.mages.matrix.LiveLocationShare
 import org.mlm.mages.matrix.SpaceParentInfo
 import org.mlm.mages.matrix.MemberSummary
@@ -302,6 +303,11 @@ data class RoomUiState(
     val predecessor: RoomPredecessorInfo? = null,
 
     val showAttachmentPicker: Boolean = false,
+    val showStickerPicker: Boolean = false,
+    val isRoomEncrypted: Boolean = false,
+    val imagePacksLoaded: Boolean = false,
+    val isLoadingImagePacks: Boolean = false,
+    val imagePacks: List<ImagePackSummary> = emptyList(),
     val showPollCreator: Boolean = false,
     val showLiveLocation: Boolean = false,
     val showShareLocation: Boolean = false,

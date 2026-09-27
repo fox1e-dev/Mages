@@ -1623,6 +1623,30 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         else Result.failure(Exception("Failed to forward the message"))
     }
 
+    override suspend fun listImagePacks(roomId: String): List<ImagePackSummary> =
+        wasmJson.decodeFromJsonElement(
+            requireClient().listImagePacks(roomId).await<JsAny?>().toJsonElement()
+        )
+
+    override suspend fun packImageToCache(
+        mxcUrl: String,
+        width: Int,
+        height: Int
+    ): Result<String> = Result.failure(
+        UnsupportedOperationException("media cache is not available on web")
+    )
+
+    override suspend fun sendStickerMxc(
+        roomId: String,
+        mxcUrl: String,
+        body: String,
+        infoJson: String?,
+        threadRootEventId: String?
+    ): Boolean = requireClient()
+        .sendStickerMxc(roomId, mxcUrl, body, infoJson, threadRootEventId)
+        .awaitUnitResult()
+        .isSuccess
+
     override suspend fun listKnockRequests(roomId: String): List<KnockRequestSummary> {
         return emptyList()
     }

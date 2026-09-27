@@ -47,6 +47,7 @@ use uniffi::{Object, export, setup_scaffolding};
 
 mod core;
 mod errors;
+mod image_packs;
 mod macros;
 mod platform;
 mod types;
@@ -914,6 +915,43 @@ impl Client {
 
     pub fn room_parent_spaces(&self, room_id: String) -> Result<Vec<SpaceParentInfo>, FfiError> {
         RT.block_on(self.core.room_parent_spaces(room_id))
+    }
+
+    pub fn list_image_packs(&self, room_id: String) -> Result<Vec<ImagePackSummary>, FfiError> {
+        RT.block_on(self.core.list_image_packs(room_id))
+    }
+
+    pub fn pack_image_to_cache(
+        &self,
+        mxc_url: String,
+        width: u32,
+        height: u32,
+    ) -> Result<String, FfiError> {
+        let (media_id, data) = RT.block_on(self.core.pack_image_bytes(mxc_url, width, height))?;
+
+        let dir = cache_dir(&self.store_dir);
+        platform::ensure_dir(&dir);
+        let path = dir.join(sanitize_filename(&format!("pack-{width}x{height}-{media_id}")));
+        std::fs::write(&path, &data)
+            .map_err(|e| FfiError::Msg(format!("cache write failed: {e}")))?;
+        Ok(path.to_string_lossy().into_owned())
+    }
+
+    pub fn send_sticker_mxc(
+        &self,
+        room_id: String,
+        mxc_url: String,
+        body: String,
+        info_json: Option<String>,
+        thread_root_event_id: Option<String>,
+    ) -> Result<(), FfiError> {
+        RT.block_on(self.core.send_sticker_mxc(
+            room_id,
+            mxc_url,
+            body,
+            info_json,
+            thread_root_event_id,
+        ))
     }
 
     pub fn thread_replies(

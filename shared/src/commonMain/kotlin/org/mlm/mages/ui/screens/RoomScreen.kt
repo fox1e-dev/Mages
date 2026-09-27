@@ -902,7 +902,19 @@ fun RoomScreen(
             onCreatePoll = viewModel::showPollCreator,
             onShareLocation = viewModel::showLiveLocation,
             onShareStaticLocation = viewModel::showShareLocation,
-            onPickSticker = { stickerPicker.launch() }
+            onPickSticker = { stickerPicker.launch() },
+            onPickStickerPack = viewModel::showStickerPicker
+        )
+    }
+
+    if (state.showStickerPicker) {
+        StickerPickerSheet(
+            packs = state.imagePacks,
+            isLoading = state.isLoadingImagePacks,
+            isEncryptedRoom = state.isRoomEncrypted,
+            requestPreview = viewModel::packImagePreview,
+            onSelect = viewModel::sendPackSticker,
+            onDismiss = viewModel::hideStickerPicker
         )
     }
 

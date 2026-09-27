@@ -531,6 +531,34 @@ pub struct SpaceParentInfo {
     pub avatar_url: Option<String>,
 }
 
+/// One image inside an image pack (spec v1.19). `info_json` stays an opaque JSON
+/// string so it can be handed back verbatim when sending, instead of being
+/// re-derived from a download.
+#[derive(Clone, Serialize, Deserialize, Record)]
+pub struct ImagePackImageEntry {
+    pub shortcode: String,
+    pub mxc_url: String,
+    pub body: Option<String>,
+    pub info_json: Option<String>,
+    pub thumbnail_mxc_uri: Option<String>,
+}
+
+/// An `m.room.image_pack` visible from some room, with its images resolved.
+#[derive(Clone, Serialize, Deserialize, Record)]
+pub struct ImagePackSummary {
+    /// Stable identity of a pack: `"<room_id>\u{1f}<state_key>"`.
+    pub pack_id: String,
+    pub source_room: String,
+    /// `m.room.image_pack` state key; empty string is a valid key per the spec.
+    pub state_key: String,
+    pub display_name: Option<String>,
+    pub avatar_url: Option<String>,
+    /// Empty means both stickers and emoticons, per the spec's default.
+    pub usage: Vec<String>,
+    pub attribution: Option<String>,
+    pub images: Vec<ImagePackImageEntry>,
+}
+
 #[derive(Clone, Serialize, Deserialize, Record)]
 pub struct PollOption {
     pub id: String,

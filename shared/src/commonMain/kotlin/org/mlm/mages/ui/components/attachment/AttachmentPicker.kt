@@ -34,6 +34,8 @@ import mages.shared.generated.resources.picker_poll
 import mages.shared.generated.resources.picker_poll_sub
 import mages.shared.generated.resources.picker_share
 import mages.shared.generated.resources.picker_sticker
+import mages.shared.generated.resources.picker_sticker_pack
+import mages.shared.generated.resources.picker_sticker_pack_sub
 import mages.shared.generated.resources.picker_sticker_sub
 import mages.shared.generated.resources.picker_video
 import mages.shared.generated.resources.picker_video_sub
@@ -42,6 +44,7 @@ import mages.shared.generated.resources.picker_video_sub
 fun AttachmentPicker(
     onPickImage: () -> Unit,
     onPickSticker: () -> Unit,
+    onPickStickerPack: (() -> Unit)? = null,
     onPickVideo: () -> Unit,
     onPickDocument: () -> Unit,
     onPasteFromClipboard: (() -> Unit)?,
@@ -85,6 +88,14 @@ fun AttachmentPicker(
                 stringResource(Res.string.picker_sticker),
                 stringResource(Res.string.picker_sticker_sub)
             ) { onPickSticker(); onDismiss() }
+
+            if (onPickStickerPack != null) {
+                AttachmentOption(
+                    Icons.Default.CollectionsBookmark,
+                    stringResource(Res.string.picker_sticker_pack),
+                    stringResource(Res.string.picker_sticker_pack_sub)
+                ) { onPickStickerPack(); onDismiss() }
+            }
 
             AttachmentOption(
                 Icons.Default.VideoLibrary,

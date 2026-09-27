@@ -543,6 +543,31 @@ data class SpaceParentInfo(
 )
 
 @Serializable
+data class ImagePackImageEntry(
+    val shortcode: String,
+    val mxcUrl: String,
+    val body: String? = null,
+    /** The pack's own `info` object, forwarded verbatim when sending. */
+    val infoJson: String? = null,
+    val thumbnailMxcUri: String? = null
+)
+
+@Serializable
+data class ImagePackSummary(
+    val packId: String,
+    val sourceRoom: String,
+    val stateKey: String = "",
+    val displayName: String? = null,
+    val avatarUrl: String? = null,
+    /** Empty means the pack serves both stickers and emoticons. */
+    val usage: List<String> = emptyList(),
+    val attribution: String? = null,
+    val images: List<ImagePackImageEntry> = emptyList()
+) {
+    fun servesStickers(): Boolean = usage.isEmpty() || "sticker" in usage
+}
+
+@Serializable
 data class ForwardResult(
     val sent: List<String>,
     val failed: List<String>
@@ -950,6 +975,29 @@ interface MatrixPort {
     suspend fun isSpace(roomId: String): Boolean
     suspend fun mySpaces(): List<SpaceInfo>
     suspend fun roomParentSpaces(roomId: String): List<SpaceParentInfo>
+
+    suspend fun listImagePacks(roomId: String): List<ImagePackSummary>
+
+    /** Downloads a pack image into the media cache and returns a local path. */
+    suspend fun packImageToCache(
+        mxcUrl: String,
+        width: Int,
+        height: Int
+    ): Result<String>
+
+    /**
+     * Sends a pack image as an `m.sticker`, reusing its mxc URI and `info`
+     * verbatim. [threadRootEventId] must be set to thread the sticker: ruma
+     * models sticker content as an opaque catch-all, so the thread relation
+     * cannot be inferred and has to be attached explicitly.
+     */
+    suspend fun sendStickerMxc(
+        roomId: String,
+        mxcUrl: String,
+        body: String,
+        infoJson: String?,
+        threadRootEventId: String?
+    ): Boolean
     suspend fun createSpace(
         name: String,
         topic: String?,

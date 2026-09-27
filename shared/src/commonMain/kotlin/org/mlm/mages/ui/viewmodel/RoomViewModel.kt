@@ -8,6 +8,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.html.HtmlGenerator
@@ -243,6 +244,8 @@ class RoomViewModel(
     private var liveLocationBeaconToken: ULong? = null
     private val paginateLock = Mutex()
     private val thumbnailFetchInFlight = mutableSetOf<String>()
+    private val previewPathByMxc = mutableMapOf<String, String>()
+    private val previewLock = Mutex()
 
     init {
         LiveLocationSharingCoordinator.onLocationDispatched = { lat, lon ->
@@ -443,6 +446,68 @@ class RoomViewModel(
 
     fun showAttachmentPicker() = updateState { copy(showAttachmentPicker = true) }
     fun hideAttachmentPicker() = updateState { copy(showAttachmentPicker = false) }
+
+    fun showStickerPicker() {
+        updateState {
+            copy(
+                showStickerPicker = true,
+                showAttachmentPicker = false,
+                isLoadingImagePacks = !imagePacksLoaded
+            )
+        }
+        if (currentState.imagePacksLoaded) return
+        launch {
+            val roomId = currentState.roomId
+            val packs = service.port.listImagePacks(roomId)
+            val encrypted = service.port.roomProfile(roomId)?.isEncrypted == true
+            updateState {
+                copy(
+                    imagePacks = packs,
+                    imagePacksLoaded = true,
+                    isLoadingImagePacks = false,
+                    isRoomEncrypted = encrypted
+                )
+            }
+        }
+    }
+
+    fun hideStickerPicker() = updateState { copy(showStickerPicker = false) }
+
+    /**
+     * Resolves a preview path for a pack image, preferring the thumbnail the
+     * pack author declared. Paths are cached per media URI because the picker
+     * re-resolves its grid every time it opens.
+     */
+    suspend fun packImagePreview(thumbnailMxcUri: String?, mxcUrl: String): String? {
+        val key = thumbnailMxcUri ?: mxcUrl
+        previewLock.withLock { previewPathByMxc[key] }?.let { return it }
+
+        val path = service.port
+            .packImageToCache(thumbnailMxcUri ?: mxcUrl, 128, 128)
+            .getOrNull()
+            ?: return null
+
+        previewLock.withLock { previewPathByMxc[key] = path }
+        return path
+    }
+
+    fun sendPackSticker(image: ImagePackImageEntry, threadRootEventId: String? = null) {
+        val roomId = currentState.roomId
+        val body = image.body ?: image.shortcode
+        hideStickerPicker()
+        launch {
+            val sent = service.port.sendStickerMxc(
+                roomId,
+                image.mxcUrl,
+                body,
+                image.infoJson,
+                threadRootEventId
+            )
+            if (!sent) {
+                _events.send(Event.ShowError("Failed to send sticker"))
+            }
+        }
+    }
 
     fun showPollCreator() = updateState { copy(showPollCreator = true, showAttachmentPicker = false) }
     fun hidePollCreator() = updateState { copy(showPollCreator = false, editingPoll = null, editing = null) }

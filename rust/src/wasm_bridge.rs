@@ -525,6 +525,8 @@ wasm_delegate_result_json! {
     "listInvited"      => list_invited();
     "ignoredUsers"     => ignored_users();
     "roomJoinRuleAllowList" => room_join_rule_allow_list(room_id: String);
+    "listImagePacks"   => list_image_packs(room_id: String);
+    "sendStickerMxc"   => send_sticker_mxc(room_id: String, mxc_url: String, body: String, info_json: Option<String>, thread_root_event_id: Option<String>);
 }
 
 wasm_delegate_option_json! {

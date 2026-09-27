@@ -62,8 +62,9 @@ use tracing::warn;
 
 use crate::{
     ActionAvailability, ActionPresentation, AttachmentInfo, AttachmentKind, DirectoryUser,
-    FfiError, FfiPushRuleKind, FfiRoomNotificationMode, KnockRequestSummary, MemberActionState,
-    MemberSummary, MessageActionState, MessageEvent, OwnReceipt, PasswordLoginKind, PollDefinition,
+    FfiError, FfiPushRuleKind, FfiRoomNotificationMode, ImagePackSummary, KnockRequestSummary,
+    MemberActionState, MemberSummary, MessageActionState, MessageEvent, OwnReceipt,
+    PasswordLoginKind, PollDefinition,
     PredecessorRoomInfo, Presence, PresenceInfo, PublicRoom, PublicRoomsPage, ReactionSummary,
     RoomActionState, RoomCallState, RoomDirectoryVisibility, RoomHistoryVisibility,
     RoomInfoSnapshot, RoomJoinRule, RoomListEntry, RoomListMembership, RoomPowerLevelChanges,
@@ -2673,6 +2674,83 @@ impl CoreClient {
     pub async fn unignore_user(&self, user_id: String) -> Result<(), FfiError> {
         let uid = Self::parse_uid(&user_id)?;
         self.sdk.account().unignore_user(&uid).await.ffi()
+    }
+
+    pub async fn list_image_packs(&self, room_id: String) -> Result<Vec<ImagePackSummary>, FfiError> {
+        let rid = Self::parse_rid(&room_id)?;
+        Ok(crate::image_packs::list_image_packs(&self.sdk, rid).await)
+    }
+
+    /// Downloads a pack image as a thumbnail into the media cache.
+    pub async fn pack_image_bytes(
+        &self,
+        mxc_url: String,
+        width: u32,
+        height: u32,
+    ) -> Result<(String, Vec<u8>), FfiError> {
+        use matrix_sdk::media::{MediaFormat, MediaRequestParameters, MediaThumbnailSettings};
+        use matrix_sdk::ruma::events::room::MediaSource;
+        use matrix_sdk::ruma::OwnedMxcUri;
+
+        let uri = OwnedMxcUri::try_from(mxc_url.as_str())
+            .map_err(|_| FfiError::Msg("invalid mxc uri".into()))?;
+
+        let settings = MediaThumbnailSettings::new(width.into(), height.into());
+        let request = MediaRequestParameters {
+            source: MediaSource::Plain(uri.clone()),
+            format: MediaFormat::Thumbnail(settings),
+        };
+
+        let data = self
+            .sdk
+            .media()
+            .get_media_content(&request, true)
+            .await
+            .map_err(|e| FfiError::Msg(format!("media load failed: {e}")))?;
+
+        let media_id = uri.media_id().unwrap_or("unknown");
+        Ok((media_id.to_string(), data))
+    }
+
+    /// Send a pack image as a sticker. `info_json` is the pack's own `info`
+    /// object, forwarded verbatim; it is never re-derived from a download, so
+    /// the dimensions stay what the pack author declared.
+    pub async fn send_sticker_mxc(
+        &self,
+        room_id: String,
+        mxc_url: String,
+        body: String,
+        info_json: Option<String>,
+        thread_root_event_id: Option<String>,
+    ) -> Result<(), FfiError> {
+        use matrix_sdk::ruma::events::{room::ImageInfo, sticker::StickerEventContent};
+
+        let tl = self
+            .timeline(&room_id)
+            .await
+            .ok_or_else(|| FfiError::Msg("timeline not found".into()))?;
+
+        let uri = matrix_sdk::ruma::OwnedMxcUri::try_from(mxc_url.as_str())
+            .map_err(|_| FfiError::Msg("invalid mxc uri".into()))?;
+
+        let info = info_json
+            .as_deref()
+            .filter(|raw| !raw.trim().is_empty() && raw.trim() != "{}")
+            .and_then(|raw| serde_json::from_str::<ImageInfo>(raw).ok())
+            .unwrap_or_default();
+
+        let mut content = StickerEventContent::new(body, info, uri);
+
+        // ruma models StickerEventContent as an opaque catch-all, so
+        // Timeline::send cannot infer the relation and would post to the room
+        // instead of the thread. Attach it explicitly.
+        if let Some(root) = thread_root_event_id {
+            if let Ok(root) = OwnedEventId::try_from(root.as_str()) {
+                content.relates_to = Some(MsgRelation::Thread(ThreadRel::without_fallback(root)));
+            }
+        }
+
+        tl.send(content.into()).await.ffi().map(|_| ())
     }
 
     pub async fn ignored_users(&self) -> Result<Vec<String>, FfiError> {
