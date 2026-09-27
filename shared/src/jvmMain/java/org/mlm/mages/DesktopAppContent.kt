@@ -91,8 +91,9 @@ fun DesktopBackground(
 
 @Composable
 fun DesktopAppContent(
-    deepLinks: Flow<DeepLinkAction>
+    deepLinks: Flow<DeepLinkAction>,
+    initialDeepLink: String? = null
 ) {
     val settingsRepo: SettingsRepository<AppSettings> = koinInject()
-    App(settingsRepo, deepLinks)
+    App(settingsRepo, deepLinks, initialDeepLink)
 }

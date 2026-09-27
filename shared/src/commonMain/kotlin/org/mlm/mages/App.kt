@@ -27,7 +27,9 @@ import io.github.mlmgames.settings.core.annotations.SettingPlatform
 import io.github.mlmgames.settings.core.platform.currentPlatform
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
@@ -93,6 +95,7 @@ val LocalMessageFontSize = staticCompositionLocalOf { 16f }
 fun App(
     settingsRepository: SettingsRepository<AppSettings>,
     deepLinks: Flow<DeepLinkAction>? = null,
+    initialDeepLink: String? = null,
     onRequestLocationPermissions: ((() -> Unit) -> Unit)? = null,
     onRequestVideoCallPermissions: ((() -> Unit) -> Unit)? = null,
     onRequestVoiceCallPermissions: ((() -> Unit) -> Unit)? = null
@@ -102,6 +105,7 @@ fun App(
     CompositionLocalProvider(LocalMessageFontSize provides settings.fontSize) {
         AppContent(
             deepLinks = deepLinks,
+            initialDeepLink = initialDeepLink,
             onRequestLocationPermissions = onRequestLocationPermissions,
             onRequestVideoCallPermissions = onRequestVideoCallPermissions,
             onRequestVoiceCallPermissions = onRequestVoiceCallPermissions,
@@ -113,6 +117,7 @@ fun App(
 @Composable
 private fun AppContent(
     deepLinks: Flow<DeepLinkAction>?,
+    initialDeepLink: String? = null,
     onRequestLocationPermissions: ((() -> Unit) -> Unit)? = null,
     onRequestVideoCallPermissions: ((() -> Unit) -> Unit)? = null,
     onRequestVoiceCallPermissions: ((() -> Unit) -> Unit)? = null
@@ -264,16 +269,48 @@ private fun AppContent(
                 }
             }
 
+            // Held until an account is available so a link opened while logged out still works.
+            var pendingInitialDeepLink by remember {
+                mutableStateOf(initialDeepLink?.takeIf { it.isNotBlank() })
+            }
+
+            LaunchedEffect(activeId) {
+                val raw = pendingInitialDeepLink ?: return@LaunchedEffect
+                if (activeId == null || !service.isLoggedInSuspend()) return@LaunchedEffect
+                pendingInitialDeepLink = null
+
+                val link = parseMatrixLink(raw)
+                if (link is MatrixLink.Unsupported) {
+                    snackbarManager.showError("Could not open link: $raw")
+                    return@LaunchedEffect
+                }
+
+                var target: Pair<String, String?>? = null
+                val opened = handleMatrixLink(service, link) { roomId, eventId ->
+                    target = roomId to eventId
+                }
+                val resolved = target
+                if (!opened || resolved == null) {
+                    snackbarManager.showError("Could not open link: $raw")
+                    return@LaunchedEffect
+                }
+                localDeepLinks.emit(DeepLinkAction(roomId = resolved.first, eventId = resolved.second))
+            }
+
             LaunchedEffect(activeId) {
                 if (activeId == null || !service.isLoggedInSuspend()) return@LaunchedEffect
-                settingsRepository.flow.collect { s ->
-                    val presence = when (s.presence) {
-                        PresenceMode.Online -> Presence.Online
-                        PresenceMode.Offline -> Presence.Offline
-                        PresenceMode.Unavailable -> Presence.Unavailable
+                settingsRepository.flow
+                    .map { s ->
+                        when (s.presence) {
+                            PresenceMode.Online -> Presence.Online
+                            PresenceMode.Offline -> Presence.Offline
+                            PresenceMode.Unavailable -> Presence.Unavailable
+                        }
                     }
-                    runCatching { service.port.setPresence(presence, null) }
-                }
+                    .distinctUntilChanged()
+                    .collect { presence ->
+                        service.port.applySyncPresence(presence)
+                    }
             }
 
             LaunchedEffect(activeId) {
@@ -738,6 +775,10 @@ private fun AppContent(
 
                                         is SpaceDetailViewModel.Event.ShowError -> {
                                             postError(event.message)
+                                        }
+
+                                        is SpaceDetailViewModel.Event.ShowMessage -> {
+                                            snackbarManager.show(event.message)
                                         }
                                     }
                                 }

@@ -28,7 +28,10 @@ import java.awt.event.WindowEvent
 import java.awt.event.WindowFocusListener
 import javax.swing.SwingUtilities
 
-fun main() {
+fun main(args: Array<String>) {
+    val initialDeepLink =
+        args.firstOrNull { it.startsWith("matrix:") || it.startsWith("http") }
+
     application {
         MagesPaths.init()
 
@@ -38,7 +41,7 @@ fun main() {
     }
 
     var startInTray by remember { mutableStateOf(initialStartInTray) }
-    var showWindow by remember { mutableStateOf(!startInTray) }
+    var showWindow by remember { mutableStateOf(!startInTray || initialDeepLink != null) }
 
     val deepLinkEmitter = remember { MutableSharedFlow<DeepLinkAction>(extraBufferCapacity = 8) }
     val deepLinks = remember { deepLinkEmitter.asSharedFlow() }
@@ -178,7 +181,8 @@ fun main() {
 
             ProvideMapPresentationHost(host = rememberAwtComposeMapPresentationHost(window)) {
                 DesktopAppContent(
-                    deepLinks = deepLinks
+                    deepLinks = deepLinks,
+                    initialDeepLink = initialDeepLink
                 )
             }
         }
