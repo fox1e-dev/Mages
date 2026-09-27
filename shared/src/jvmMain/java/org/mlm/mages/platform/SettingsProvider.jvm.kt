@@ -33,7 +33,7 @@ import org.mlm.mages.settings.AppSettingsSchema
                     toVersion = 3,
                     oldKey = "block_media_previews",
                     oldKind = PreferenceKind.BOOLEAN,
-                    newField = "media_previews",
+                    newField = "mediaPreviews",
                 ) { blocked -> if (blocked == true) "Off" else "On" }
             
             // Run migration synchronously for desktop
