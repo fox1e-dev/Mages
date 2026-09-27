@@ -36,5 +36,3 @@ vendor-uniffi/
 webApp/src/wasm/
 
 /.direnv
-
-nix/flake.lock

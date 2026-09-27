@@ -180,6 +180,6 @@ jobs:
             echo "### Nix hashes updated"
             echo
             echo "- version: \`$VERSION\` (tag \`$TAG\`)"
-            echo "- install: \`nix profile install github:$GITHUB_REPOSITORY#mages\`"
-            echo "- pin: \`nix profile install github:$GITHUB_REPOSITORY/$GITHUB_SHA#mages\`"
+            echo "- install: \`nix profile install github:$GITHUB_REPOSITORY?dir=nix#mages\`"
+            echo "- pin: \`nix profile install github:$GITHUB_REPOSITORY/$GITHUB_SHA?dir=nix#mages\`"
           } >> "$GITHUB_STEP_SUMMARY"
