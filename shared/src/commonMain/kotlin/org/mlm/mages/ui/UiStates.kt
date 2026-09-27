@@ -496,7 +496,7 @@ data class SpaceSettingsUiState(
     val spaceId: String,
     val space: SpaceInfo? = null,
     val children: List<SpaceChildInfo> = emptyList(),
-    val availableRooms: List<RoomSummary> = emptyList(),
+    val joinedRooms: List<RoomSummary> = emptyList(),
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val error: String? = null,
@@ -548,7 +548,14 @@ data class SpaceSettingsUiState(
     val showLeaveWithChildren: Boolean = false,
     val joinedChildren: List<SpaceChildInfo> = emptyList(),
     val selectedChildIds: Set<String> = emptySet(),
-)
+) {
+    val addableRooms: List<RoomSummary>
+        get() {
+            val taken = children.mapTo(mutableSetOf()) { it.roomId }
+            taken += spaceId
+            return joinedRooms.filter { it.id !in taken }
+        }
+}
 
 data class ThreadUiState(
     val roomId: String = "",

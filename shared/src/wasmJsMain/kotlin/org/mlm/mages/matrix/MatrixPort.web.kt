@@ -1144,15 +1144,13 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         topic: String?,
         invitees: List<String>,
         isPublic: Boolean,
-        roomAlias: String?,
-        parentSpaceId: String?
+        roomAlias: String?
     ): String? = requireClient().createRoom(
         name,
         topic,
         invitees.toJsArray(),
         isPublic,
-        roomAlias,
-        parentSpaceId
+        roomAlias
     ).awaitString()
 
     override suspend fun setRoomName(roomId: String, name: String): Result<Unit> {

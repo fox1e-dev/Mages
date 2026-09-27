@@ -437,19 +437,23 @@ private fun AppContent(
                                     matrixPort = service.port,
                                     onCreate = { name, topic, invitees, isPublic, roomAlias ->
                                         scope.launch {
-                                            val roomId = service.port.createRoom(
-                                                name,
-                                                topic,
-                                                invitees,
-                                                isPublic,
-                                                roomAlias
-                                            )
-                                            if (roomId != null) {
+                                            runCatching {
+                                                service.port.createRoom(
+                                                    name,
+                                                    topic,
+                                                    invitees,
+                                                    isPublic,
+                                                    roomAlias
+                                                )
+                                            }.onSuccess { roomId ->
+                                                if (roomId == null) return@onSuccess
                                                 showCreateRoom = false
                                                 showStartChat = false
                                                 backStack.add(Route.Room(roomId, name ?: roomId))
-                                            } else {
-                                                throw IllegalStateException("Failed to create room")
+                                            }.onFailure { e ->
+                                                snackbarManager.showError(
+                                                    e.message ?: "Failed to create room"
+                                                )
                                             }
                                         }
                                     },

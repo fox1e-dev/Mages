@@ -1277,11 +1277,11 @@ class RustMatrixPort : MatrixPort, VerificationService {
     }
 
     override suspend fun createRoom(
-        name: String?, topic: String?, invitees: List<String>, isPublic: Boolean, roomAlias: String?, parentSpaceId: String?
+        name: String?, topic: String?, invitees: List<String>, isPublic: Boolean, roomAlias: String?
     ): String? = withContext(matrixDispatcher) {
-        runWithFfiResult { withClient { it.createRoom(name, topic, invitees, isPublic, roomAlias, parentSpaceId) } }
-            .onFailure { Logger.w("createRoom failed: ${it.message}") }
-            .getOrNull()
+        runWithFfiResult { withClient { it.createRoom(name, topic, invitees, isPublic, roomAlias) } }
+            .onFailure { Logger.e("createRoom failed", it) }
+            .getOrThrow()
     }
 
     override suspend fun setRoomName(roomId: String, name: String): Result<Unit> =

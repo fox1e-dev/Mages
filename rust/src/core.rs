@@ -2819,7 +2819,6 @@ impl CoreClient {
         invitees: Vec<String>,
         is_public: bool,
         room_alias: Option<String>,
-        parent_space_id: Option<String>,
     ) -> Result<String, FfiError> {
         use matrix_sdk::ruma::api::client::room::{Visibility, create_room::v3 as cr};
         let mut req = cr::Request::new();
@@ -2838,21 +2837,6 @@ impl CoreClient {
         }
         if let Some(t) = &topic {
             req.topic = Some(t.clone());
-        }
-        if let Some(parent) = &parent_space_id {
-            let parent_rid = OwnedRoomId::try_from(parent.as_str())
-                .map_err(|_| FfiError::Msg("invalid parent space id".into()))?;
-            let server = parent_rid
-                .server_name()
-                .ok_or_else(|| FfiError::Msg("parent space id has no server".into()))?
-                .to_string();
-            let raw: _ = serde_json::from_value(serde_json::json!({
-                "type": "m.space.parent",
-                "state_key": parent_rid.as_str(),
-                "content": { "via": [server] },
-            }))
-            .map_err(|e| FfiError::Msg(format!("could not build parent state: {e}")))?;
-            req.initial_state.push(raw);
         }
         if let Some(alias) = &room_alias {
             let normalized = if alias.starts_with('#') {
@@ -3271,15 +3255,27 @@ impl CoreClient {
         order: Option<String>,
         suggested: Option<bool>,
     ) -> Result<(), FfiError> {
+        use matrix_sdk::ruma::events::{space::parent::SpaceParentEventContent, StateEventType};
+
         let rid_space = Self::parse_rid(&space_id)?;
         let rid_child = Self::parse_rid(&child_room_id)?;
-        let room = self.sdk.get_room(&rid_space).or_ffi("space not found")?;
-        let via: Vec<_> = rid_child
-            .server_name()
-            .map(|s| s.to_owned())
-            .into_iter()
-            .collect();
-        let mut content = SpaceChildEventContent::new(via);
+        let space = self.sdk.get_room(&rid_space).or_ffi("space not found")?;
+
+        // A room we just created is not in the store until the next sync sees it.
+        let child = timeout_compat(Duration::from_secs(10), async {
+            loop {
+                if let Some(room) = self.sdk.get_room(&rid_child) {
+                    return Some(room);
+                }
+                matrix_sdk::sleep::sleep(Duration::from_millis(250)).await;
+            }
+        })
+        .await
+        .ok()
+        .flatten()
+        .or_ffi("room is not known to the client yet, it may still be syncing")?;
+
+        let mut content = SpaceChildEventContent::new(child.route().await.ffi()?);
         if let Some(o) = order {
             let ord = <&SpaceChildOrder>::try_from(o.as_str())
                 .map_err(|e| FfiError::Msg(format!("Invalid order string: {}", e)))?
@@ -3287,10 +3283,23 @@ impl CoreClient {
             content.order = Some(ord);
         }
         content.suggested = suggested.unwrap_or(false);
-        room.send_state_event_for_key(&rid_child, content)
+        let space_route = space.route().await.ffi()?;
+        space
+            .send_state_event_for_key(&rid_child, content)
             .await
-            .map(|_| ())
-            .ffi()
+            .ffi()?;
+
+        // The spec asks for both directions so the relationship is discoverable from either room.
+        if let Some(user_id) = self.sdk.user_id() {
+            let child_power_levels = child.power_levels().await.ffi()?;
+            if child_power_levels.user_can_send_state(user_id, StateEventType::SpaceParent) {
+                child
+                    .send_state_event_for_key(&rid_space, SpaceParentEventContent::new(space_route))
+                    .await
+                    .ffi()?;
+            }
+        }
+        Ok(())
     }
 
     pub async fn space_remove_child(

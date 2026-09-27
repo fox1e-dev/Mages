@@ -1,6 +1,7 @@
 package org.mlm.mages.ui.viewmodel
 
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.receiveAsFlow
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.MemberSummary
@@ -10,6 +11,9 @@ import org.mlm.mages.ui.SpaceSettingsUiState
 
 private fun List<SpaceChildInfo>.withoutSpace(spaceId: String): List<SpaceChildInfo> =
     filter { it.roomId != spaceId }
+
+private const val CHILDREN_RELOAD_ATTEMPTS = 4
+private const val CHILDREN_RELOAD_DELAY_MS = 1_500L
 
 class SpaceSettingsViewModel(
     private val service: MatrixService,
@@ -344,22 +348,34 @@ class SpaceSettingsViewModel(
             return
         }
         val topic = currentState.newRoomTopic.trim().ifBlank { null }
+        val spaceId = currentState.spaceId
+        val isPublic = currentState.newRoomIsPublic
+        var createdRoomId: String? = null
         runSavingResultAction(
             errorMessage = "Could not create the room. Try again.",
             onSuccess = {
                 updateState { copy(showCreateRoom = false) }
-                loadChildren()
+                _events.send(Event.ShowSuccess("Room added to space"))
+                createdRoomId?.let { reloadChildrenUntilPresent(it) }
             }
         ) {
+            // Space membership is expressed as an m.space.child event on the space, so the
+            // room is created standalone and linked to the space afterwards.
             val roomId = service.port.createRoom(
                 name = name,
                 topic = topic,
                 invitees = emptyList(),
-                isPublic = currentState.newRoomIsPublic,
-                roomAlias = null,
-                parentSpaceId = currentState.spaceId
-            )
-            if (roomId == null) null else Result.success(Unit)
+                isPublic = isPublic,
+                roomAlias = null
+            ) ?: return@runSavingResultAction null
+            createdRoomId = roomId
+            service.spaceAddChild(spaceId, roomId, order = null, suggested = false)
+                .recoverCatching {
+                    throw IllegalStateException(
+                        "Room was created but could not be added to the space.",
+                        it
+                    )
+                }
         }
     }
 
@@ -456,38 +472,56 @@ class SpaceSettingsViewModel(
                 updateState { copy(isLoading = false, error = t.message ?: "Failed to load children") }
             }
         ) {
-            updateState { copy(isLoading = true, error = null) }
+            loadChildrenNow()
+        }
+    }
 
-            val result = service.spaceHierarchy(
-                spaceId = currentState.spaceId,
-                from = null,
-                limit = 100,
-                maxDepth = 1,
-                suggestedOnly = false
-            )
+    private suspend fun loadChildrenNow() {
+        updateState { copy(isLoading = true, error = null) }
 
-            if (result.isSuccess) {
-                val page = result.getOrThrow()
-                val children = page.children.withoutSpace(currentState.spaceId)
+        val result = service.spaceHierarchy(
+            spaceId = currentState.spaceId,
+            from = null,
+            limit = 100,
+            maxDepth = 1,
+            suggestedOnly = false
+        )
 
-                hydrateMissingSpaceChildNames(service, children) { roomId, name ->
-                    val updatedChildren = this.children.map { existing ->
-                        if (existing.roomId == roomId && existing.name.isNullOrBlank()) {
-                            existing.copy(name = name)
-                        } else {
-                            existing
-                        }
+        if (result.isSuccess) {
+            val page = result.getOrThrow()
+            val children = page.children.withoutSpace(currentState.spaceId)
+
+            hydrateMissingSpaceChildNames(service, children) { roomId, name ->
+                val updatedChildren = this.children.map { existing ->
+                    if (existing.roomId == roomId && existing.name.isNullOrBlank()) {
+                        existing.copy(name = name)
+                    } else {
+                        existing
                     }
-                    copy(children = updatedChildren)
                 }
+                copy(children = updatedChildren)
+            }
 
-                resolveSpaceChildAvatars(service, children) { roomId, path ->
-                    copy(avatarPathByRoomId = avatarPathByRoomId + (roomId to path))
+            resolveSpaceChildAvatars(service, children) { roomId, path ->
+                copy(avatarPathByRoomId = avatarPathByRoomId + (roomId to path))
+            }
+
+            updateState { copy(children = children, isLoading = false) }
+        } else {
+            updateState { copy(isLoading = false, error = result.toUserMessage("Failed to load children")) }
+        }
+    }
+
+    // The hierarchy endpoint only lists a room once the server has aggregated its stats,
+    // which lags for rooms that were just created.
+    private fun reloadChildrenUntilPresent(roomId: String) {
+        launch {
+            repeat(CHILDREN_RELOAD_ATTEMPTS) { attempt ->
+                if (attempt > 0) {
+                    delay(CHILDREN_RELOAD_DELAY_MS * attempt)
                 }
-
-                updateState { copy(children = children, isLoading = false) }
-            } else {
-                updateState { copy(isLoading = false, error = result.toUserMessage("Failed to load children")) }
+                loadChildrenNow()
+                if (currentState.children.any { it.roomId == roomId }) return@launch
             }
         }
     }
@@ -495,10 +529,7 @@ class SpaceSettingsViewModel(
     private fun loadAvailableRooms() {
         launch {
             val rooms = runSafe { service.portOrNull?.listRooms() } ?: emptyList()
-            // Filter out rooms that are already children and the space itself
-            val childIds = currentState.children.map { it.roomId }.toSet() + currentState.spaceId
-            val available = rooms.filter { it.id !in childIds }
-            updateState { copy(availableRooms = available) }
+            updateState { copy(joinedRooms = rooms) }
         }
     }
 }

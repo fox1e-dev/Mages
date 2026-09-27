@@ -870,11 +870,10 @@ impl Client {
         invitees: Vec<String>,
         is_public: bool,
         room_alias: Option<String>,
-        parent_space_id: Option<String>,
     ) -> Result<String, FfiError> {
         RT.block_on(
             self.core
-                .create_room(name, topic, invitees, is_public, room_alias, parent_space_id),
+                .create_room(name, topic, invitees, is_public, room_alias),
         )
     }
 

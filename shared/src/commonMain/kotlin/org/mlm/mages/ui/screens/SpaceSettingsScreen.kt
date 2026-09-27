@@ -294,7 +294,7 @@ fun SpaceSettingsScreen(
     // Add room dialog
     if (state.showAddRoom) {
         AddRoomDialog(
-            availableRooms = state.availableRooms,
+            availableRooms = state.addableRooms,
             onAdd = { roomId, suggested -> viewModel.addChild(roomId, suggested) },
             onDismiss = viewModel::hideAddRoomDialog
         )
