@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Cập nhật trạng thái phòng không xác định hoặc chưa phân loại</string>
     <string name="setting_auto_paginate_older_messages_description">Tự động tải tin nhắn cũ hơn khi cuộn lên trên</string>
     <string name="setting_include_silent_unread_in_filter_description">Khi bật, bộ lọc chưa đọc hiển thị các phòng có tin nhắn chưa đọc (thông báo trước); khi tắt, chỉ hiển thị phòng có thông báo.</string>
+    <string name="setting_show_space_badge_in_room_list">Hiển thị huy hiệu không gian trong danh sách phòng</string>
+    <string name="setting_show_space_badge_in_room_list_description">Hiển thị ảnh đại diện nhỏ của không gian bên cạnh các phòng thuộc không gian</string>
     <string name="setting_chat_bubbles_description">Mở cài đặt hệ thống để bật hoặc tắt bong bóng trò chuyện</string>
     <string name="setting_notification_rules_description">Quản lý tin nhắn, lượt nhắc, phản ứng, lời mời và các quy tắc thông báo khác của máy chủ</string>
     <string name="setting_enable_notifications_description">Hiển thị thông báo (thăm dò máy tính và web cùng push Android)</string>

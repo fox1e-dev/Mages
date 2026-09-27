@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Pembaruan keadaan ruangan yang tidak diketahui atau tidak dikategorikan</string>
     <string name="setting_auto_paginate_older_messages_description">Secara otomatis memuat pesan lama saat menggulir ke top</string>
     <string name="setting_include_silent_unread_in_filter_description">Saat aktif, filter belum dibaca menampilkan ruangan dengan pesan yang belum dibaca (pemberitahuan terlebih dahulu). Saat nonaktif, hanya ruangan dengan notifikasi yang ditampilkan.</string>
+    <string name="setting_show_space_badge_in_room_list">Tampilkan lencana ruang di daftar ruang</string>
+    <string name="setting_show_space_badge_in_room_list_description">Menampilkan avatar ruang kecil di sebelah ruangan yang termasuk dalam sebuah ruang</string>
     <string name="setting_chat_bubbles_description">Buka pengaturan sistem untuk mengaktifkan (atau menonaktifkan) gelembung percakapan</string>
     <string name="setting_notification_rules_description">Kelola pesan, sebutan, reaksi, undangan, dan aturan notifikasi lain yang didukung server</string>
     <string name="setting_enable_notifications_description">Tampilkan notifikasi (desktop &amp; polling web + Android push)</string>

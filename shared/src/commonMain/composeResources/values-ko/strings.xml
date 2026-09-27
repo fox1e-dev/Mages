@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">알 수 없거나 분류되지 않은 방 상태 업데이트</string>
     <string name="setting_auto_paginate_older_messages_description">맨 위로 스크롤할 때 이전 메시지를 자동으로 로드</string>
     <string name="setting_include_silent_unread_in_filter_description">언제 설정하면 읽지 않은 필터가 읽지 않은 메시지가 있는 방을 표시합니다(알림이 먼저 표시됨). 꺼져 있으면 알림이 있는 방만 표시됩니다.</string>
+    <string name="setting_show_space_badge_in_room_list">룸 목록에 스페이스 배지 표시</string>
+    <string name="setting_show_space_badge_in_room_list_description">스페이스에 속한 룸 옆에 작은 스페이스 아바타를 표시합니다</string>
     <string name="setting_chat_bubbles_description">대화 풍선을 활성화(또는 비활성화)하려면 시스템 설정을 엽니다.</string>
     <string name="setting_notification_rules_description">메시지, 멘션, 반응, 초대 및 기타 서버 지원 알림 규칙을 관리합니다.</string>
     <string name="setting_enable_notifications_description">알림 표시(데스크톱 및 웹 폴링 + Android 푸시)</string>

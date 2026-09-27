@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Tuntemattomat tai luokittelemattomat huoneen tilan päivitykset</string>
     <string name="setting_auto_paginate_older_messages_description">Lataa automaattisesti vanhemmat viestit vierittäessäsi ylös</string>
     <string name="setting_include_silent_unread_in_filter_description">Kun se on päällä, lukematon suodatin näyttää huoneet, joissa on lukemattomia viestejä (ilmoitukset ensin). Kun se ei ole käytössä, vain huoneet, joissa on ilmoituksia, näytetään.</string>
+    <string name="setting_show_space_badge_in_room_list">Näytä avaruuden merkki huoneluettelossa</string>
+    <string name="setting_show_space_badge_in_room_list_description">Näyttää pienen avaruudenavatarin huoneiden vieressä, jotka kuuluvat avaruuteen</string>
     <string name="setting_chat_bubbles_description">Ota keskustelukuplat käyttöön (tai poista ne käytöstä) avaamalla järjestelmäasetukset</string>
     <string name="setting_notification_rules_description">Hallitse viestejä, mainintoja, reaktioita, kutsuja ja muita palvelimen tukemia ilmoitussääntöjä</string>
     <string name="setting_enable_notifications_description">Näytä ilmoitukset (työpöytä- ja verkkokyselyt + Android push)</string>

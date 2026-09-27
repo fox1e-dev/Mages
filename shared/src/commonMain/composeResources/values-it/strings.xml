@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Aggiornamenti di stato sconosciuti o non categorizzati della stanza</string>
     <string name="setting_auto_paginate_older_messages_description">Carica automaticamente i messaggi precedenti quando si scorre verso l’alto</string>
     <string name="setting_include_silent_unread_in_filter_description">Se attivo, il filtro non letti mostra le stanze con qualsiasi messaggio non letto (prima le notifiche); se disattivato mostra solo le stanze con notifiche.</string>
+    <string name="setting_show_space_badge_in_room_list">Mostra il badge dello spazio nell'elenco delle stanze</string>
+    <string name="setting_show_space_badge_in_room_list_description">Mostra un piccolo avatar dello spazio accanto alle stanze che appartengono a uno spazio</string>
     <string name="setting_chat_bubbles_description">Apri le impostazioni di sistema per attivare o disattivare le bolle della chat</string>
     <string name="setting_notification_rules_description">Gestisci messaggi, menzioni, reazioni, inviti e altre regole di notifica del server</string>
     <string name="setting_enable_notifications_description">Mostra le notifiche (polling desktop e web e push Android)</string>

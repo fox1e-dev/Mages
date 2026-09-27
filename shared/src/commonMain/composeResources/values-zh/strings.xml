@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">未知或未分类的房间状态更新</string>
     <string name="setting_auto_paginate_older_messages_description">向上滚动时自动加载更早的消息</string>
     <string name="setting_include_silent_unread_in_filter_description">启用后，未读筛选器会显示有未读消息的房间（优先显示通知）；停用时只显示有通知的房间。</string>
+    <string name="setting_show_space_badge_in_room_list">在房间列表中显示空间徽章</string>
+    <string name="setting_show_space_badge_in_room_list_description">在属于空间的房间旁显示一个小的空间头像</string>
     <string name="setting_chat_bubbles_description">打开系统设置以启用或禁用聊天气泡</string>
     <string name="setting_notification_rules_description">管理消息、提及、反应、邀请和其他服务器通知规则</string>
     <string name="setting_enable_notifications_description">显示通知（桌面和网页轮询以及 Android 推送）</string>

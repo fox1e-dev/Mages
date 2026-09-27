@@ -36,6 +36,7 @@ import org.mlm.mages.ui.components.sheets.RoomAliasesSheet
 import org.mlm.mages.ui.components.sheets.RoomNotificationSheet
 import org.mlm.mages.ui.components.settings.*
 import org.mlm.mages.ui.components.core.Avatar
+import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
 import org.koin.compose.koinInject
 import org.mlm.mages.matrix.RoomNotificationMode
@@ -242,8 +243,9 @@ fun RoomInfoScreen(
                 state.parentSpace?.let { space ->
                     item {
                         SettingsGroup {
-                            SettingsNavRow(
-                                icon = Icons.Default.Workspaces,
+                            SettingsAvatarNavRow(
+                                avatarPath = space.avatarUrl,
+                                avatarName = space.name ?: space.spaceId,
                                 title = space.name ?: space.spaceId,
                                 onClick = { onOpenSpace(space.spaceId) }
                             )
@@ -808,6 +810,41 @@ private fun SettingsNavRow(
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** A row that leads with an avatar instead of an icon and navigates on click. */
+@Composable
+private fun SettingsAvatarNavRow(
+    avatarPath: String?,
+    avatarName: String,
+    title: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.md, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Avatar(
+                name = avatarName,
+                avatarPath = avatarPath,
+                size = Sizes.avatarSmall
+            )
+            Spacer(Modifier.width(Spacing.md))
+            Text(
+                title,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f)
+            )
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

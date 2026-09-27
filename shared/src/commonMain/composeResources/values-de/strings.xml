@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Unbekannte oder nicht kategorisierte Raumstatusaktualisierungen</string>
     <string name="setting_auto_paginate_older_messages_description">Ältere Nachrichten beim Scrollen nach oben automatisch laden</string>
     <string name="setting_include_silent_unread_in_filter_description">Wenn aktiviert, zeigt der Ungelesene-Filter Räume mit ungelesenen Nachrichten zuerst mit Benachrichtigungen an; wenn deaktiviert, werden nur Räume mit Benachrichtigungen angezeigt.</string>
+    <string name="setting_show_space_badge_in_room_list">Raum-Badge in der Raumliste anzeigen</string>
+    <string name="setting_show_space_badge_in_room_list_description">Zeigt ein kleines Space-Avatar neben Räumen, die zu einem Space gehören</string>
     <string name="setting_chat_bubbles_description">Systemeinstellungen öffnen, um Chatblasen zu aktivieren oder zu deaktivieren</string>
     <string name="setting_notification_rules_description">Nachrichten, Erwähnungen, Reaktionen, Einladungen und weitere serverseitige Benachrichtigungsregeln verwalten</string>
     <string name="setting_enable_notifications_description">Benachrichtigungen anzeigen (Desktop- und Web-Abfrage sowie Android-Push)</string>

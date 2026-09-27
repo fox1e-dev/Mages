@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">_Bilinmeyen veya kategorize edilmemiş oda durumu güncellemeleri_</string>
     <string name="setting_auto_paginate_older_messages_description">Yukarı kaydırırken eski mesajları otomatik olarak yükle</string>
     <string name="setting_include_silent_unread_in_filter_description">Açık olduğunda, okunmamış filtre okunmamış mesajların bulunduğu odaları gösterir (önce bildirimler). Kapalıyken yalnızca bildirim içeren odalar gösterilir.</string>
+    <string name="setting_show_space_badge_in_room_list">Oda listesinde alan rozetini göster</string>
+    <string name="setting_show_space_badge_in_room_list_description">Bir alana ait odaların yanında küçük alan avatarını gösterir</string>
     <string name="setting_chat_bubbles_description">Konuşma balonlarını etkinleştirmek (veya devre dışı bırakmak) için sistem ayarlarını açın</string>
     <string name="setting_notification_rules_description">Mesajları, bahsetmeleri, tepkileri, davetleri ve diğer sunucu destekli bildirim kurallarını yönetin</string>
     <string name="setting_enable_notifications_description">Bildirimleri göster (masaüstü ve web yoklaması + Android push)</string>

@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Onbekende of niet-gecategoriseerde updates van de kamerstatus</string>
     <string name="setting_auto_paginate_older_messages_description">Laad automatisch oudere berichten wanneer u naar boven scrolt</string>
     <string name="setting_include_silent_unread_in_filter_description">Als het ongelezen filter is ingeschakeld, worden kamers met ongelezen berichten weergegeven (meldingen eerst). Als deze optie is uitgeschakeld, worden alleen kamers met meldingen weergegeven.</string>
+    <string name="setting_show_space_badge_in_room_list">Ruimtebadge in de kamerenlijst tonen</string>
+    <string name="setting_show_space_badge_in_room_list_description">Toont een kleine ruimte-avatar naast kamers die tot een ruimte behoren</string>
     <string name="setting_chat_bubbles_description">Open systeeminstellingen om gespreksballonnen in (of uit te schakelen)</string>
     <string name="setting_notification_rules_description">Beheer berichten, vermeldingen, reacties, uitnodigingen en andere door de server ondersteunde meldingsregels</string>
     <string name="setting_enable_notifications_description">Meldingen weergeven (desktop- en webpolling + Android-push)</string>

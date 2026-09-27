@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">به‌روزرسانی‌های وضعیت ناشناخته یا دسته‌بندی‌نشده اتاق</string>
     <string name="setting_auto_paginate_older_messages_description">بارگذاری خودکار پیام‌های قدیمی‌تر هنگام اسکرول به بالا</string>
     <string name="setting_include_silent_unread_in_filter_description">وقتی فعال است، فیلتر خوانده‌نشده اتاق‌های دارای هر پیام خوانده‌نشده را نشان می‌دهد (اعلان‌ها اول). وقتی خاموش است، فقط اتاق‌های دارای اعلان نمایش داده می‌شوند.</string>
+    <string name="setting_show_space_badge_in_room_list">نمایش نشان فضا در فهرست اتاق‌ها</string>
+    <string name="setting_show_space_badge_in_room_list_description">یک آواتار کوچک از فضا را کنار اتاق‌هایی که به یک فضا تعلق دارند نمایش می‌دهد</string>
     <string name="setting_chat_bubbles_description">باز کردن تنظیمات سیستم برای فعال یا غیرفعال کردن حباب‌های گفتگو</string>
     <string name="setting_notification_rules_description">مدیریت پیام‌ها، اشاره‌ها، واکنش‌ها، دعوت‌ها و سایر قوانین اعلان سمت سرور</string>
     <string name="setting_enable_notifications_description">نمایش اعلان‌ها (نظرسنجی دسکتاپ و وب + push اندروید)</string>

@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Ismeretlen vagy kategorizálatlan szobaállapot-frissítések</string>
     <string name="setting_auto_paginate_older_messages_description">A régebbi üzenetek automatikus betöltése a lap tetejére görgetéskor</string>
     <string name="setting_include_silent_unread_in_filter_description">Ha be van kapcsolva, az olvasatlan szűrő megjeleníti az olvasatlan üzenetekkel rendelkező szobákat (először az értesítéseket). Ha ki van kapcsolva, csak az értesítésekkel rendelkező szobák jelennek meg.</string>
+    <string name="setting_show_space_badge_in_room_list">Térjelvény megjelenítése a szobák listájában</string>
+    <string name="setting_show_space_badge_in_room_list_description">Kis tér-avatar jelenik meg azoknak a szobáknak a mellett, amelyek egy térhez tartoznak</string>
     <string name="setting_chat_bubbles_description">Nyissa meg a rendszerbeállításokat a beszélgetési buborékok engedélyezéséhez (vagy letiltásához).</string>
     <string name="setting_notification_rules_description">Üzenetek, megemlítések, reakciók, meghívók és egyéb, szerver által támogatott értesítési szabályok kezelése</string>
     <string name="setting_enable_notifications_description">Értesítések megjelenítése (asztali és internetes szavazás + Android push)</string>

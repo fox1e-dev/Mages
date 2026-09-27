@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Nieznane lub niesklasyfikowane aktualizacje stanu pokoju</string>
     <string name="setting_auto_paginate_older_messages_description">Automatycznie wczytuj starsze wiadomości podczas przewijania w górę</string>
     <string name="setting_include_silent_unread_in_filter_description">Po włączeniu filtr nieprzeczytanych pokazuje pokoje z każdą nieprzeczytaną wiadomością (najpierw powiadomienia); po wyłączeniu pokazuje tylko pokoje z powiadomieniami.</string>
+    <string name="setting_show_space_badge_in_room_list">Pokaż odznakę przestrzeni na liście pokoi</string>
+    <string name="setting_show_space_badge_in_room_list_description">Wyświetla mały awatar przestrzeni obok pokoi, które do niej należą</string>
     <string name="setting_chat_bubbles_description">Otwórz ustawienia systemowe, aby włączyć lub wyłączyć bąbelki czatu</string>
     <string name="setting_notification_rules_description">Zarządzaj wiadomościami, wzmiankami, reakcjami, zaproszeniami i innymi regułami powiadomień serwera</string>
     <string name="setting_enable_notifications_description">Pokazuj powiadomienia (odpytywanie pulpitu i przeglądarki oraz push Androida)</string>

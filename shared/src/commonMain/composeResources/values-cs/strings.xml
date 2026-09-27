@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Neznámé nebo nekategorizované aktualizace stavu pokoje</string>
     <string name="setting_auto_paginate_older_messages_description">Automaticky načíst starší zprávy při posouvání nahoru</string>
     <string name="setting_include_silent_unread_in_filter_description">Při zapnutí zobrazuje filtr nepřečtených místností všechny nepřečtené zprávy (nejprve upozornění). Když je vypnuto, zobrazují se pouze místnosti s oznámeními.</string>
+    <string name="setting_show_space_badge_in_room_list">Zobrazit odznaku prostoru v seznamu míst</string>
+    <string name="setting_show_space_badge_in_room_list_description">Zobrazí malý avatar prostoru vedle míst, která do prostoru patří</string>
     <string name="setting_chat_bubbles_description">Otevřete nastavení systému pro povolení (nebo zakázání) bublin konverzace</string>
     <string name="setting_notification_rules_description">Správa zpráv, zmínek, reakcí, pozvánek a dalších pravidel upozornění podporovaných serverem</string>
     <string name="setting_enable_notifications_description">Zobrazit oznámení (dotazování na ploše a webu + Android push)</string>

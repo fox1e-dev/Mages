@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">עדכוני מצב חדר לא ידועים או לא ממוינים</string>
     <string name="setting_auto_paginate_older_messages_description">טעינה אוטומטית של הודעות קודמות בעת גלילה למעלה</string>
     <string name="setting_include_silent_unread_in_filter_description">כשהאפשרות פעילה, מסנן שליטה שקטה מציג חדרים עם הודעות שלא נקראו (קודם התראות); כשהיא כבויה, מוצגים רק חדרים עם התראות.</string>
+    <string name="setting_show_space_badge_in_room_list">הצגת תג מרחב ברשימת החדרים</string>
+    <string name="setting_show_space_badge_in_room_list_description">מציג אווטר קטן של המרחב ליד חדרים השייכים למרחב</string>
     <string name="setting_chat_bubbles_description">פתיחת הגדרות המערכת כדי להפעיל או להשבית בועות צ׳אט</string>
     <string name="setting_notification_rules_description">ניהול הודעות, אזכורים, תגובות, הזמנות וכללי התראות אחרים בשרת</string>
     <string name="setting_enable_notifications_description">הצגת התראות (תשאול שולחן עבודה ודפדפן ו-push של Android)</string>

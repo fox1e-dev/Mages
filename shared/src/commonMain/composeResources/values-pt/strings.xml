@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Atualizações de estado da sala desconhecidas ou não categorizadas</string>
     <string name="setting_auto_paginate_older_messages_description">Carregar automaticamente mensagens mais antigas ao rolar para cima</string>
     <string name="setting_include_silent_unread_in_filter_description">Quando ativado, o filtro de não lidas mostra salas com mensagens não lidas (notificações primeiro). Quando desativado, apenas salas com notificações são mostradas.</string>
+    <string name="setting_show_space_badge_in_room_list">Mostrar emblema do espaço na lista de salas</string>
+    <string name="setting_show_space_badge_in_room_list_description">Mostra um pequeno avatar do espaço ao lado das salas que pertencem a um espaço</string>
     <string name="setting_chat_bubbles_description">Abra as configurações do sistema para ativar (ou desativar) balões de conversa</string>
     <string name="setting_notification_rules_description">Gerenciar mensagens, menções, reações, convites e outras regras de notificação baseadas no servidor</string>
     <string name="setting_enable_notifications_description">Mostrar notificações (sondagem na área de trabalho e na web + push do Android)</string>

@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Nepoznata ili nekategorizirana soba ažuriranja stanja</string>
     <string name="setting_auto_paginate_older_messages_description">Automatsko učitavanje starijih poruka prilikom pomicanja na vrh</string>
     <string name="setting_include_silent_unread_in_filter_description">Kada je uključeno, filtar nepročitanih prikazuje sobe s nepročitanim porukama (prvo obavijesti). Kada je isključeno, prikazuju se samo sobe s obavijestima.</string>
+    <string name="setting_show_space_badge_in_room_list">Prikaži oznaku prostora na popisu soba</string>
+    <string name="setting_show_space_badge_in_room_list_description">Prikazuje mali avatar prostora uz sobe koje pripadaju prostoru</string>
     <string name="setting_chat_bubbles_description">Otvorite postavke sustava da biste omogućili (ili onemogućili) oblačiće razgovora</string>
     <string name="setting_notification_rules_description">Upravljajte porukama, spominjanjima, reakcijama, pozivnicama i drugim pravilima obavijesti koje podržava poslužitelj</string>
     <string name="setting_enable_notifications_description">Prikaži obavijesti (stolno i web anketiranje + Android push)</string>

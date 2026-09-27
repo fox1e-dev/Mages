@@ -511,6 +511,8 @@
     <string name="setting_auto_paginate_older_messages_description">Automatically load older messages when scrolling to top</string>
     <string name="setting_include_silent_unread_in_filter">Include silent unread in filter</string>
     <string name="setting_include_silent_unread_in_filter_description">When on, the unread filter shows rooms with any unread messages (notifications first). When off, only rooms with notifications are shown.</string>
+    <string name="setting_show_space_badge_in_room_list">Show space badge in room list</string>
+    <string name="setting_show_space_badge_in_room_list_description">Show a small space avatar next to rooms that belong to a space</string>
     <string name="setting_chat_bubbles">Chat bubbles</string>
     <string name="setting_chat_bubbles_description">Open system settings to enable (or disable) conversation bubbles</string>
     <string name="setting_notification_rules">Notification rules</string>

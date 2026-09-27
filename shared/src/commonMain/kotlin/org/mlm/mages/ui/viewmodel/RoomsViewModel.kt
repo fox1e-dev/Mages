@@ -47,6 +47,10 @@ class RoomsViewModel(
     private var subscribePrefetchJob: Job? = null
 
     init {
+        launch {
+            settingsRepo.flow.collect { recomputeGroupedRooms() }
+        }
+
         observerJob = launch {
             while (!service.isLoggedInSuspend()) {
                 delay(100)
@@ -280,7 +284,7 @@ class RoomsViewModel(
             lastMessageType = lastType,
             lastMessageTs = lastEvent?.timestamp,
             isSharingLocation = LiveLocationSharingCoordinator.isSharing(entry.roomId),
-            parentSpaceId = space?.spaceId,
+            parentSpaceId = space?.spaceId.takeIf { settings.value.showSpaceBadgeInRoomList },
             parentSpaceName = space?.name,
             parentSpaceAvatarUrl = space?.spaceId?.let { currentState.parentSpaceAvatarPath[it] }
         )
@@ -298,11 +302,16 @@ class RoomsViewModel(
         launch {
             val byRoom = buildMap {
                 for (roomId in roomIds) {
-                    val space = runSafe { service.port.roomParentSpaces(roomId) }?.firstOrNull()
+                    val space = runSafe { service.roomParentSpaces(roomId) }?.firstOrNull()
                     if (space != null) put(roomId, space)
                 }
             }
             updateState {
+                fun List<RoomListItemUi>.withBadgeVisibility() = map { item ->
+                    if (settings.value.showSpaceBadgeInRoomList) item
+                    else item.copy(parentSpaceId = null)
+                }
+
                 fun List<RoomListItemUi>.withSpaces() = map { item ->
                     val space = byRoom[item.roomId]
                     if (space == null) item
@@ -311,7 +320,7 @@ class RoomsViewModel(
                         parentSpaceName = space.name,
                         parentSpaceAvatarUrl = parentSpaceAvatarPath[space.spaceId]
                     )
-                }
+                }.withBadgeVisibility()
                 copy(
                     parentSpaces = byRoom,
                     allItems = allItems.withSpaces(),

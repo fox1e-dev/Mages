@@ -397,6 +397,16 @@ data class AppSettings(
     val includeSilentUnreadInFilter: Boolean = true,
 
     @Setting(
+        title = "Show space badge in room list",
+        titleKey = MagesSettingsKeys.SHOW_SPACE_BADGE_IN_ROOM_LIST,
+        description = "Show a small space avatar next to rooms that belong to a space",
+        descriptionKey = MagesSettingsKeys.SHOW_SPACE_BADGE_IN_ROOM_LIST_DESCRIPTION,
+        category = Timeline::class,
+        type = Toggle::class,
+    )
+    val showSpaceBadgeInRoomList: Boolean = false,
+
+    @Setting(
         title = "Chat bubbles",
         titleKey = MagesSettingsKeys.CHAT_BUBBLES,
         description = "Open system settings to enable (or disable) conversation bubbles",

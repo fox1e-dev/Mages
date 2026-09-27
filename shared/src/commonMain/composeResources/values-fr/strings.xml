@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Mises à jour de l'état de la salle inconnues ou non catégorisées</string>
     <string name="setting_auto_paginate_older_messages_description">Charger automatiquement les messages plus anciens lors du défilement vers le haut</string>
     <string name="setting_include_silent_unread_in_filter_description">Lorsque cette option est activée, les messages non lus le filtre affiche les salles avec des messages non lus (les notifications en premier). Lorsqu'elle est désactivée, seules les salles avec notifications sont affichées.</string>
+    <string name="setting_show_space_badge_in_room_list">Afficher le badge d'espace dans la liste des chambres</string>
+    <string name="setting_show_space_badge_in_room_list_description">Affiche un petit avatar d'espace à côté des chambres qui appartiennent à un espace</string>
     <string name="setting_chat_bubbles_description">Ouvrez les paramètres du système pour activer (ou désactiver) les bulles de conversation</string>
     <string name="setting_notification_rules_description">Gérer les messages, mentions, réactions, invitations et autres règles de notification sauvegardées par le serveur.</string>
     <string name="setting_enable_notifications_description">Afficher les notifications (interrogations sur ordinateur et Web + push Android)</string>

@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">تحديثات حالة الغرفة غير معروفة أو غير مصنفة</string>
     <string name="setting_auto_paginate_older_messages_description">تحميل الرسائل القديمة تلقائيًا عند التمرير إلى الأعلى</string>
     <string name="setting_include_silent_unread_in_filter_description">عند التشغيل، يعرض عامل التصفية غير المقروء الغرف التي تحتوي على أي رسائل غير مقروءة (الإشعارات أولاً). عند إيقاف التشغيل، يتم عرض الغرف التي تحتوي على إشعارات فقط.</string>
+    <string name="setting_show_space_badge_in_room_list">إظهار شارة المساحة في قائمة الغرف</string>
+    <string name="setting_show_space_badge_in_room_list_description">إظهار صورة رمز صغيرة للمساحة بجوار الغرف التي تنتمي إلى مساحة</string>
     <string name="setting_chat_bubbles_description">فتح إعدادات النظام لتمكين (أو تعطيل) فقاعات المحادثة</string>
     <string name="setting_notification_rules_description">إدارة الرسائل والإشارات وردود الفعل والدعوات وقواعد الإشعارات الأخرى المدعومة من الخادم</string>
     <string name="setting_enable_notifications_description">عرض الإشعارات (استطلاع سطح المكتب والويب + دفع أندرويد)</string>

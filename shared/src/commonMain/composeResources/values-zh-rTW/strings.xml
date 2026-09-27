@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">未知或未分類的聊天室狀態更新</string>
     <string name="setting_auto_paginate_older_messages_description">向上捲動時自動載入較早的訊息</string>
     <string name="setting_include_silent_unread_in_filter_description">啟用後，未讀篩選器會顯示有未讀訊息的聊天室（優先顯示通知）；停用時只顯示有通知的聊天室。</string>
+    <string name="setting_show_space_badge_in_room_list">在聊天室清單中顯示空間徽章</string>
+    <string name="setting_show_space_badge_in_room_list_description">在屬於空間的聊天室旁顯示一個小的空間頭像</string>
     <string name="setting_chat_bubbles_description">開啟系統設定以啟用或停用聊天氣泡</string>
     <string name="setting_notification_rules_description">管理訊息、提及、反應、邀請和其他伺服器通知規則</string>
     <string name="setting_enable_notifications_description">顯示通知（桌面和網頁輪詢以及 Android 推送）</string>

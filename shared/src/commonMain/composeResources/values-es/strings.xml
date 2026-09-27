@@ -511,6 +511,8 @@
     <string name="setting_auto_paginate_older_messages_description">Cargar automáticamente mensajes anteriores al desplazarse hacia arriba</string>
     <string name="setting_include_silent_unread_in_filter">Incluir no leídos silenciosos en el filtro</string>
     <string name="setting_include_silent_unread_in_filter_description">Con el filtro activado, se muestran las salas con cualquier mensaje no leído (primero las notificaciones). Con el filtro desactivado, solo se muestran las salas con notificaciones.</string>
+    <string name="setting_show_space_badge_in_room_list">Mostrar insignia de espacio en la lista de salas</string>
+    <string name="setting_show_space_badge_in_room_list_description">Muestra un pequeño avatar del espacio junto a las salas que pertenecen a un espacio</string>
     <string name="setting_chat_bubbles">Burbujas de conversación</string>
     <string name="setting_chat_bubbles_description">Abrir los ajustes del sistema para activar o desactivar las burbujas de conversación</string>
     <string name="setting_notification_rules">Reglas de notificación</string>

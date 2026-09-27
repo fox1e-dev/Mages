@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">_不明または未分類のルーム状態の更新_</string>
     <string name="setting_auto_paginate_older_messages_description">上へスクロールすると古いメッセージが自動的に読み込まれます。</string>
     <string name="setting_include_silent_unread_in_filter_description">_オンの場合、未読フィルターには未読メッセージのあるルームが表示されます (通知が最初)。オフの場合、通知のあるルームのみが表示されます。</string>
+    <string name="setting_show_space_badge_in_room_list">ルーム一覧にスペースのバッジを表示</string>
+    <string name="setting_show_space_badge_in_room_list_description">スペースに属するルームの横に小さなスペースのアバターを表示します</string>
     <string name="setting_chat_bubbles_description">_システム設定を開いて会話バブルを有効 (または無効) にします_</string>
     <string name="setting_notification_rules_description">_メッセージ、メンション、反応、招待、およびその他のサーバー支援通知ルールを管理します</string>
     <string name="setting_enable_notifications_description">通知を表示 (デスクトップ)</string>

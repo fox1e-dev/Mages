@@ -214,7 +214,6 @@ class RoomInfoViewModel(
             val historyVis = runSafe { service.port.roomHistoryVisibility(roomId) }
             val successor = runSafe { service.port.roomSuccessor(roomId) }
             val predecessor = runSafe { service.port.roomPredecessor(roomId) }
-            val parentSpace = runSafe { service.port.roomParentSpaces(roomId) }?.firstOrNull()
             updateState { copy(isLoadingNotificationMode = true) }
             val notificationMode = runSafe { service.port.roomNotificationMode(roomId) }
 
@@ -250,7 +249,6 @@ class RoomInfoViewModel(
                     historyVisibility = historyVis,
                     successor = successor,
                     predecessor = predecessor,
-                    parentSpace = parentSpace,
                     error = if (profile == null) "Failed to load room info" else null,
                     myPowerLevel = powerLevel,
                     powerLevels = powerLevels,
@@ -278,6 +276,18 @@ class RoomInfoViewModel(
 
             resolveMemberAvatars(sorted)
             resolveKnockRequestAvatars(knockRequests)
+            resolveParentSpace()
+        }
+    }
+
+    private fun resolveParentSpace() {
+        launch {
+            val space = runSafe { service.roomParentSpaces(roomId) }?.firstOrNull() ?: return@launch
+            updateState { copy(parentSpace = space) }
+            val path = space.avatarUrl?.let { runSafe { service.avatars.resolve(it, px = 64) } }
+            if (path != null) {
+                updateState { copy(parentSpace = this.parentSpace?.copy(avatarUrl = path)) }
+            }
         }
     }
 

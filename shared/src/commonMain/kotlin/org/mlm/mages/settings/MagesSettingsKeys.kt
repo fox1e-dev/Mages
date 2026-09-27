@@ -38,6 +38,8 @@ object MagesSettingsKeys {
     const val HIDE_OTHER_STATE_EVENTS = "mages.settings.hide_other_state_events"
     const val AUTO_PAGINATE_OLDER_MESSAGES = "mages.settings.auto_paginate_older_messages"
     const val INCLUDE_SILENT_UNREAD_IN_FILTER = "mages.settings.include_silent_unread_in_filter"
+    const val SHOW_SPACE_BADGE_IN_ROOM_LIST = "mages.settings.show_space_badge_in_room_list"
+    const val SHOW_SPACE_BADGE_IN_ROOM_LIST_DESCRIPTION = "mages.settings.show_space_badge_in_room_list.description"
     const val CHAT_BUBBLES = "mages.settings.chat_bubbles"
     const val NOTIFICATION_RULES = "mages.settings.notification_rules"
     const val ENABLE_NOTIFICATIONS = "mages.settings.enable_notifications"

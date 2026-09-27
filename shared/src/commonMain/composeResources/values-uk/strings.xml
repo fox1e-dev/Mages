@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Невідомі або некласифіковані оновлення стану кімнати</string>
     <string name="setting_auto_paginate_older_messages_description">Автоматично завантажувати старі повідомлення під час прокручування вгору</string>
     <string name="setting_include_silent_unread_in_filter_description">Якщо ввімкнено, фільтр непрочитаних показує кімнати з будь-якими непрочитаними повідомленнями (спершу зі сповіщеннями); якщо вимкнено — лише кімнати зі сповіщеннями.</string>
+    <string name="setting_show_space_badge_in_room_list">Показувати бейдж простору в списку кімнат</string>
+    <string name="setting_show_space_badge_in_room_list_description">Показує маленький аватар простору поруч із кімнатами, що належать простору</string>
     <string name="setting_chat_bubbles_description">Відкрити системні налаштування, щоб увімкнути або вимкнути бульбашки чату</string>
     <string name="setting_notification_rules_description">Керувати повідомленнями, згадками, реакціями, запрошеннями та іншими серверними правилами сповіщень</string>
     <string name="setting_enable_notifications_description">Показувати сповіщення (опитування робочого столу й вебу та push Android)</string>

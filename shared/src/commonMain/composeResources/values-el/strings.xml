@@ -94,6 +94,8 @@
     <string name="setting_hide_other_state_events_description">Άγνωστες ή μη κατηγοριοποιημένες ενημερώσεις κατάστασης δωματίου</string>
     <string name="setting_auto_paginate_older_messages_description">Αυτόματη φόρτωση παλαιότερων μηνυμάτων κατά την κύλιση στην κορυφή</string>
     <string name="setting_include_silent_unread_in_filter_description">Όταν είναι ενεργοποιημένο, το μη αναγνωσμένο φίλτρο εμφανίζει δωμάτια με μη αναγνωσμένα μηνύματα (πρώτα ειδοποιήσεις). Όταν είναι απενεργοποιημένα, εμφανίζονται μόνο δωμάτια με ειδοποιήσεις.</string>
+    <string name="setting_show_space_badge_in_room_list">Εμφάνιση σήματος χώρου στη λίστα δωματίων</string>
+    <string name="setting_show_space_badge_in_room_list_description">Εμφανίζει ένα μικρό avatar χώρου δίπλα στα δωμάτια που ανήκουν σε χώρο</string>
     <string name="setting_chat_bubbles_description">Ανοίξτε τις ρυθμίσεις του συστήματος για να ενεργοποιήσετε (ή να απενεργοποιήσετε) τις φυσαλίδες συνομιλίας</string>
     <string name="setting_notification_rules_description">Διαχείριση μηνυμάτων, αναφορών, αντιδράσεων, προσκλήσεων και άλλων κανόνων ειδοποιήσεων που υποστηρίζονται από διακομιστή</string>
     <string name="setting_enable_notifications_description">Εμφάνιση ειδοποιήσεων (desktop &amp; web polling + Android push)</string>
