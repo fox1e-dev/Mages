@@ -3,6 +3,8 @@ package org.mlm.mages.ui.viewmodel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import org.mlm.mages.MatrixService
+import org.mlm.mages.matrix.RoomJoinRule
+import org.mlm.mages.matrix.RoomListMembership
 import org.mlm.mages.matrix.SpaceChildInfo
 import org.mlm.mages.matrix.SpaceInfo
 import org.mlm.mages.ui.SpaceDetailUiState
@@ -30,6 +32,7 @@ class SpaceDetailViewModel(
         data class OpenSpace(val spaceId: String, val name: String) : Event()
         data class OpenRoom(val roomId: String, val name: String) : Event()
         data class ShowError(val message: String) : Event()
+        data class ShowMessage(val message: String) : Event()
     }
 
     private val _events = Channel<Event>(Channel.BUFFERED)
@@ -58,9 +61,39 @@ class SpaceDetailViewModel(
             val displayName = child.name ?: child.alias ?: child.roomId
             if (child.isSpace) {
                 _events.send(Event.OpenSpace(child.roomId, displayName))
+                return@launch
+            }
+            when (child.membership) {
+                RoomListMembership.Joined,
+                RoomListMembership.Invited,
+                RoomListMembership.Knocked -> _events.send(Event.OpenRoom(child.roomId, displayName))
+
+                else -> joinChild(child, displayName)
+            }
+        }
+    }
+
+    private fun joinChild(child: SpaceChildInfo, displayName: String) {
+        launch {
+            val target = child.alias ?: child.roomId
+            val joinRule = service.port.roomPreview(target).getOrNull()?.joinRule
+
+            val result = when (joinRule) {
+                RoomJoinRule.Knock, RoomJoinRule.KnockRestricted -> service.port.knock(target)
+                else -> service.port.joinByIdOrAlias(target)
+            }
+
+            if (result.isFailure) {
+                _events.send(Event.ShowError("Could not join $displayName"))
+                return@launch
+            }
+
+            if (joinRule == RoomJoinRule.Knock || joinRule == RoomJoinRule.KnockRestricted) {
+                _events.send(Event.ShowMessage("Knocked on $displayName"))
             } else {
                 _events.send(Event.OpenRoom(child.roomId, displayName))
             }
+            loadHierarchy()
         }
     }
 

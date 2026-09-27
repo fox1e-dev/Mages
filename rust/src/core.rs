@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeSet, HashMap, HashSet},
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -21,7 +21,7 @@ use matrix_sdk::{
         },
         directory::{Filter, PublicRoomsChunk},
         events::{
-            AnyMessageLikeEventContent,
+            AnyMessageLikeEventContent, Mentions,
             ignored_user_list::IgnoredUserListEventContent,
             key::verification::request::ToDeviceKeyVerificationRequestEvent,
             poll::{
@@ -70,7 +70,7 @@ use crate::{
     RoomPowerLevels, RoomPreview, RoomPreviewMembership, RoomSummary, RoomTags, RoomUpgradeLinks,
     SearchHit, SearchPage, SeenByEntry, SendState, SendUpdate, SpaceChildInfo, SpaceHierarchyPage,
     SpaceInfo, SpaceParentInfo, SuccessorRoomInfo, ThreadPage, ThreadSummary, UnreadStats,
-    ForwardResult,
+    ForwardResult, MediaPreviewMode,
     VerificationInboxObserver, build_unstable_poll_content, latest_room_event_for,
     map_event_id_via_timeline, map_timeline_event, paginate_backwards_visible,
     timeline_event_filter,
@@ -146,6 +146,92 @@ pub fn room_list_membership(room: &matrix_sdk::Room) -> RoomListMembership {
         RoomState::Left => RoomListMembership::Left,
         RoomState::Knocked => RoomListMembership::Knocked,
         RoomState::Banned => RoomListMembership::Banned,
+    }
+}
+
+const MATRIX_TO_PREFIX: &str = "https://matrix.to/#/";
+
+/// The plain-text body drops user IDs and keeps only the display name, so the HTML is
+/// the only place they survive.
+fn mentioned_user_ids(formatted_body: Option<&str>) -> BTreeSet<OwnedUserId> {
+    let mut user_ids = BTreeSet::new();
+    let Some(html) = formatted_body else {
+        return user_ids;
+    };
+
+    let mut rest = html;
+    while let Some(idx) = rest.find(MATRIX_TO_PREFIX) {
+        rest = &rest[idx + MATRIX_TO_PREFIX.len()..];
+        let end = rest
+            .find(|c: char| c == '"' || c == '\'' || c == '<' || c.is_whitespace())
+            .unwrap_or(rest.len());
+        let candidate = rest[..end].trim();
+        rest = &rest[end..];
+        if let Ok(user_id) = OwnedUserId::try_from(candidate) {
+            user_ids.insert(user_id);
+        }
+    }
+
+    user_ids
+}
+
+/// `@room` must stand alone as a word, so `bob@room.com` does not notify everybody.
+fn mentions_room(body: &str) -> bool {
+    body.split(|c: char| !c.is_alphanumeric() && c != '_' && c != '@')
+        .any(|word| word == "@room")
+}
+
+fn mentions_for(body: &str, formatted_body: Option<&str>) -> Option<Mentions> {
+    let user_ids = mentioned_user_ids(formatted_body);
+    let room = mentions_room(body);
+    if user_ids.is_empty() && !room {
+        return None;
+    }
+    let mut mentions = Mentions::with_user_ids(user_ids);
+    mentions.room = room;
+    Some(mentions)
+}
+
+fn text_content(body: &str, formatted_body: Option<&str>) -> RoomMessageEventContent {
+    let mut content = match formatted_body {
+        Some(fmt) => RoomMessageEventContent::text_html(body, fmt),
+        None => RoomMessageEventContent::text_plain(body),
+    };
+    if let Some(mentions) = mentions_for(body, formatted_body) {
+        content = content.add_mentions(mentions);
+    }
+    content
+}
+
+fn text_content_no_rel(body: &str, formatted_body: Option<&str>) -> MsgNoRel {
+    let mut content = match formatted_body {
+        Some(fmt) => MsgNoRel::text_html(body, fmt),
+        None => MsgNoRel::text_plain(body),
+    };
+    if let Some(mentions) = mentions_for(body, formatted_body) {
+        content = content.add_mentions(mentions);
+    }
+    content
+}
+
+/// MSC4171. Only valid for rooms we are in, since the server summary has no member hints.
+pub(crate) fn human_member_count(room: &Room, joined: u64) -> u64 {
+    let service_members = room
+        .service_members()
+        .map(|members| members.len())
+        .unwrap_or_default() as u64;
+    joined.saturating_sub(service_members)
+}
+
+fn media_preview_mode(
+    previews: Option<&matrix_sdk::ruma::events::media_preview_config::MediaPreviews>,
+) -> MediaPreviewMode {
+    use matrix_sdk::ruma::events::media_preview_config::MediaPreviews;
+
+    match previews {
+        Some(MediaPreviews::Off) => MediaPreviewMode::Off,
+        Some(MediaPreviews::Private) => MediaPreviewMode::Private,
+        _ => MediaPreviewMode::On,
     }
 }
 
@@ -632,11 +718,7 @@ impl CoreClient {
             .timeline(&room_id)
             .await
             .ok_or_else(|| FfiError::Msg("timeline not found".into()))?;
-        let content = if let Some(fmt) = formatted_body {
-            RoomMessageEventContent::text_html(body, fmt)
-        } else {
-            RoomMessageEventContent::text_plain(body)
-        };
+        let content = text_content(&body, formatted_body.as_deref());
         tl.send(content.into()).await.ffi().map(|_| ())
     }
 
@@ -654,11 +736,7 @@ impl CoreClient {
             .ok_or_else(|| FfiError::Msg("timeline not found".into()))?;
         let reply_to =
             EventId::parse(&in_reply_to).map_err(|_| FfiError::Msg("invalid event id".into()))?;
-        let content = if let Some(fmt) = formatted_body {
-            MsgNoRel::text_html(body, fmt)
-        } else {
-            MsgNoRel::text_plain(body)
-        };
+        let content = text_content_no_rel(&body, formatted_body.as_deref());
         tl.send_reply(content, reply_to.to_owned())
             .await
             .ffi()
@@ -797,11 +875,7 @@ impl CoreClient {
             .ok_or_else(|| FfiError::Msg("timeline not found".into()))?;
         let root = OwnedEventId::try_from(root_event_id)
             .map_err(|_| FfiError::Msg("invalid event id".into()))?;
-        let mut content = if let Some(fmt) = formatted_body {
-            RoomMessageEventContent::text_html(body, fmt)
-        } else {
-            RoomMessageEventContent::text_plain(body)
-        };
+        let mut content = text_content(&body, formatted_body.as_deref());
         let relation = if let Some(reply_to) = reply_to_event_id {
             if let Ok(eid) = OwnedEventId::try_from(reply_to) {
                 MsgRelation::Thread(ThreadRel::reply(root, eid))
@@ -1154,7 +1228,7 @@ impl CoreClient {
             .map(|d| d.to_string())
             .unwrap_or_else(|_| rid.to_string());
         let topic = room.topic();
-        let member_count = room.joined_members_count();
+        let member_count = human_member_count(room, room.joined_members_count());
         let is_encrypted = matches!(room.encryption_state(), EncryptionState::Encrypted);
         let is_dm = room.is_direct().await.unwrap_or(false);
         let is_public = room.is_public() == Some(true);
@@ -2790,10 +2864,37 @@ impl CoreClient {
         })
     }
 
+    /// Servers that can vouch for the local user when knocking on a
+    /// knock-restricted room: the servers of every space we are joined to or
+    /// invited to. A knock-restricted room is only approvable through one of
+    /// those spaces, so this is what the homeserver checks `via` against.
+    fn knock_via_servers(&self) -> Vec<OwnedServerName> {
+        let mut servers: Vec<OwnedServerName> = Vec::new();
+        for room in self.sdk.rooms() {
+            if !matches!(room.state(), RoomState::Joined | RoomState::Invited) {
+                continue;
+            }
+            if !room.is_space() {
+                continue;
+            }
+            if let Some(server) = room.room_id().server_name() {
+                let server = server.to_owned();
+                if !servers.contains(&server) {
+                    servers.push(server);
+                }
+            }
+        }
+        servers
+    }
+
     pub async fn knock(&self, id_or_alias: String, via: Vec<String>) -> Result<(), FfiError> {
         let target = OwnedRoomOrAliasId::try_from(id_or_alias.as_str())
             .map_err(|_| FfiError::Msg("invalid room id or alias".into()))?;
-        let via = Self::parse_via_servers(via)?;
+        let via = if via.is_empty() {
+            self.knock_via_servers()
+        } else {
+            Self::parse_via_servers(via)?
+        };
         self.sdk.knock(target, None, via).await.ffi().map(|_| ())
     }
 
@@ -3206,6 +3307,79 @@ impl CoreClient {
             .ffi()
     }
 
+    /// Sends no request, so the server-side `status_msg` is left alone.
+    pub async fn apply_sync_presence(&self, state: Presence) {
+        let presence = match state {
+            Presence::Online => PresenceState::Online,
+            Presence::Offline => PresenceState::Offline,
+            Presence::Unavailable => PresenceState::Unavailable,
+        };
+        let _ = self.sdk.set_presence(presence, None, false);
+    }
+
+    /// `None` means the account never set one, which is not the same as `On`.
+    pub async fn media_preview_config(&self) -> Result<Option<MediaPreviewMode>, FfiError> {
+        Ok(self.read_media_preview_config().await?.map(|content| {
+            media_preview_mode(
+                content.media_previews.as_ref(),
+            )
+        }))
+    }
+
+    async fn read_media_preview_config(
+        &self,
+    ) -> Result<
+        Option<matrix_sdk::ruma::events::media_preview_config::MediaPreviewConfigEventContent>,
+        FfiError,
+    > {
+        use matrix_sdk::ruma::events::media_preview_config::{
+            MediaPreviewConfigEventContent, UnstableMediaPreviewConfigEventContent,
+        };
+
+        let account = self.sdk.account();
+
+        let mut content = account
+            .account_data::<UnstableMediaPreviewConfigEventContent>()
+            .await
+            .ffi()?
+            .and_then(|raw| raw.deserialize().ok())
+            .map(|content| content.0);
+        if content.is_none() {
+            content = account
+                .account_data::<MediaPreviewConfigEventContent>()
+                .await
+                .ffi()?
+                .and_then(|raw| raw.deserialize().ok());
+        }
+
+        Ok(content)
+    }
+
+    /// Read-modify-write so a choice made in another client survives. The unstable type is
+    /// the one other clients currently read.
+    pub async fn set_media_preview_config(
+        &self,
+        previews: MediaPreviewMode,
+    ) -> Result<(), FfiError> {
+        use matrix_sdk::ruma::events::media_preview_config::{
+            MediaPreviews, UnstableMediaPreviewConfigEventContent,
+        };
+
+        let previews = match previews {
+            MediaPreviewMode::On => MediaPreviews::On,
+            MediaPreviewMode::Private => MediaPreviews::Private,
+            MediaPreviewMode::Off => MediaPreviews::Off,
+        };
+
+        let existing = self.read_media_preview_config().await?.unwrap_or_default();
+        let content: UnstableMediaPreviewConfigEventContent = existing
+            .media_previews(Some(previews))
+            .into();
+
+        self.sdk.account().set_account_data(content).await.ffi()?;
+        Ok(())
+    }
+
     pub async fn get_presence(&self, user_id: String) -> Result<PresenceInfo, FfiError> {
         let uid = Self::parse_uid(&user_id)?;
         let req = get_presence_v3::Request::new(uid);
@@ -3245,7 +3419,7 @@ impl CoreClient {
                 room_id: rid.to_string(),
                 name,
                 topic: room.topic(),
-                member_count: room.joined_members_count(),
+                member_count: human_member_count(&room, room.joined_members_count()),
                 is_encrypted: matches!(room.encryption_state(), EncryptionState::Encrypted),
                 is_public: room.is_public().unwrap_or(false),
                 avatar_url: room.avatar_url().map(|mxc| mxc.to_string()),
@@ -3395,6 +3569,7 @@ impl CoreClient {
                     world_readable: s.world_readable,
                     guest_can_join: s.guest_can_join,
                     suggested: suggested.get(s.room_id.as_str()).copied().unwrap_or(false),
+                    membership: self.sdk.get_room(&s.room_id).map(|room| room_list_membership(&room)),
                 }
             })
             .collect();
@@ -3945,7 +4120,8 @@ impl CoreClient {
                     room.encryption_state(),
                     matrix_sdk::EncryptionState::Encrypted
                 ),
-                member_count: room.joined_members_count().min(u32::MAX as u64) as u32,
+                member_count: human_member_count(room, room.joined_members_count())
+                    .min(u32::MAX as u64) as u32,
                 topic: room.topic(),
                 latest_event,
             });
@@ -4025,3 +4201,5 @@ pub(crate) fn map_send_queue_update(
         _ => None,
     }
 }
+
+

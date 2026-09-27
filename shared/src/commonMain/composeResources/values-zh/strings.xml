@@ -552,4 +552,18 @@
     <string name="banner_people_sharing">%1$d 人们共享位置</string>
     <string name="timeline_shared_live_location">共享实时位置</string>
     <string name="timeline_shared_location">共享位置</string>
+    <string name="space_child_suggested">推荐</string>
+    <string name="space_child_not_joined">未加入</string>
+    <string name="status_message">状态消息</string>
+    <string name="status_message_description">显示在你的在线状态旁边</string>
+    <string name="status_message_placeholder">今天在家办公</string>
+    <string name="save_status">更新状态</string>
+    <string name="saving">保存中…</string>
+    <string name="live_location_desktop_desc">只要 Mages 正在运行，位置更新就会持续，直到你停止分享或计时器结束。</string>
+    <string name="live_location_web_foreground_desc">请保持 Mages 打开以继续分享。浏览器位置更新仅在 Mages 可见时可用。</string>
+    <string-array name="setting_media_previews_options">
+        <item>始终</item>
+        <item>仅在私聊中</item>
+        <item>从不</item>
+    </string-array>
 </resources>

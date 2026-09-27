@@ -5,6 +5,9 @@ import androidx.paging.PagingState
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.SearchHit
 
+private const val ROOM_BATCH = 10
+private const val HITS_PER_ROOM = 20
+
 class SearchPagingSource(
     private val service: MatrixService,
     private val roomId: String?,
@@ -28,23 +31,34 @@ class SearchPagingSource(
                     nextKey = page.nextOffset?.toInt()
                 )
             } else {
-                val allHits = mutableListOf<SearchHit>()
                 val rooms = service.port.listRooms()
-                for (room in rooms.take(50)) {
-                    val page = runCatching {
-                        service.port.searchRoom(
-                            roomId = room.id,
-                            query = query,
-                            limit = 10,
-                            offset = null
-                        )
-                    }.getOrNull()
-                    if (page != null) allHits.addAll(page.hits)
+                val startIndex = offset ?: 0
+                if (startIndex >= rooms.size) {
+                    return LoadResult.Page(data = emptyList(), prevKey = null, nextKey = null)
                 }
+
+                val hits = mutableListOf<SearchHit>()
+                var index = startIndex
+                while (hits.size < params.loadSize && index < rooms.size) {
+                    val batchEnd = minOf(index + ROOM_BATCH, rooms.size)
+                    for (room in rooms.subList(index, batchEnd)) {
+                        val page = runCatching {
+                            service.port.searchRoom(
+                                roomId = room.id,
+                                query = query,
+                                limit = HITS_PER_ROOM,
+                                offset = null
+                            )
+                        }.getOrNull()
+                        if (page != null) hits.addAll(page.hits)
+                    }
+                    index = batchEnd
+                }
+
                 LoadResult.Page(
-                    data = allHits.sortedByDescending { it.timestampMs.toLong() }.take(100),
-                    prevKey = null,
-                    nextKey = null
+                    data = hits.sortedByDescending { it.timestampMs.toLong() },
+                    prevKey = (startIndex - ROOM_BATCH).takeIf { it >= 0 },
+                    nextKey = if (index < rooms.size) index else null
                 )
             }
         } catch (e: Exception) {

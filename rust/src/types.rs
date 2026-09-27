@@ -514,6 +514,8 @@ pub struct SpaceChildInfo {
     pub world_readable: bool,
     pub guest_can_join: bool,
     pub suggested: bool,
+    /// Our own membership, absent when we have no local state for the child.
+    pub membership: Option<RoomListMembership>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Record)]
@@ -823,6 +825,13 @@ pub enum Presence {
     Online,
     Offline,
     Unavailable,
+}
+
+#[derive(Clone, Copy, Serialize, Deserialize, Enum, PartialEq, Eq)]
+pub enum MediaPreviewMode {
+    On,
+    Private,
+    Off,
 }
 
 #[derive(Clone, Serialize, Deserialize, Enum)]

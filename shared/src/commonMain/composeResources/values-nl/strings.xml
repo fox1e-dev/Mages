@@ -552,4 +552,18 @@
     <string name="banner_people_sharing">%1$d mensen delen locatie</string>
     <string name="timeline_shared_live_location">gedeelde live-locatie</string>
     <string name="timeline_shared_location">een locatie gedeeld</string>
+    <string name="space_child_suggested">Voorgesteld</string>
+    <string name="space_child_not_joined">Niet toegevoegd</string>
+    <string name="status_message">Statusbericht</string>
+    <string name="status_message_description">Wordt naast je aanwezigheid getoond</string>
+    <string name="status_message_placeholder">Ik werk vandaag thuis</string>
+    <string name="save_status">Status bijwerken</string>
+    <string name="saving">Opslaan…</string>
+    <string name="live_location_desktop_desc">Locatie-updates blijven doorgaan zolang Mages draait, totdat je het delen stopt of de timer afloopt.</string>
+    <string name="live_location_web_foreground_desc">Houd Mages geopend om te blijven delen. Locatie-updates in de browser zijn alleen beschikbaar zolang Mages zichtbaar is.</string>
+    <string-array name="setting_media_previews_options">
+        <item>Altijd</item>
+        <item>Alleen in DMs</item>
+        <item>Nooit</item>
+    </string-array>
 </resources>

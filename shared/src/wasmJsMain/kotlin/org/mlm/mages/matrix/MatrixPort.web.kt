@@ -1344,6 +1344,20 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         return unitResult(result.ok, "set presence", result.error)
     }
 
+    override suspend fun applySyncPresence(presence: Presence) {
+        requireClient().applySyncPresence(presence.name).await()
+    }
+
+    override suspend fun mediaPreviewConfig(): MediaPreviewMode? =
+        requireClient().mediaPreviewConfig().awaitValue<MediaPreviewMode>()
+
+    override suspend fun setMediaPreviewConfig(previews: MediaPreviewMode): Result<Unit> {
+        val result = requireClient()
+            .setMediaPreviewConfig(previews.name)
+            .awaitResult()
+        return unitResult(result.ok, "set media preview config", result.error)
+    }
+
     override suspend fun getPresence(userId: String): Pair<Presence, String?>? =
         requireClient().getPresence(userId).awaitValue<PresenceInfo>()
             ?.let { it.presence to it.statusMsg }

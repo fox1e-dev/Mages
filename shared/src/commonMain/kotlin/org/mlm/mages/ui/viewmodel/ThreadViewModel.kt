@@ -17,6 +17,7 @@ import org.mlm.mages.MatrixService
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.ReplyPreviewKind
 import org.mlm.mages.matrix.TimelineDiff
+import org.mlm.mages.matrix.allowsMediaPreviews
 import org.mlm.mages.settings.AppSettings
 import org.mlm.mages.ui.ThreadUiState
 import kotlin.getValue
@@ -440,13 +441,16 @@ class ThreadViewModel(
         if (!prefs.value.sendTypingIndicators) return
     }
 
+    private fun mediaPreviewsAllowed(): Boolean =
+        prefs.value.mediaPreviews.allowsMediaPreviews(isPrivateRoom = null)
+
     private fun prefetchReplyThumbnails(events: List<MessageEvent>) {
-        if (prefs.value.blockMediaPreviews) return
+        if (!mediaPreviewsAllowed()) return
         events.forEach { prefetchReplyThumbnail(it) }
     }
 
     private fun prefetchReplyThumbnail(event: MessageEvent, retryAttempt: Int = 0) {
-        if (prefs.value.blockMediaPreviews) return
+        if (!mediaPreviewsAllowed()) return
         val replyId = event.replyToEventId?.takeIf { it.isNotBlank() } ?: return
         val preview = event.replyPreview ?: return
         if (preview.kind != ReplyPreviewKind.Image &&

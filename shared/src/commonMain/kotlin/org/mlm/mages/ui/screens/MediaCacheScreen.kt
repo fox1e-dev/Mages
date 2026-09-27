@@ -125,17 +125,17 @@ fun MediaCacheScreen(
 
             HorizontalDivider()
 
-//            ListItem(
-//                headlineContent = {
-//                    Text(stringResource(Res.string.auto_download_previews))
-//                },
-//                trailingContent = {
-//                    Switch(
-//                        checked = state.autoDownloadPreviews,
-//                        onCheckedChange = onAutoDownloadChange,
-//                    )
-//                }
-//            )
+            ListItem(
+                headlineContent = {
+                    Text(stringResource(Res.string.auto_download_previews))
+                },
+                trailingContent = {
+                    Switch(
+                        checked = state.autoDownloadPreviews,
+                        onCheckedChange = onAutoDownloadChange,
+                    )
+                }
+            )
 
             HorizontalDivider()
 

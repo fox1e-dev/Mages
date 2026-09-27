@@ -552,4 +552,18 @@
     <string name="banner_people_sharing">%1$d konum paylaşan kişiler</string>
     <string name="timeline_shared_live_location">paylaşılan canlı konum</string>
     <string name="timeline_shared_location">bir konum paylaştı</string>
+    <string name="space_child_suggested">Önerilen</string>
+    <string name="space_child_not_joined">Katılmadınız</string>
+    <string name="status_message">Durum mesajı</string>
+    <string name="status_message_description">Durumunuzun yanında gösterilir</string>
+    <string name="status_message_placeholder">Bugün evden çalışıyorum</string>
+    <string name="save_status">Durumu güncelle</string>
+    <string name="saving">Kaydediliyor…</string>
+    <string name="live_location_desktop_desc">Paylaşımı durdurana veya zamanlayıcı bitene kadar Mages çalışırken konum güncellemeleri devam eder.</string>
+    <string name="live_location_web_foreground_desc">Paylaşmaya devam etmek için Mages'i açık tutun. Tarayıcı konum güncellemeleri yalnızca Mages görünürken kullanılabilir.</string>
+    <string-array name="setting_media_previews_options">
+        <item>Her zaman</item>
+        <item>Yalnızca DM'lerde</item>
+        <item>Asla</item>
+    </string-array>
 </resources>

@@ -64,7 +64,7 @@ object MagesSettingsKeys {
     const val SELECT_UNIFIED_PUSH_DISTRIBUTOR = "mages.settings.select_unified_push_distributor"
     const val RE_REGISTER_UNIFIED_PUSH = "mages.settings.re_register_unified_push"
     const val COPY_UNIFIED_PUSH_ENDPOINT = "mages.settings.copy_unified_push_endpoint"
-    const val BLOCK_MEDIA_PREVIEWS = "mages.settings.block_media_previews"
+    const val BLOCK_MEDIA_PREVIEWS = "mages.settings.media_previews"
     const val MEDIA_CACHE = "mages.settings.media_cache"
     const val START_IN_TRAY = "mages.settings.start_in_tray"
     const val ENTER_SENDS_MESSAGE = "mages.settings.enter_sends_message"
@@ -124,7 +124,7 @@ object MagesSettingsKeys {
     const val SELECT_UNIFIED_PUSH_DISTRIBUTOR_DESCRIPTION = "mages.settings.select_unified_push_distributor.description"
     const val RE_REGISTER_UNIFIED_PUSH_DESCRIPTION = "mages.settings.re_register_unified_push.description"
     const val COPY_UNIFIED_PUSH_ENDPOINT_DESCRIPTION = "mages.settings.copy_unified_push_endpoint.description"
-    const val BLOCK_MEDIA_PREVIEWS_DESCRIPTION = "mages.settings.block_media_previews.description"
+    const val BLOCK_MEDIA_PREVIEWS_DESCRIPTION = "mages.settings.media_previews.description"
     const val MEDIA_CACHE_DESCRIPTION = "mages.settings.media_cache.description"
     const val START_IN_TRAY_DESCRIPTION = "mages.settings.start_in_tray.description"
     const val ENTER_SENDS_MESSAGE_DESCRIPTION = "mages.settings.enter_sends_message.description"
@@ -137,4 +137,5 @@ object MagesSettingsKeys {
     const val HIDE_IN_ROOMS_OPTIONS = "mages.settings.hide_in_rooms.options"
     const val APP_LOCK_TIMEOUT_OPTIONS = "mages.settings.app_lock_timeout.options"
     const val PRESENCE_OPTIONS = "mages.settings.presence.options"
+    const val BLOCK_MEDIA_PREVIEWS_OPTIONS = "mages.settings.media_previews.options"
 }

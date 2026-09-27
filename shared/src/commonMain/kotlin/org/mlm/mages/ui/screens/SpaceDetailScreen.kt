@@ -249,7 +249,20 @@ private fun SpaceChildItem(
                         shape = MaterialTheme.shapes.extraSmall
                     ) {
                         Text(
-                            "Suggested",
+                            stringResource(Res.string.space_child_suggested),
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                if (!child.isSpace && child.membership == null) {
+                    Spacer(Modifier.width(Spacing.xs))
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = MaterialTheme.shapes.extraSmall
+                    ) {
+                        Text(
+                            stringResource(Res.string.space_child_not_joined),
                             style = MaterialTheme.typography.labelSmall,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )

@@ -552,4 +552,18 @@
     <string name="banner_people_sharing">%1$d lidí sdílejících polohu</string>
     <string name="timeline_shared_live_location">sdílená živá poloha</string>
     <string name="timeline_shared_location">sdílel polohu</string>
+    <string name="space_child_suggested">Doporučeno</string>
+    <string name="space_child_not_joined">Nepřipojeno</string>
+    <string name="status_message">Stavová zpráva</string>
+    <string name="status_message_description">Zobrazuje se vedle vaší přítomnosti</string>
+    <string name="status_message_placeholder">Dnes pracuji z domova</string>
+    <string name="save_status">Aktualizovat stav</string>
+    <string name="saving">Ukládání…</string>
+    <string name="live_location_desktop_desc">Aktualizace polohy pokračují, dokud je Mages spuštěný, než sdílení zastavíte nebo skončí časovač.</string>
+    <string name="live_location_web_foreground_desc">Ponechte Mages otevřené pro pokračování ve sdílení. Aktualizace polohy v prohlížeči jsou dostupné pouze, když je Mages viditelný.</string>
+    <string-array name="setting_media_previews_options">
+        <item>Vždy</item>
+        <item>Pouze v DMs</item>
+        <item>Nikdy</item>
+    </string-array>
 </resources>

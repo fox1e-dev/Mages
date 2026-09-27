@@ -178,6 +178,7 @@ private val arrayResources: Map<String, StringArrayResource> = mapOf(
     MagesSettingsKeys.HIDE_IN_ROOMS_OPTIONS to Res.array.setting_hide_in_rooms_options,
     MagesSettingsKeys.APP_LOCK_TIMEOUT_OPTIONS to Res.array.setting_app_lock_timeout_options,
     MagesSettingsKeys.PRESENCE_OPTIONS to Res.array.setting_presence_options,
+    MagesSettingsKeys.BLOCK_MEDIA_PREVIEWS_OPTIONS to Res.array.setting_media_previews_options,
 )
 
 @Composable

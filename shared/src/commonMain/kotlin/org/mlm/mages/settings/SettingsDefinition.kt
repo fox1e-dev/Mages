@@ -35,6 +35,9 @@ enum class ThemeMode { System, Light, Dark }
 enum class PresenceMode { Online, Offline, Unavailable }
 
 @Serializable
+enum class MediaPreviewsMode { On, Private, Off }
+
+@Serializable
 enum class AppLockTimeout {
     Immediate,
     OneMinute,
@@ -719,14 +722,16 @@ data class AppSettings(
     val copyUnifiedPushEndpoint: Unit = Unit,
 
     @Setting(
-        title = "Block media previews",
+        title = "Media previews",
         titleKey = MagesSettingsKeys.BLOCK_MEDIA_PREVIEWS,
-        description = "Don't auto-download thumbnails/previews",
+        description = "Automatically download thumbnails, images, voice and video. Synced to your other devices",
         descriptionKey = MagesSettingsKeys.BLOCK_MEDIA_PREVIEWS_DESCRIPTION,
         category = Storage::class,
-        type = Toggle::class
+        type = Dropdown::class,
+        options = ["On", "Private", "Off"],
+        optionsKey = MagesSettingsKeys.BLOCK_MEDIA_PREVIEWS_OPTIONS,
     )
-    val blockMediaPreviews: Boolean = false,
+    val mediaPreviews: MediaPreviewsMode = MediaPreviewsMode.On,
 
     @Setting(
         title = "Media Cache",

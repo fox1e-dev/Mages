@@ -552,4 +552,18 @@
     <string name="banner_people_sharing">%1$d osoby udostępniają lokalizację</string>
     <string name="timeline_shared_live_location">udostępniona lokalizacja na żywo</string>
     <string name="timeline_shared_location">udostępnił lokalizację</string>
+    <string name="space_child_suggested">Sugerowane</string>
+    <string name="space_child_not_joined">Nie dołączono</string>
+    <string name="status_message">Wiadomość o statusie</string>
+    <string name="status_message_description">Wyświetlana obok Twojej obecności</string>
+    <string name="status_message_placeholder">Dziś pracuję z domu</string>
+    <string name="save_status">Aktualizuj status</string>
+    <string name="saving">Zapisywanie…</string>
+    <string name="live_location_desktop_desc">Aktualizacje lokalizacji trwają, dopóki Mages działa, aż zatrzymasz udostępnianie lub upłynie limit czasu.</string>
+    <string name="live_location_web_foreground_desc">Nie zamykaj Mages, aby kontynuować udostępnianie. Aktualizacje lokalizacji w przeglądarce są dostępne tylko, gdy Mages jest widoczny.</string>
+    <string-array name="setting_media_previews_options">
+        <item>Zawsze</item>
+        <item>Tylko w DM-ach</item>
+        <item>Nigdy</item>
+    </string-array>
 </resources>

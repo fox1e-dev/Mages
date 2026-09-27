@@ -552,4 +552,18 @@
     <string name="banner_people_sharing">%1$d 사람들이 위치를 공유함</string>
     <string name="timeline_shared_live_location">공유된 실시간 위치</string>
     <string name="timeline_shared_location">위치를 공유했습니다</string>
+    <string name="space_child_suggested">제안됨</string>
+    <string name="space_child_not_joined">가입하지 않음</string>
+    <string name="status_message">상태 메시지</string>
+    <string name="status_message_description">온라인 상태 옆에 표시됩니다</string>
+    <string name="status_message_placeholder">오늘 집에서 일합니다</string>
+    <string name="save_status">상태 업데이트</string>
+    <string name="saving">저장 중…</string>
+    <string name="live_location_desktop_desc">공유를 중지하거나 타이머가 끝날 때까지 Mages가 실행되는 동안 위치 업데이트가 계속됩니다.</string>
+    <string name="live_location_web_foreground_desc">공유를 계속하려면 Mages를 열어 두세요. 브라우저 위치 업데이트는 Mages가 표시되어 있는 동안에만 사용할 수 있습니다.</string>
+    <string-array name="setting_media_previews_options">
+        <item>항상</item>
+        <item>DM에서만</item>
+        <item>안 함</item>
+    </string-array>
 </resources>

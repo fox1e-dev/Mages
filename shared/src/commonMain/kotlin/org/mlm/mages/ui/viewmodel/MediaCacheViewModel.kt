@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.MediaCacheOverview
 import org.mlm.mages.settings.AppSettings
+import org.mlm.mages.settings.MediaPreviewsMode
 
 data class MediaCacheUiState(
     val isLoading: Boolean = true,
@@ -24,7 +25,7 @@ class MediaCacheViewModel(
 
     init {
         settingsRepository.flow
-            .onEach { updateState { copy(autoDownloadPreviews = !it.blockMediaPreviews) } }
+            .onEach { updateState { copy(autoDownloadPreviews = it.mediaPreviews != MediaPreviewsMode.Off) } }
             .launchIn(viewModelScope)
 
         load()
@@ -50,7 +51,16 @@ class MediaCacheViewModel(
 
     fun setAutoDownloadPreviews(enabled: Boolean) {
         viewModelScope.launch {
-            settingsRepository.update { it.copy(blockMediaPreviews = !enabled) }
+            settingsRepository.update {
+                val current = it.mediaPreviews
+                it.copy(
+                    mediaPreviews = when {
+                        !enabled -> MediaPreviewsMode.Off
+                        current == MediaPreviewsMode.Off -> MediaPreviewsMode.On
+                        else -> current
+                    }
+                )
+            }
         }
     }
 }

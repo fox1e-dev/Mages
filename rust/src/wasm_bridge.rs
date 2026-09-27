@@ -142,6 +142,18 @@ pub fn base64_encode(data: &[u8]) -> Result<String, JsValue> {
     window.btoa(&binary_string)
 }
 
+fn sniff_image_mime(data: &[u8]) -> &'static str {
+    if data.starts_with(&[0x89, b'P', b'N', b'G']) {
+        "image/png"
+    } else if data.starts_with(b"GIF87a") || data.starts_with(b"GIF89a") {
+        "image/gif"
+    } else if data.len() >= 12 && data.starts_with(b"RIFF") && &data[8..12] == b"WEBP" {
+        "image/webp"
+    } else {
+        "image/jpeg"
+    }
+}
+
 fn call_js(f: &Function, arg: JsValue) {
     let _ = f.call1(&JsValue::NULL, &arg);
 }
@@ -1070,6 +1082,43 @@ impl WasmClient {
             return webffi_not_init();
         };
         webffi_unit(s.core.set_presence(p, status).await)
+    }
+
+    #[wasm_bindgen(js_name = applySyncPresence)]
+    pub async fn apply_sync_presence(&self, presence: String) -> JsValue {
+        let p = match presence.as_str() {
+            "Online" => Presence::Online,
+            "Offline" => Presence::Offline,
+            "Unavailable" => Presence::Unavailable,
+            _ => return webffi_err("invalid presence state"),
+        };
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        s.core.apply_sync_presence(p).await;
+        JsValue::UNDEFINED
+    }
+
+    #[wasm_bindgen(js_name = mediaPreviewConfig)]
+    pub async fn media_preview_config(&self) -> JsValue {
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        webffi_value(s.core.media_preview_config().await)
+    }
+
+    #[wasm_bindgen(js_name = setMediaPreviewConfig)]
+    pub async fn set_media_preview_config(&self, previews: String) -> JsValue {
+        let mode = match previews.as_str() {
+            "On" => MediaPreviewMode::On,
+            "Private" => MediaPreviewMode::Private,
+            "Off" => MediaPreviewMode::Off,
+            _ => return webffi_err("invalid media preview mode"),
+        };
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        webffi_unit(s.core.set_media_preview_config(mode).await)
     }
 
     #[wasm_bindgen(js_name = isEventReadBy)]
@@ -2653,7 +2702,7 @@ impl WasmClient {
         } else {
             MediaSource::Plain(mxc_uri.into())
         };
-        let settings = MediaThumbnailSettings::new(width.into(), height.into());
+        let settings = MediaThumbnailSettings { animated: true, ..MediaThumbnailSettings::new(width.into(), height.into()) };
         let req = MediaRequestParameters {
             source,
             format: MediaFormat::Thumbnail(settings),
@@ -2664,11 +2713,7 @@ impl WasmClient {
                     Ok(s) => s,
                     Err(_) => return webffi_err("base64 encode failed"),
                 };
-                let mime = if data.starts_with(&[0x89, b'P', b'N', b'G']) {
-                    "image/png"
-                } else {
-                    "image/jpeg"
-                };
+                let mime = sniff_image_mime(&data);
                 JsValue::from_str(&format!("data:{};base64,{}", mime, b64))
             }
             Err(e) => webffi_err(&format!("thumbnail fetch failed: {}", e)),
@@ -2687,7 +2732,7 @@ impl WasmClient {
             return webffi_err("not initialized");
         };
         let uri = matrix_sdk::ruma::OwnedMxcUri::from(mxc_uri);
-        let settings = MediaThumbnailSettings::new(width.into(), height.into());
+        let settings = MediaThumbnailSettings { animated: true, ..MediaThumbnailSettings::new(width.into(), height.into()) };
         let req = MediaRequestParameters {
             source: MediaSource::Plain(uri),
             format: MediaFormat::Thumbnail(settings),
@@ -2698,11 +2743,7 @@ impl WasmClient {
                     Ok(s) => s,
                     Err(_) => return webffi_err("base64 encode failed"),
                 };
-                let mime = if data.starts_with(&[0x89, b'P', b'N', b'G']) {
-                    "image/png"
-                } else {
-                    "image/jpeg"
-                };
+                let mime = sniff_image_mime(&data);
                 JsValue::from_str(&format!("data:{};base64,{}", mime, b64))
             }
             Err(e) => webffi_err(&format!("mxc thumbnail failed: {}", e)),

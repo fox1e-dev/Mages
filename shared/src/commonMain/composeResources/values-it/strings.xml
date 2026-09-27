@@ -552,4 +552,18 @@
     <string name="banner_people_sharing">%1$d persone che condividono la posizione</string>
     <string name="timeline_shared_live_location">posizione live condivisa</string>
     <string name="timeline_shared_location">condiviso una posizione</string>
+    <string name="space_child_suggested">Suggerito</string>
+    <string name="space_child_not_joined">Non unito</string>
+    <string name="status_message">Messaggio di stato</string>
+    <string name="status_message_description">Mostrato accanto alla tua presenza</string>
+    <string name="status_message_placeholder">Oggi lavoro da casa</string>
+    <string name="save_status">Aggiorna stato</string>
+    <string name="saving">Salvataggio…</string>
+    <string name="live_location_desktop_desc">Gli aggiornamenti della posizione proseguono finché Mages è in esecuzione, finché non interrompi la condivisione o il timer scade.</string>
+    <string name="live_location_web_foreground_desc">Mantieni Mages aperto per continuare a condividere. Gli aggiornamenti della posizione nel browser sono disponibili solo finché Mages è visibile.</string>
+    <string-array name="setting_media_previews_options">
+        <item>Sempre</item>
+        <item>Solo nei DM</item>
+        <item>Mai</item>
+    </string-array>
 </resources>

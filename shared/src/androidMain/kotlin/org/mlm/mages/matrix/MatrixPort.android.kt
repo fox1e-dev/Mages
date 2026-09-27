@@ -1528,6 +1528,30 @@ class RustMatrixPort : MatrixPort, VerificationService {
             runWithFfiResult { withClient { it.setPresence(presence.toFfi(), status) } }.map { }
         }
 
+    override suspend fun applySyncPresence(presence: Presence) {
+        withContext(matrixDispatcher) {
+            withClient { it.applySyncPresence(presence.toFfi()) }
+        }
+    }
+
+    override suspend fun mediaPreviewConfig(): MediaPreviewMode? =
+        withContext(matrixDispatcher) {
+            withClient { it.mediaPreviewConfig() }?.let {
+                when (it) {
+                    mages.MediaPreviewMode.ON -> MediaPreviewMode.On
+                    mages.MediaPreviewMode.PRIVATE -> MediaPreviewMode.Private
+                    mages.MediaPreviewMode.OFF -> MediaPreviewMode.Off
+                }
+            }
+        }
+
+    override suspend fun setMediaPreviewConfig(previews: MediaPreviewMode): Result<Unit> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult {
+                withClient { it.setMediaPreviewConfig(previews.toFfi()) }
+            }.map { }
+        }
+
     override suspend fun getPresence(userId: String): Pair<Presence, String?>? =
         withContext(matrixDispatcher) {
             val info = runWithFfiResult { withClient { it.getPresence(userId) } }.getOrNull()
@@ -2160,6 +2184,12 @@ private fun mages.Presence.toKotlin(): Presence = when (this) {
     mages.Presence.ONLINE -> Presence.Online
     mages.Presence.OFFLINE -> Presence.Offline
     mages.Presence.UNAVAILABLE -> Presence.Unavailable
+}
+
+private fun MediaPreviewMode.toFfi(): mages.MediaPreviewMode = when (this) {
+    MediaPreviewMode.On -> mages.MediaPreviewMode.ON
+    MediaPreviewMode.Private -> mages.MediaPreviewMode.PRIVATE
+    MediaPreviewMode.Off -> mages.MediaPreviewMode.OFF
 }
 
 private fun RoomDirectoryVisibility.toFfi(): mages.RoomDirectoryVisibility = when (this) {

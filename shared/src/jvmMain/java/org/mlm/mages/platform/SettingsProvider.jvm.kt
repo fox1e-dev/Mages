@@ -5,6 +5,7 @@ import io.github.mlmgames.settings.core.datastore.createSettingsDataStore
 import io.github.mlmgames.settings.core.managers.Migration
 import io.github.mlmgames.settings.core.managers.MigrationManager
 import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.runBlocking
@@ -21,8 +22,9 @@ import org.mlm.mages.settings.AppSettingsSchema
             repository?.let { return it }
             val dataStore = createSettingsDataStore("mages_settings")
             
-            val migrationManager = MigrationManager(dataStore, currentVersion = 2)
+            val migrationManager = MigrationManager(dataStore, currentVersion = 3)
                 .addMigration(EnumIntToStringMigration())
+                .addMigration(MediaPreviewsModeMigration())
             
             // Run migration synchronously for desktop
             runBlocking {
@@ -117,3 +119,20 @@ import org.mlm.mages.settings.AppSettingsSchema
         }
     }
  }
+
+private class MediaPreviewsModeMigration : Migration {
+    override val fromVersion: Int = 2
+    override val toVersion: Int = 3
+
+    override suspend fun migrate(prefs: MutablePreferences) {
+        // Settings are stored under both a namespaced and a plain legacy key.
+        val old = prefs[booleanPreferencesKey("__kmp_settings_v2__:boolean:20:block_media_previews")]
+            ?: prefs[booleanPreferencesKey("block_media_previews")]
+            ?: return
+        val mode = if (old) "Off" else "On"
+        prefs[stringPreferencesKey("__kmp_settings_v2__:enum:14:media_previews")] = mode
+        prefs[stringPreferencesKey("media_previews")] = mode
+        prefs.remove(booleanPreferencesKey("__kmp_settings_v2__:boolean:20:block_media_previews"))
+        prefs.remove(booleanPreferencesKey("block_media_previews"))
+    }
+}

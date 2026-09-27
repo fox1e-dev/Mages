@@ -186,6 +186,13 @@ data class PresenceInfo(
 )
 
 @Serializable
+enum class MediaPreviewMode {
+    On,
+    Private,
+    Off
+}
+
+@Serializable
 enum class RoomDirectoryVisibility {
     Public,
     Private
@@ -524,7 +531,8 @@ data class SpaceChildInfo(
     val memberCount: Long,
     val worldReadable: Boolean,
     val guestCanJoin: Boolean,
-    val suggested: Boolean
+    val suggested: Boolean,
+    val membership: RoomListMembership? = null
 )
 
 @Serializable
@@ -965,6 +973,9 @@ interface MatrixPort {
     suspend fun spaceInviteUser(spaceId: String, userId: String): Result<Unit>
 
     suspend fun setPresence(presence: Presence, status: String?): Result<Unit>
+    suspend fun applySyncPresence(presence: Presence)
+    suspend fun mediaPreviewConfig(): MediaPreviewMode?
+    suspend fun setMediaPreviewConfig(previews: MediaPreviewMode): Result<Unit>
     suspend fun getPresence(userId: String): Pair<Presence, String?>?
 
     suspend fun ignoreUser(userId: String): Result<Unit>

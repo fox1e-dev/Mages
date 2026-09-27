@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -29,7 +28,6 @@ import io.github.mlmgames.settings.ui.ProvideStringResources
 import org.koin.compose.koinInject
 import org.mlm.mages.matrix.DeviceSummary
 import org.mlm.mages.matrix.MatrixPort
-import org.mlm.mages.matrix.Presence
 import org.mlm.mages.settings.*
 import org.mlm.mages.ui.components.core.EmptyState
 import org.mlm.mages.ui.components.sheets.EnterRecoveryKeySheet
@@ -49,6 +47,8 @@ private sealed interface SecuritySheet {
     data class SetupRecovery(val isChange: Boolean) : SecuritySheet
     data object EnterRecoveryKey : SecuritySheet
 }
+
+private const val STATUS_MESSAGE_MAX_BYTES = 255
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -181,6 +181,10 @@ fun SecurityScreen(
                 )
 
                 1 -> PrivacyTab(
+                    statusMessage = state.presence.statusMessage,
+                    isSavingPresence = state.presence.isSaving,
+                    onStatusChange = viewModel::setStatusMessage,
+                    onSavePresence = viewModel::savePresence,
                     ignoredUsers = state.ignoredUsers,
                     onUnignore = viewModel::unignoreUser
                 )
@@ -188,12 +192,6 @@ fun SecurityScreen(
                 2 -> SettingsTab(
                     settings = settings,
                     schema = viewModel.settingsSchema,
-                    currentPresence = state.presence.currentPresence,
-                    statusMessage = state.presence.statusMessage,
-                    isSavingPresence = state.presence.isSaving,
-                    onPresenceChange = viewModel::setPresence,
-                    onStatusChange = viewModel::setStatusMessage,
-                    onSavePresence = viewModel::savePresence,
                     onSettingChange = viewModel::updateSetting,
                     onSettingAction = viewModel::executeSettingAction,
                     snackbarHostState = settingsSnackbarHostState
@@ -640,43 +638,100 @@ private fun DeviceCard(
 
 @Composable
 private fun PrivacyTab(
+    statusMessage: String,
+    isSavingPresence: Boolean,
+    onStatusChange: (String) -> Unit,
+    onSavePresence: () -> Unit,
     ignoredUsers: List<String>,
     onUnignore: (String) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(Spacing.lg)
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
-        Text(
-            stringResource(Res.string.ignored_users),
-            style = MaterialTheme.typography.titleMedium
-        )
+        item {
+            Text(
+                stringResource(Res.string.status_message),
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
 
-        Spacer(Modifier.height(Spacing.md))
+        item {
+            Text(
+                stringResource(Res.string.status_message_description),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+
+        item {
+            val overLimit = statusMessage.encodeToByteArray().size > STATUS_MESSAGE_MAX_BYTES
+            OutlinedTextField(
+                value = statusMessage,
+                onValueChange = { next ->
+                    if (next.encodeToByteArray().size <= STATUS_MESSAGE_MAX_BYTES) {
+                        onStatusChange(next)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                isError = overLimit,
+                supportingText = {
+                    Text(stringResource(Res.string.status_message_length, STATUS_MESSAGE_MAX_BYTES))
+                },
+                placeholder = { Text(stringResource(Res.string.status_message_placeholder)) }
+            )
+        }
+
+        item {
+            Button(
+                onClick = onSavePresence,
+                enabled = !isSavingPresence,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    if (isSavingPresence) {
+                        stringResource(Res.string.saving)
+                    } else {
+                        stringResource(Res.string.save_status)
+                    }
+                )
+            }
+        }
+
+        item {
+            HorizontalDivider(Modifier.padding(vertical = Spacing.sm))
+        }
+
+        item {
+            Text(
+                stringResource(Res.string.ignored_users),
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
 
         if (ignoredUsers.isEmpty()) {
-            EmptyState(
-                icon = Icons.Default.Block,
-                title = stringResource(Res.string.no_ignored_users),
-                subtitle = stringResource(Res.string.ignored_users_subtitle)
-            )
+            item {
+                EmptyState(
+                    icon = Icons.Default.Block,
+                    title = stringResource(Res.string.no_ignored_users),
+                    subtitle = stringResource(Res.string.ignored_users_subtitle)
+                )
+            }
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                items(ignoredUsers) { mxid ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(Spacing.md),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Person, null)
-                            Spacer(Modifier.width(Spacing.md))
-                            Text(mxid, Modifier.weight(1f))
-                            TextButton(onClick = { onUnignore(mxid) }) {
-                                Text(stringResource(Res.string.unignore))
-                            }
+            items(ignoredUsers) { mxid ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(Spacing.md),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Person, null)
+                        Spacer(Modifier.width(Spacing.md))
+                        Text(mxid, Modifier.weight(1f))
+                        TextButton(onClick = { onUnignore(mxid) }) {
+                            Text(stringResource(Res.string.unignore))
                         }
                     }
                 }
@@ -689,12 +744,6 @@ private fun PrivacyTab(
 private fun SettingsTab(
     settings: AppSettings,
     schema: SettingsSchema<AppSettings>,
-    currentPresence: Presence,
-    statusMessage: String,
-    isSavingPresence: Boolean,
-    onPresenceChange: (Presence) -> Unit,
-    onStatusChange: (String) -> Unit,
-    onSavePresence: () -> Unit,
     onSettingChange: (String, Any?) -> Unit,
     onSettingAction: suspend (KClass<out SettingAction>) -> Unit,
     snackbarHostState: SnackbarHostState
@@ -714,44 +763,3 @@ private fun SettingsTab(
     }
 }
 
-@Composable
-private fun PresenceOption(
-    presence: Presence,
-    currentPresence: Presence,
-    title: String,
-    color: Color,
-    onClick: () -> Unit
-) {
-    val isSelected = presence == currentPresence
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = Spacing.sm),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Surface(
-            color = color,
-            shape = CircleShape,
-            modifier = Modifier.size(12.dp)
-        ) {}
-
-        Spacer(Modifier.width(Spacing.md))
-
-        Text(
-            title,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-            modifier = Modifier.weight(1f)
-        )
-
-        if (isSelected) {
-            Icon(
-                Icons.Default.CheckCircle,
-                "Selected",
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}

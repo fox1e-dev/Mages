@@ -12,6 +12,7 @@ import org.mlm.mages.AttachmentKind
 import org.mlm.mages.MatrixService
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.matrix.BackPaginationSession
+import org.mlm.mages.matrix.allowsMediaPreviews
 import org.mlm.mages.matrix.BackPaginationStatus
 import org.mlm.mages.matrix.TimelineDiff
 import org.mlm.mages.matrix.TimelineListReducer
@@ -328,7 +329,7 @@ class MediaGalleryViewModel(
     }
 
     private fun prefetchThumbnails(events: List<MessageEvent>) {
-        if (settings.value.blockMediaPreviews) return
+        if (!settings.value.mediaPreviews.allowsMediaPreviews(isPrivateRoom = null)) return
 
         events.filter {
             val kind = it.attachment?.kind

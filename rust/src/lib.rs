@@ -244,6 +244,9 @@ delegate_option! { PredecessorRoomInfo; room_predecessor(room_id: String); }
 delegate_option! { bool; is_marked_unread(room_id: String); }
 
 delegate_plain! { Vec<MessageEvent>; recent_events(room_id: String, limit: u32); }
+delegate_plain! { (); apply_sync_presence(state: Presence); }
+delegate_option! { MediaPreviewMode; media_preview_config(); }
+delegate_unit_result! { set_media_preview_config(previews: MediaPreviewMode); }
 delegate_result! { Option<MessageEvent>; event_details(room_id: String, event_id: String); }
 delegate_result! { ForwardResult; forward_event(source_room_id: String, event_id: String, target_room_ids: Vec<String>); }
 delegate_plain_option! { Vec<String>; get_pinned_events(room_id: String); }
@@ -2380,6 +2383,7 @@ impl Client {
                 UInt::try_from(width).unwrap_or(UInt::MIN),
                 UInt::try_from(height).unwrap_or(UInt::MIN),
             );
+            let settings = matrix_sdk::media::MediaThumbnailSettings { animated: true, ..settings };
             let request = MediaRequestParameters {
                 source: MediaSource::Plain(uri),
                 format: MediaFormat::Thumbnail(settings),
@@ -3198,6 +3202,7 @@ impl Client {
             } else {
                 MediaThumbnailSettings::new(width.into(), height.into())
             };
+            let settings = MediaThumbnailSettings { animated: true, ..settings };
             let mxc = att.mxc_uri.clone();
             (
                 MediaSource::Plain(mxc.clone().into()),
@@ -3290,6 +3295,7 @@ impl Client {
                 UInt::from(width.max(1)),
                 UInt::from(height.max(1)),
             );
+            let settings = matrix_sdk::media::MediaThumbnailSettings { animated: true, ..settings };
             let req = MediaRequestParameters {
                 source: MediaSource::Plain(mxc_uri.clone().into()),
                 format: MediaFormat::Thumbnail(settings),
@@ -4119,6 +4125,14 @@ fn map_timeline_event(
                         enc_to_record(source)
                     }
 
+                    // `StickerMediaSource` is `#[non_exhaustive]` but currently only has
+                    // `Plain` and `Encrypted`, so the `_` arm is unreachable and exists
+                    // purely to satisfy the non-exhaustive bound. It is not a bridged or
+                    // external-sticker path: bridges put an external `https://` URL in
+                    // `url`, which deserializes into `Plain` because `OwnedMxcUri` does
+                    // not validate its input, so a non-MXC url reaches the media fetcher
+                    // here and fails to resolve. Bridged stickers need an `external_url`
+                    // field on `StickerInfo` and a direct HTTP fetch to actually work.
                     let (mxc_uri, encrypted) = match &source {
                         matrix_sdk::ruma::events::sticker::StickerMediaSource::Plain(url) => {
                             (url.to_string(), None)

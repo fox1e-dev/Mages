@@ -2694,8 +2694,11 @@ class RoomViewModel(
         }
     }
 
+    private fun mediaPreviewsAllowed(): Boolean =
+        settings.value.mediaPreviews.allowsMediaPreviews(currentState.isDm)
+
     private fun prefetchThumbnailsForEvents(events: List<MessageEvent>) {
-        if (settings.value.blockMediaPreviews) return
+        if (!mediaPreviewsAllowed()) return
 
         events.forEach { ev ->
             ensureThumbnail(ev)
@@ -2704,7 +2707,7 @@ class RoomViewModel(
 
     fun ensureThumbnail(event: MessageEvent) {
         ensureReplyThumbnail(event)
-        if (settings.value.blockMediaPreviews) return
+        if (!mediaPreviewsAllowed()) return
         if (event.eventId.isBlank()) return
         if (currentState.thumbByEvent.containsKey(event.eventId)) return
         if (event.eventId in thumbnailFetchInFlight) return
@@ -2738,7 +2741,7 @@ class RoomViewModel(
     }
 
     private fun ensureReplyThumbnail(event: MessageEvent, retryAttempt: Int = 0) {
-        if (settings.value.blockMediaPreviews) return
+        if (!mediaPreviewsAllowed()) return
         val replyId = event.replyToEventId?.takeIf { it.isNotBlank() } ?: return
         val preview = event.replyPreview ?: return
         if (preview.kind != ReplyPreviewKind.Image &&
@@ -2781,6 +2784,8 @@ class RoomViewModel(
     }
 
     private fun prefetchAudioForEvents(events: List<MessageEvent>) {
+        // No on-demand retry, so a wrong call here would stick for the rest of the session.
+        if (!settings.value.mediaPreviews.allowsMediaPreviews(isPrivateRoom = null)) return
         events.forEach { ev ->
             val a = ev.attachment ?: return@forEach
             if (a.kind != AttachmentKind.Audio) return@forEach

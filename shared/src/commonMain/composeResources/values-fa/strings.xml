@@ -552,4 +552,18 @@
     <string name="banner_people_sharing">افراد %1$d مکان را به اشتراک می گذارند</string>
     <string name="timeline_shared_live_location">مکان زنده مشترک</string>
     <string name="timeline_shared_location">مکانی را به اشتراک گذاشت</string>
+    <string name="space_child_suggested">پیشنهادی</string>
+    <string name="space_child_not_joined">عضو نشده</string>
+    <string name="status_message">پیام وضعیت</string>
+    <string name="status_message_description">کنار وضعیت حضور شما نمایش داده می‌شود</string>
+    <string name="status_message_placeholder">امروز از خانه کار می‌کنم</string>
+    <string name="save_status">به‌روزرسانی وضعیت</string>
+    <string name="saving">در حال ذخیره…</string>
+    <string name="live_location_desktop_desc">تا زمانی که Mages در حال اجراست، به‌روزرسانی‌های موقعیت ادامه می‌یابد، تا وقتی اشتراک‌گذاری را متوقف کنید یا تایمر به پایان برسد.</string>
+    <string name="live_location_web_foreground_desc">برای ادامه اشتراک‌گذاری، Mages را باز نگه دارید. به‌روزرسانی‌های موقعیت در مرورگر تنها زمانی در دسترس‌اند که Mages قابل مشاهده باشد.</string>
+    <string-array name="setting_media_previews_options">
+        <item>همیشه</item>
+        <item>فقط در DMs</item>
+        <item>هرگز</item>
+    </string-array>
 </resources>
