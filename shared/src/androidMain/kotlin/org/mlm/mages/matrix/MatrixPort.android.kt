@@ -1426,6 +1426,20 @@ class RustMatrixPort : MatrixPort, VerificationService {
             }.getOrDefault(emptyList())
         }
 
+    override suspend fun roomParentSpaces(roomId: String): List<SpaceParentInfo> =
+        withContext(matrixDispatcher) {
+            runCatching {
+                withClient { it.roomParentSpaces(roomId) }
+                    .map { parent ->
+                        SpaceParentInfo(
+                            spaceId = parent.spaceId,
+                            name = parent.name,
+                            avatarUrl = parent.avatarUrl
+                        )
+                    }
+            }.getOrDefault(emptyList())
+        }
+
     override suspend fun createSpace(
         name: String,
         topic: String?,

@@ -262,6 +262,7 @@ class RoomsViewModel(
         val lastEvent = entry.latestEvent
         val lastType = determineMessageType(lastEvent)
         val lastBody = formatBodyForPreview(lastEvent, lastType)
+        val space = currentState.parentSpaces[entry.roomId]
 
         return RoomListItemUi(
             roomId = entry.roomId,
@@ -278,8 +279,52 @@ class RoomsViewModel(
             lastMessageSender = lastEvent?.sender,
             lastMessageType = lastType,
             lastMessageTs = lastEvent?.timestamp,
-            isSharingLocation = LiveLocationSharingCoordinator.isSharing(entry.roomId)
+            isSharingLocation = LiveLocationSharingCoordinator.isSharing(entry.roomId),
+            parentSpaceId = space?.spaceId,
+            parentSpaceName = space?.name,
+            parentSpaceAvatarUrl = space?.spaceId?.let { currentState.parentSpaceAvatarPath[it] }
         )
+    }
+
+    // Only re-resolve when the visible room set actually changes; the search box and the
+    // type filter call recomputeGroupedRooms on every keystroke. The key lives in the state
+    // so it is cleared together with the maps it guards when observers are reset.
+    private fun loadParentSpaces() {
+        val roomIds = currentState.allItems.map { it.roomId }
+        if (roomIds.isEmpty()) return
+        val key = roomIds.joinToString(",")
+        if (key == currentState.parentSpacesResolvedKey) return
+        updateState { copy(parentSpacesResolvedKey = key) }
+        launch {
+            val byRoom = buildMap {
+                for (roomId in roomIds) {
+                    val space = runSafe { service.port.roomParentSpaces(roomId) }?.firstOrNull()
+                    if (space != null) put(roomId, space)
+                }
+            }
+            updateState {
+                fun List<RoomListItemUi>.withSpaces() = map { item ->
+                    val space = byRoom[item.roomId]
+                    if (space == null) item
+                    else item.copy(
+                        parentSpaceId = space.spaceId,
+                        parentSpaceName = space.name,
+                        parentSpaceAvatarUrl = parentSpaceAvatarPath[space.spaceId]
+                    )
+                }
+                copy(
+                    parentSpaces = byRoom,
+                    allItems = allItems.withSpaces(),
+                    favouriteItems = favouriteItems.withSpaces(),
+                    normalItems = normalItems.withSpaces(),
+                    lowPriorityItems = lowPriorityItems.withSpaces(),
+                    inviteItems = inviteItems.withSpaces()
+                )
+            }
+            byRoom.values.forEach { space ->
+                maybePrefetchParentSpaceAvatar(space.spaceId, space.avatarUrl)
+            }
+        }
     }
 
 
@@ -491,6 +536,7 @@ class RoomsViewModel(
                 unreadDmsCount = unreadDmsCount,
             )
         }
+        loadParentSpaces()
     }
 
     private fun maybePrefetchRoomAvatar(roomId: String, avatarMxc: String?) {
@@ -499,6 +545,25 @@ class RoomsViewModel(
 
         resolveAvatar(service, avatarMxc, 96) { path ->
             copy(roomAvatarPath = roomAvatarPath + (roomId to path))
+        }
+    }
+
+    private fun maybePrefetchParentSpaceAvatar(spaceId: String, avatarMxc: String?) {
+        if (avatarMxc.isNullOrBlank()) return
+        if (currentState.parentSpaceAvatarPath.containsKey(spaceId)) return
+
+        resolveAvatar(service, avatarMxc, 64) { path ->
+            val updated = copy(parentSpaceAvatarPath = parentSpaceAvatarPath + (spaceId to path))
+            fun List<RoomListItemUi>.withSpacePath() = map { item ->
+                if (item.parentSpaceId == spaceId) item.copy(parentSpaceAvatarUrl = path) else item
+            }
+            updated.copy(
+                allItems = updated.allItems.withSpacePath(),
+                favouriteItems = updated.favouriteItems.withSpacePath(),
+                normalItems = updated.normalItems.withSpacePath(),
+                lowPriorityItems = updated.lowPriorityItems.withSpacePath(),
+                inviteItems = updated.inviteItems.withSpacePath()
+            )
         }
     }
 

@@ -909,6 +909,10 @@ impl Client {
         )
     }
 
+    pub fn room_parent_spaces(&self, room_id: String) -> Result<Vec<SpaceParentInfo>, FfiError> {
+        RT.block_on(self.core.room_parent_spaces(room_id))
+    }
+
     pub fn thread_replies(
         &self,
         room_id: String,

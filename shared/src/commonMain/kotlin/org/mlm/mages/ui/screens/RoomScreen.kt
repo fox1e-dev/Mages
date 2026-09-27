@@ -1190,7 +1190,7 @@ private fun RoomTopBar(
 //                            }
                         }
                         Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
+                        Column {
                             Text(
                                 roomName,
                                 style = MaterialTheme.typography.titleMedium,
@@ -1216,12 +1216,6 @@ private fun RoomTopBar(
                                 }
                             }
                         }
-                        Icon(
-                            Icons.Default.KeyboardArrowDown,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp),
-                        )
                     }
                 },
                 navigationIcon = {

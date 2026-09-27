@@ -68,7 +68,7 @@ use crate::{
     RoomInfoSnapshot, RoomJoinRule, RoomListEntry, RoomListMembership, RoomPowerLevelChanges,
     RoomPowerLevels, RoomPreview, RoomPreviewMembership, RoomSummary, RoomTags, RoomUpgradeLinks,
     SearchHit, SearchPage, SeenByEntry, SendState, SendUpdate, SpaceChildInfo, SpaceHierarchyPage,
-    SpaceInfo, SuccessorRoomInfo, ThreadPage, ThreadSummary, UnreadStats,
+    SpaceInfo, SpaceParentInfo, SuccessorRoomInfo, ThreadPage, ThreadSummary, UnreadStats,
     ForwardResult,
     VerificationInboxObserver, build_unstable_poll_content, latest_room_event_for,
     map_event_id_via_timeline, map_timeline_event, paginate_backwards_visible,
@@ -3300,6 +3300,55 @@ impl CoreClient {
             }
         }
         Ok(())
+    }
+
+    // Parent spaces are a claim made by the child room, so per spec they are only honoured
+    // when the sender could have added the room to that space, and never for spaces the
+    // user is not in (otherwise a hidden room would leak into their space UI).
+    pub async fn room_parent_spaces(&self, room_id: String) -> Result<Vec<SpaceParentInfo>, FfiError> {
+        use matrix_sdk::ruma::events::{
+            space::{child::SpaceChildEventContent, parent::SpaceParentEventContent},
+            StateEventType,
+        };
+
+        let rid = Self::parse_rid(&room_id)?;
+        let room = self.sdk.get_room(&rid).or_ffi("room not found")?;
+
+        let mut out = Vec::new();
+        for raw in room.get_state_events_static::<SpaceParentEventContent>().await.ffi()? {
+            let Ok(event) = raw.deserialize() else {
+                continue;
+            };
+            let Some(sync) = event.as_sync() else {
+                continue;
+            };
+
+            let space_id = sync.state_key().clone();
+            let Some(space) = self.sdk.get_room(&space_id) else {
+                continue;
+            };
+
+            let has_child_event = space
+                .get_state_event_static_for_key::<SpaceChildEventContent, _>(&rid)
+                .await
+                .map(|found| found.is_some())
+                .unwrap_or(false);
+            if !has_child_event {
+                let Ok(power_levels) = space.power_levels().await else {
+                    continue;
+                };
+                if !power_levels.user_can_send_state(sync.sender(), StateEventType::SpaceChild) {
+                    continue;
+                }
+            }
+
+            out.push(SpaceParentInfo {
+                space_id: space_id.to_string(),
+                name: space.display_name().await.ok().map(|d| d.to_string()),
+                avatar_url: space.avatar_url().map(|m| m.to_string()),
+            });
+        }
+        Ok(out)
     }
 
     pub async fn space_remove_child(

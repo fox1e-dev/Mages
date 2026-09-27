@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
@@ -65,10 +66,12 @@ fun Avatar(
                     style = when {
                         size >= Sizes.avatarLarge -> MaterialTheme.typography.titleLarge
                         size >= Sizes.avatarMedium -> MaterialTheme.typography.titleMedium
-                        else -> MaterialTheme.typography.labelLarge
+                        size >= 24.dp -> MaterialTheme.typography.labelLarge
+                        else -> MaterialTheme.typography.labelSmall
                     },
                     fontWeight = FontWeight.Bold,
-                    color = contentColor
+                    color = contentColor,
+                    maxLines = 1
                 )
             }
         }

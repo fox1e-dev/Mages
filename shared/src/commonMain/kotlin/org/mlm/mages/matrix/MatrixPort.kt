@@ -528,6 +528,13 @@ data class SpaceChildInfo(
 )
 
 @Serializable
+data class SpaceParentInfo(
+    val spaceId: String,
+    val name: String? = null,
+    val avatarUrl: String? = null
+)
+
+@Serializable
 data class ForwardResult(
     val sent: List<String>,
     val failed: List<String>
@@ -934,6 +941,7 @@ interface MatrixPort {
 
     suspend fun isSpace(roomId: String): Boolean
     suspend fun mySpaces(): List<SpaceInfo>
+    suspend fun roomParentSpaces(roomId: String): List<SpaceParentInfo>
     suspend fun createSpace(
         name: String,
         topic: String?,

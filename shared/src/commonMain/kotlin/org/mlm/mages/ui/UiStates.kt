@@ -12,6 +12,7 @@ import org.mlm.mages.matrix.DeviceSummary
 import org.mlm.mages.matrix.EventType
 import org.mlm.mages.matrix.HomeserverLoginDetails
 import org.mlm.mages.matrix.LiveLocationShare
+import org.mlm.mages.matrix.SpaceParentInfo
 import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.matrix.MatrixPort
 import org.mlm.mages.matrix.Presence
@@ -74,6 +75,9 @@ data class RoomsUiState(
     val isDecliningInvite: Boolean = false,
 
     val roomAvatarPath: Map<String, String> = emptyMap(),
+    val parentSpaces: Map<String, SpaceParentInfo> = emptyMap(),
+    val parentSpaceAvatarPath: Map<String, String> = emptyMap(),
+    val parentSpacesResolvedKey: String = "",
 
     val unreadChatCount: Int = 0,
     val unreadGroupsCount: Int = 0,
@@ -625,6 +629,10 @@ data class RoomListItemUi(
     val lastMessageTs: Long? = null,
 
     val isSharingLocation: Boolean = false,
+
+    val parentSpaceId: String? = null,
+    val parentSpaceName: String? = null,
+    val parentSpaceAvatarUrl: String? = null,
 )
 
 data class SearchUiState(

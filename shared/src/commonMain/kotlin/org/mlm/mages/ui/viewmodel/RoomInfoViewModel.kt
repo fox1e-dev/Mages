@@ -18,6 +18,7 @@ import org.mlm.mages.matrix.RoomJoinRule
 import org.mlm.mages.matrix.RoomNotificationMode
 import org.mlm.mages.matrix.RoomPowerLevelChanges
 import org.mlm.mages.matrix.RoomPowerLevels
+import org.mlm.mages.matrix.SpaceParentInfo
 import org.mlm.mages.matrix.RoomInfoSnapshot
 import org.mlm.mages.matrix.MatrixPort.RoomInfoObserver
 import org.mlm.mages.matrix.RoomPredecessorInfo
@@ -45,6 +46,7 @@ data class RoomInfoUiState(
     val showJoinRuleSpacePicker: Boolean = false,
     val pendingJoinRule: RoomJoinRule? = null,
     val selectableSpaces: List<SpaceInfo> = emptyList(),
+    val parentSpace: SpaceParentInfo? = null,
     val isAdminBusy: Boolean = false,
     val successor: RoomUpgradeInfo? = null,
     val predecessor: RoomPredecessorInfo? = null,
@@ -212,6 +214,7 @@ class RoomInfoViewModel(
             val historyVis = runSafe { service.port.roomHistoryVisibility(roomId) }
             val successor = runSafe { service.port.roomSuccessor(roomId) }
             val predecessor = runSafe { service.port.roomPredecessor(roomId) }
+            val parentSpace = runSafe { service.port.roomParentSpaces(roomId) }?.firstOrNull()
             updateState { copy(isLoadingNotificationMode = true) }
             val notificationMode = runSafe { service.port.roomNotificationMode(roomId) }
 
@@ -247,6 +250,7 @@ class RoomInfoViewModel(
                     historyVisibility = historyVis,
                     successor = successor,
                     predecessor = predecessor,
+                    parentSpace = parentSpace,
                     error = if (profile == null) "Failed to load room info" else null,
                     myPowerLevel = powerLevel,
                     powerLevels = powerLevels,

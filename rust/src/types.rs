@@ -523,6 +523,13 @@ pub struct SpaceHierarchyPage {
 }
 
 #[derive(Clone, Serialize, Deserialize, Record)]
+pub struct SpaceParentInfo {
+    pub space_id: String,
+    pub name: Option<String>,
+    pub avatar_url: Option<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Record)]
 pub struct PollOption {
     pub id: String,
     pub text: String,

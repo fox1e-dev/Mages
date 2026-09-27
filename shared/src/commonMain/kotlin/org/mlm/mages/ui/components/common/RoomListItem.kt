@@ -1,5 +1,6 @@
 package org.mlm.mages.ui.components.common
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -131,6 +132,27 @@ fun RoomListItem(
                             modifier = Modifier.size(14.dp),
                             tint = MaterialTheme.colorScheme.error
                         )
+                    }
+
+                    if (!item.parentSpaceId.isNullOrBlank()) {
+                        Spacer(Modifier.width(Spacing.sm))
+                        Box(
+                            modifier = Modifier
+                                .size(18.dp)
+                                .border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.surfaceContainer,
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Avatar(
+                                name = item.parentSpaceName ?: item.parentSpaceId,
+                                avatarPath = item.parentSpaceAvatarUrl,
+                                size = 16.dp,
+                                shape = CircleShape
+                            )
+                        }
                     }
                 }
 

@@ -55,7 +55,8 @@ fun RoomInfoRoute(
     viewModel: RoomInfoViewModel,
     onBack: () -> Unit,
     onLeaveSuccess: () -> Unit,
-    onOpenMediaGallery: () -> Unit
+    onOpenMediaGallery: () -> Unit,
+    onOpenSpace: (String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarManager: SnackbarManager = koinInject()
@@ -99,6 +100,7 @@ fun RoomInfoRoute(
         onApplyPowerLevelChanges = viewModel::applyPowerLevelChanges,
         onReportRoom = viewModel::reportRoom,
         onOpenRoom = viewModel::openRoom,
+        onOpenSpace = onOpenSpace,
         onOpenMediaGallery = onOpenMediaGallery,
         onShowNotificationSettings = viewModel::showNotificationSettings,
         onHideNotificationSettings = viewModel::hideNotificationSettings,
@@ -148,6 +150,7 @@ fun RoomInfoScreen(
     onApplyPowerLevelChanges: (RoomPowerLevelChanges) -> Unit,
     onReportRoom: (String?) -> Unit,
     onOpenRoom: (String) -> Unit,
+    onOpenSpace: (String) -> Unit,
     onOpenMediaGallery: () -> Unit,
     onShowNotificationSettings: () -> Unit,
     onHideNotificationSettings: () -> Unit,
@@ -233,6 +236,18 @@ fun RoomInfoScreen(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                             onAction = { onOpenRoom(predecessor.roomId) }
                         )
+                    }
+                }
+
+                state.parentSpace?.let { space ->
+                    item {
+                        SettingsGroup {
+                            SettingsNavRow(
+                                icon = Icons.Default.Workspaces,
+                                title = space.name ?: space.spaceId,
+                                onClick = { onOpenSpace(space.spaceId) }
+                            )
+                        }
                     }
                 }
 

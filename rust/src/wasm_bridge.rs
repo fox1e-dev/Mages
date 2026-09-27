@@ -498,6 +498,7 @@ wasm_delegate_json! {
     "ownLastRead"       => own_last_read(room_id: String)                         or OwnReceipt { event_id: None, ts_ms: None };
     "reactionsForEvent" => reactions_for_event(room_id: String, event_id: String)  or Vec::<ReactionSummary>::new();
     "mySpaces"          => my_spaces()                                             or Vec::<SpaceInfo>::new();
+    "roomParentSpaces"  => room_parent_spaces(room_id: String)                     or Vec::<SpaceParentInfo>::new();
 }
 
 wasm_delegate_result_json! {

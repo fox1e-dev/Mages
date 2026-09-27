@@ -1303,6 +1303,11 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
     override suspend fun mySpaces(): List<SpaceInfo> =
         wasmJson.decodeFromJsonElement(requireClient().mySpaces().await<JsAny?>().toJsonElement())
 
+    override suspend fun roomParentSpaces(roomId: String): List<SpaceParentInfo> =
+        wasmJson.decodeFromJsonElement(
+            requireClient().roomParentSpaces(roomId).await<JsAny?>().toJsonElement()
+        )
+
     override suspend fun createSpace(
         name: String,
         topic: String?,

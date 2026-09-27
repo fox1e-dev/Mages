@@ -647,7 +647,15 @@ private fun AppContent(
                                 viewModel = viewModel,
                                 onBack = backStack::popBack,
                                 onLeaveSuccess = { backStack.popUntil { it is Route.Rooms } },
-                                onOpenMediaGallery = { backStack.add(Route.MediaGallery(key.roomId)) }
+                                onOpenMediaGallery = { backStack.add(Route.MediaGallery(key.roomId)) },
+                                onOpenSpace = { spaceId ->
+                                    backStack.add(
+                                        Route.SpaceDetail(
+                                            spaceId,
+                                            viewModel.state.value.parentSpace?.name.orEmpty()
+                                        )
+                                    )
+                                }
                             )
                         }
 
