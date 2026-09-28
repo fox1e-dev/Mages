@@ -34,6 +34,33 @@ import com.fleeksoft.ksoup.nodes.Node
 import com.fleeksoft.ksoup.nodes.TextNode
 import org.mlm.mages.LocalMessageFontSize
 
+private val EMOTE_IMG_TAG = Regex("""<img[^>]*data-mx-emoticon[^>]*>""", RegexOption.IGNORE_CASE)
+private val SRC_ATTR = Regex("""\ssrc\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
+
+/** Bounds the work a single hostile message can ask a client to do. */
+private const val MAX_EMOTES_PER_MESSAGE = 32
+
+/**
+ * The mxc URIs of the custom emotes a `formatted_body` references.
+ *
+ * A cheap tag scan used to decide what to prefetch. It is not a substitute for
+ * [parseFormattedBody], which performs the authoritative parse, but it repeats
+ * the mxc-only rule so a crafted body cannot make a client fetch a
+ * non-mxc URI during prefetch.
+ */
+fun emoteMxcUrisFrom(formattedBody: String?): List<String> {
+    if (formattedBody == null || !formattedBody.contains("data-mx-emoticon")) return emptyList()
+
+    val out = LinkedHashSet<String>()
+    for (match in EMOTE_IMG_TAG.findAll(formattedBody)) {
+        val src = SRC_ATTR.find(match.value)?.groupValues?.get(1)?.trim() ?: continue
+        if (!src.startsWith("mxc://")) continue
+        out += src
+        if (out.size >= MAX_EMOTES_PER_MESSAGE) break
+    }
+    return out.toList()
+}
+
 /** The spec's recommended emote height, scaled to the user's message font size. */
 private val EMOTE_HEIGHT: TextUnit = 32.sp
 

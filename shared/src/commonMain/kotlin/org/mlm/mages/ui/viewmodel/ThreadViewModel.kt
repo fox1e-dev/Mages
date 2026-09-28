@@ -9,17 +9,20 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
-import org.intellij.markdown.html.HtmlGenerator
-import org.intellij.markdown.parser.MarkdownParser
 import org.koin.core.component.inject
 import org.mlm.mages.MatrixService
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.ReplyPreviewKind
+import org.mlm.mages.matrix.ImagePackSummary
 import org.mlm.mages.matrix.TimelineDiff
 import org.mlm.mages.matrix.allowsMediaPreviews
 import org.mlm.mages.settings.AppSettings
 import org.mlm.mages.ui.ThreadUiState
+import org.mlm.mages.ui.components.composer.EmoteSuggestion
+import org.mlm.mages.ui.components.composer.composerToFormattedBody
+import org.mlm.mages.ui.components.composer.composerToPlainBody
+import org.mlm.mages.ui.components.composer.emoteSuggestionsFrom
+import org.mlm.mages.ui.components.core.emoteMxcUrisFrom
 import kotlin.getValue
 
 class ThreadViewModel(
@@ -61,6 +64,7 @@ class ThreadViewModel(
 
     init {
         preloadRoomMembers()
+        loadImagePacks()
         observeTimeline()
         // Load initial thread data after a short delay to let timeline sync
         launch {
@@ -93,6 +97,36 @@ class ThreadViewModel(
                 }
             }
         }
+    }
+
+    private fun loadImagePacks() {
+        launch {
+            val packs = runSafe { service.port.listImagePacks(roomId) }.orEmpty()
+            updateState { copy(imagePacks = packs) }
+        }
+    }
+
+    private var emoteCacheKey: List<ImagePackSummary>? = null
+    private var emoteCache: List<EmoteSuggestion> = emptyList()
+
+    /** Emotes from every pack visible here; the pack name disambiguates duplicates. */
+    val emoteSuggestions: List<EmoteSuggestion>
+        get() {
+            val packs = currentState.imagePacks
+            if (packs === emoteCacheKey) return emoteCache
+            val resolved = emoteSuggestionsFrom(packs)
+            emoteCacheKey = packs
+            emoteCache = resolved
+            return resolved
+        }
+
+    /** Caches an emote referenced by a message in this thread for inline display. */
+    suspend fun emotePreview(thumbnailMxcUri: String?, mxcUrl: String): String? {
+        val key = thumbnailMxcUri ?: mxcUrl
+        currentState.emotePathByMxc[key]?.let { return it }
+        val path = runSafe { service.port.mxcThumbnailToCache(key, 128, 128, false) } ?: return null
+        updateState { copy(emotePathByMxc = emotePathByMxc + (key to path)) }
+        return path
     }
 
     /**
@@ -446,7 +480,36 @@ class ThreadViewModel(
 
     private fun prefetchReplyThumbnails(events: List<MessageEvent>) {
         if (!mediaPreviewsAllowed()) return
-        events.forEach { prefetchReplyThumbnail(it) }
+        events.forEach {
+            prefetchReplyThumbnail(it)
+            prefetchEmotes(it)
+        }
+    }
+
+    private val emoteFetchInFlight = mutableSetOf<String>()
+
+    private companion object {
+        /** Custom emotes render at 32dp, so this covers high-density screens. */
+        const val EMOTE_PX = 128
+    }
+
+    private fun prefetchEmotes(event: MessageEvent) {
+        val missing = emoteMxcUrisFrom(event.formattedBody)
+            .filterNot { currentState.emotePathByMxc.containsKey(it) }
+        if (missing.isEmpty()) return
+
+        launch {
+            val resolved = missing
+                .filter { emoteFetchInFlight.add(it) }
+                .mapNotNull { mxc ->
+                    runSafe { service.port.mxcThumbnailToCache(mxc, EMOTE_PX, EMOTE_PX, false) }
+                        ?.let { mxc to it }
+                }
+                .toMap()
+            missing.forEach { emoteFetchInFlight.remove(it) }
+            if (resolved.isEmpty()) return@launch
+            updateState { copy(emotePathByMxc = emotePathByMxc + resolved) }
+        }
     }
 
     private fun prefetchReplyThumbnail(event: MessageEvent, retryAttempt: Int = 0) {
@@ -619,36 +682,10 @@ class ThreadViewModel(
         return result?.isSuccess == true
     }
 
-    private fun String.toPlainComposerText(): String =
-        Regex("\\[([^]]+)]\\(https://matrix\\.to/#/(@[^)]+)\\)")
-            .replace(this) { matchResult ->
-                val label = matchResult.groupValues[1]
-                if (label.startsWith("@")) label else "@$label"
-            }
+    private fun String.toPlainComposerText(): String = composerToPlainBody(this)
 
-    private val markdownFlavour = CommonMarkFlavourDescriptor()
-
-    private fun String.toFormattedBodyOrNull(): String? {
-        if (isBlank()) return null
-        val matrixMentionRegex = Regex("""\[([^\]]+)\]\(https://matrix\.to/#/(@[^)]+)\)""")
-        val processedText = matrixMentionRegex.replace(this) { match ->
-            val label = match.groupValues[1]
-            val userId = match.groupValues[2]
-            val escapedUserId = escapeHtmlAttribute(userId)
-            val displayLabel = if (label.startsWith("@")) escapeHtml(label) else "@${escapeHtml(label)}"
-            "<a href=\"https://matrix.to/#/$escapedUserId\">$displayLabel</a>"
-        }
-        val parsedTree = MarkdownParser(markdownFlavour).buildMarkdownTreeFromString(processedText)
-        return HtmlGenerator(processedText, parsedTree, markdownFlavour, false).generateHtml()
-    }
-
-    private fun escapeHtml(text: String): String = text
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace("\"", "&quot;")
-
-    private fun escapeHtmlAttribute(text: String): String = escapeHtml(text)
+    private fun String.toFormattedBodyOrNull(): String? =
+        composerToFormattedBody(this, currentState.imagePacks.flatMap { it.images })
 
     override fun onCleared() {
         super.onCleared()

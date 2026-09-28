@@ -28,6 +28,7 @@ import org.mlm.mages.MessageEvent
 import org.mlm.mages.matrix.ReactionSummary
 import org.mlm.mages.ui.ThreadUiState
 import org.mlm.mages.ui.displayPreview
+import org.mlm.mages.ui.components.composer.EmoteSuggestion
 import org.mlm.mages.ui.components.composer.MessageComposer
 import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.components.core.LoadMoreButton
@@ -92,6 +93,8 @@ fun ThreadRoute(
         onDelete = { ev -> viewModel.delete(ev) },
         enterSendsMessage = settings.enterSendsMessage,
         showReactionAvatars = settings.showReactionAvatars,
+        emoteSuggestions = viewModel.emoteSuggestions,
+        resolveEmotePreview = { thumbnail, mxc -> viewModel.emotePreview(thumbnail, mxc) },
     )
 }
 
@@ -113,6 +116,8 @@ fun ThreadScreen(
     onDelete: suspend (MessageEvent) -> Boolean,
     enterSendsMessage: Boolean = false,
     showReactionAvatars: Boolean = true,
+    emoteSuggestions: List<EmoteSuggestion> = emptyList(),
+    resolveEmotePreview: suspend (thumbnailMxcUri: String?, mxcUrl: String) -> String? = { _, _ -> null },
 ) {
     val scope = rememberCoroutineScope()
     var sheetEvent by remember { mutableStateOf<MessageEvent?>(null) }
@@ -202,6 +207,8 @@ fun ThreadScreen(
                     enterSendsMessage = enterSendsMessage,
                     roomMembers = state.roomMembers,
                     avatarPathByUserId = state.avatarByUserId,
+                    emoteSuggestions = emoteSuggestions,
+                    resolveEmotePreview = resolveEmotePreview,
                 )
             }
         },
@@ -298,6 +305,7 @@ fun ThreadScreen(
                                         reactionSummaries = bubbleItem.event.reactions,
                                         avatarByUserId = state.avatarByUserId,
                                         replyThumbByEvent = state.replyThumbByEvent,
+                                        emotePaths = state.emotePathByMxc,
                                         onReact = { emoji -> onReact(bubbleItem.event, emoji) },
                                         onLongPress = { sheetEvent = bubbleItem.event },
                                         grouped = shouldGroup,
@@ -645,6 +653,7 @@ private fun ThreadReplyMessage(
     reactionSummaries: List<ReactionSummary>,
     avatarByUserId: Map<String, String>,
     replyThumbByEvent: Map<String, String>,
+    emotePaths: Map<String, String>,
     onReact: (String) -> Unit,
     onLongPress: () -> Unit,
     grouped: Boolean = false,
@@ -699,7 +708,8 @@ private fun ThreadReplyMessage(
             MessageBubble(
                 model = bubbleModel,
                 onLongPress = onLongPress,
-                onReact = onReact
+                onReact = onReact,
+                emotePaths = emotePaths
             )
         }
     }

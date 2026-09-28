@@ -10,9 +10,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
-import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
-import org.intellij.markdown.html.HtmlGenerator
-import org.intellij.markdown.parser.MarkdownParser
 import org.koin.core.component.inject
 import org.mlm.mages.*
 import org.mlm.mages.calls.CallManager
@@ -43,7 +40,10 @@ import org.mlm.mages.ui.components.AttachmentData
 import org.mlm.mages.ui.mediaCaption
 import org.mlm.mages.ui.components.OutgoingMediaMode
 import org.mlm.mages.ui.components.composer.EmoteSuggestion
-import org.mlm.mages.ui.components.core.EmoteRef
+import org.mlm.mages.ui.components.composer.composerToFormattedBody
+import org.mlm.mages.ui.components.composer.composerToPlainBody
+import org.mlm.mages.ui.components.composer.emoteSuggestionsFrom
+import org.mlm.mages.ui.components.core.emoteMxcUrisFrom
 import org.mlm.mages.matrix.ImagePackSummary
 import org.mlm.mages.ui.util.mimeToExtension
 import org.mlm.mages.ui.util.nowMs
@@ -289,21 +289,6 @@ class RoomViewModel(
 
         /** Custom emotes render at 32dp, so this covers high-density screens. */
         const val EMOTE_PX = 128
-
-        /** Bounds the work a single hostile message can ask for. */
-        const val MAX_EMOTES_PER_MESSAGE = 32
-
-        val EMOTE_MARKER = "data-mx-emoticon"
-        val EMOTE_TAG = Regex("""<img[^>]*data-mx-emoticon[^>]*>""", RegexOption.IGNORE_CASE)
-        val SRC_ATTR = Regex("""\ssrc\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
-
-        /** The composer stands an emote in as a markdown image. */
-        val EMOTE_MARKDOWN = Regex("""!\[([^\]]*)]\([^)]*\)""")
-
-        val MENTION_MARKDOWN = Regex("""\[([^\]]+)]\(https://matrix\.to/#/(@[^)]+)\)""")
-
-        val IMG_TAG = Regex("""<img\b[^>]*>""", RegexOption.IGNORE_CASE)
-        val IMG_SRC = Regex("""\ssrc\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
     }
 
     private fun filteredVisibleEvents(items: List<MessageEvent>): List<MessageEvent> =
@@ -799,15 +784,10 @@ class RoomViewModel(
     private fun captionOrFallback(caption: String, event: MessageEvent): String =
         caption.ifBlank { event.attachment?.fileName ?: event.body }
 
-    private fun String.toPlainComposerText(): String =
-        MENTION_MARKDOWN
-            .replace(this) { match ->
-                val label = match.groupValues[1]
-                if (label.startsWith("@")) label else "@$label"
-            }
-            .replace(EMOTE_MARKDOWN) { it.groupValues[1] }
+    private fun String.toPlainComposerText(): String = composerToPlainBody(this)
 
-    private val markdownFlavour = CommonMarkFlavourDescriptor()
+    private fun String.toFormattedBodyOrNull(): String? =
+        composerToFormattedBody(this, currentState.imagePacks.flatMap { it.images })
 
     private var emoteCacheKey: List<ImagePackSummary>? = null
     private var emoteCache: List<EmoteSuggestion> = emptyList()
@@ -824,108 +804,11 @@ class RoomViewModel(
         get() {
             val packs = currentState.imagePacks
             if (packs === emoteCacheKey) return emoteCache
-
-            val byShortcode = LinkedHashMap<String, MutableList<EmoteSuggestion>>()
-            for (pack in packs) {
-                if (!pack.servesEmoticons()) continue
-                val packName = pack.displayName ?: pack.sourceRoom
-                for (image in pack.images) {
-                    byShortcode.getOrPut(image.shortcode) { mutableListOf() } += EmoteSuggestion(
-                        shortcode = image.shortcode,
-                        packName = packName,
-                        ref = EmoteRef(
-                            mxcUri = image.mxcUrl,
-                            alt = image.body ?: image.shortcode,
-                            title = image.shortcode
-                        )
-                    )
-                }
-            }
-
-            val resolved = byShortcode.keys.sorted().flatMap { key ->
-                val siblings = byShortcode.getValue(key)
-                if (siblings.size > 1) siblings else siblings.map { it.copy(packName = null) }
-            }
-
+            val resolved = emoteSuggestionsFrom(packs)
             emoteCacheKey = packs
             emoteCache = resolved
             return resolved
         }
-
-    private fun String.toFormattedBodyOrNull(): String? {
-        if (isBlank()) return null
-        val processedText = MENTION_MARKDOWN.replace(this) { match ->
-            val label = match.groupValues[1]
-            val userId = match.groupValues[2]
-            val escapedUserId = escapeHtmlAttribute(userId)
-            val displayLabel = if (label.startsWith("@")) escapeHtml(label) else "@${escapeHtml(label)}"
-            "<a href=\"https://matrix.to/#/$escapedUserId\">$displayLabel</a>"
-        }
-        val parsedTree = MarkdownParser(markdownFlavour).buildMarkdownTreeFromString(processedText)
-        var html = HtmlGenerator(processedText, parsedTree, markdownFlavour, false).generateHtml()
-        html = html.removeSurrounding("<body>", "</body>")
-        html = html.removeSurrounding("<p>", "</p>")
-        return markEmoteImages(html)?.ifBlank { null } ?: html.ifBlank { null }
-    }
-
-    /**
-     * Rewrites the `<img>` elements the markdown pass produced for emote
-     * placeholders into the form the spec defines for custom emotes.
-     *
-     * The attribute's presence is what marks an image as an emote, so only
-     * images whose `src` resolves to a known pack image are touched; anything
-     * else is left alone. The rewritten tag always quotes the pack's own URI
-     * rather than the parsed one, so nothing from the message reaches the
-     * output verbatim. `height` is set because the spec makes it mandatory for
-     * clients that do not understand custom emotes.
-     */
-    private fun markEmoteImages(html: String): String? {
-        val known = currentState.imagePacks
-            .flatMap { it.images }
-            .associateBy({ it.mxcUrl }, { it })
-        if (known.isEmpty()) return null
-
-        var changed = false
-        val out = IMG_TAG.replace(html) { match ->
-            val tag = match.value
-            val raw = IMG_SRC.find(tag)?.groupValues?.get(1) ?: return@replace tag
-            val image = known[raw] ?: known[raw.decodePercentEscapes()] ?: return@replace tag
-            changed = true
-            val src = escapeHtmlAttribute(image.mxcUrl)
-            val alt = escapeHtmlAttribute(image.body ?: image.shortcode)
-            "<img data-mx-emoticon src=\"$src\" alt=\"$alt\" " +
-                "title=\"${escapeHtmlAttribute(image.shortcode)}\" height=\"32\">"
-        }
-        return if (changed) out else null
-    }
-
-    private fun String.decodePercentEscapes(): String {
-        if (!contains('%')) return this
-        val out = StringBuilder(length)
-        var i = 0
-        while (i < length) {
-            val c = this[i]
-            if (c == '%' && i + 2 < length) {
-                val hex = substring(i + 1, i + 3).toIntOrNull(16)
-                if (hex != null) {
-                    out.append(hex.toChar())
-                    i += 3
-                    continue
-                }
-            }
-            out.append(c)
-            i++
-        }
-        return out.toString()
-    }
-
-    private fun escapeHtml(text: String): String = text
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace("\"", "&quot;")
-
-    private fun escapeHtmlAttribute(text: String): String = escapeHtml(text)
 
     //  Reactions
 
@@ -2950,18 +2833,8 @@ class RoomViewModel(
      */
     private fun ensureEmotes(event: MessageEvent) {
         if (!mediaPreviewsAllowed()) return
-        val html = event.formattedBody?.takeIf { it.contains(EMOTE_MARKER) } ?: return
-
-        val wanted = LinkedHashSet<String>()
-        for (match in EMOTE_TAG.findAll(html)) {
-            val src = SRC_ATTR.find(match.value)?.groupValues?.get(1)?.trim() ?: continue
-            if (!src.startsWith("mxc://")) continue
-            wanted += src
-            if (wanted.size >= MAX_EMOTES_PER_MESSAGE) break
-        }
-        if (wanted.isEmpty()) return
-
-        val missing = wanted.filterNot { currentState.emotePathByMxc.containsKey(it) }
+        val missing = emoteMxcUrisFrom(event.formattedBody)
+            .filterNot { currentState.emotePathByMxc.containsKey(it) }
         if (missing.isEmpty()) return
 
         launch {

@@ -585,6 +585,8 @@ data class ThreadUiState(
     val roomMembers: List<MemberSummary> = emptyList(),
     val focusedEventId: String? = null,
     val focusedEventMissing: Boolean = false,
+    val imagePacks: List<ImagePackSummary> = emptyList(),
+    val emotePathByMxc: Map<String, String> = emptyMap(),
 ) {
     val messageCount: Int get() = (if (rootMessage != null) 1 else 0) + replies.size
 

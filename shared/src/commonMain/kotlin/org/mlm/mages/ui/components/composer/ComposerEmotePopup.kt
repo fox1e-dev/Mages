@@ -25,6 +25,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import org.mlm.mages.matrix.ImagePackSummary
 import org.mlm.mages.ui.components.core.EmoteRef
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
@@ -47,6 +48,34 @@ data class EmoteSuggestion(
     private fun altForMarkdown(): String {
         val raw = ref.label
         return raw.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]").replace("(", "\\(").replace(")", "\\)")
+    }
+}
+
+/**
+ * Emote-servicing images from [packs], ordered by shortcode. The pack name is
+ * kept only where a shortcode is defined more than once, which is the
+ * disambiguation the spec asks clients to provide.
+ */
+fun emoteSuggestionsFrom(packs: List<ImagePackSummary>): List<EmoteSuggestion> {
+    val byShortcode = LinkedHashMap<String, MutableList<EmoteSuggestion>>()
+    for (pack in packs) {
+        if (!pack.servesEmoticons()) continue
+        val packName = pack.displayName ?: pack.sourceRoom
+        for (image in pack.images) {
+            byShortcode.getOrPut(image.shortcode) { mutableListOf() } += EmoteSuggestion(
+                shortcode = image.shortcode,
+                packName = packName,
+                ref = EmoteRef(
+                    mxcUri = image.mxcUrl,
+                    alt = image.body ?: image.shortcode,
+                    title = image.shortcode
+                )
+            )
+        }
+    }
+    return byShortcode.keys.sorted().flatMap { key ->
+        val siblings = byShortcode.getValue(key)
+        if (siblings.size > 1) siblings else siblings.map { it.copy(packName = null) }
     }
 }
 
