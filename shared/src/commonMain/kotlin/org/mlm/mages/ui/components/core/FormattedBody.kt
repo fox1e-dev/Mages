@@ -7,9 +7,11 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -77,6 +79,12 @@ private val ITALIC_TAGS = setOf("i", "em")
 private val UNDERLINE_TAGS = setOf("u", "ins")
 private val STRIKE_TAGS = setOf("s", "del", "strike")
 
+/** The attribute the spec marks a spoiler span with. The value is the reason. */
+private const val SPOILER_ATTR = "data-mx-spoiler"
+
+/** The link tag a concealed spoiler is annotated with, so a tap can reveal it. */
+private const val SPOILER_TAG = "mages-spoiler"
+
 /** Schemes a link may not point at (anything else renders as plain text) */
 private val BLOCKED_SCHEMES = listOf("javascript:", "data:", "vbscript:", "file:")
 
@@ -92,6 +100,7 @@ data class EmoteRef(
     val label: String get() = alt?.takeIf { it.isNotBlank() } ?: title?.takeIf { it.isNotBlank() } ?: mxcUri
 }
 
+/** A run of text the sender marked as hidden, addressed by its position in the body. */
 class FormattedBody(
     val text: AnnotatedString,
     val inlineContent: Map<String, InlineTextContent>
@@ -105,19 +114,34 @@ class FormattedBody(
  * remote URL, and ruma's `OwnedMxcUri` does not validate its input, so bridged
  * content really does arrive carrying `https://` sources. Any other scheme is
  * dropped and the emote degrades to its alt text.
+ *
+ * A spoiler is concealed by painting over its glyphs rather than replacing them,
+ * so the text keeps its metrics and revealing it does not reflow the message.
+ * Revealing is driven by [onReveal], which the parse calls when a still
+ * concealed spoiler is tapped, so [revealed] only has to be a snapshot of the
+ * ones already tapped.
  */
 fun parseFormattedBody(
     html: String,
-    emotePaths: Map<String, String> = emptyMap()
+    emotePaths: Map<String, String> = emptyMap(),
+    conceal: Color? = null,
+    revealed: Set<Int> = emptySet(),
+    onReveal: (Int) -> Unit = {}
 ): FormattedBody {
-    val builder = Builder(emotePaths)
+    val builder = Builder(emotePaths, conceal, revealed, onReveal)
     builder.walk(Ksoup.parse(html).body())
     return builder.build()
 }
 
-private class Builder(private val emotePaths: Map<String, String>) {
+private class Builder(
+    private val emotePaths: Map<String, String>,
+    private val conceal: Color?,
+    private val revealed: Set<Int>,
+    private val onReveal: (Int) -> Unit
+) {
     private val text = AnnotatedString.Builder()
     private val inlineContent = mutableMapOf<String, InlineTextContent>()
+    private var spoilers = 0
 
     fun build() = FormattedBody(text.toAnnotatedString(), inlineContent)
 
@@ -141,6 +165,10 @@ private class Builder(private val emotePaths: Map<String, String>) {
             appendEmote(element)
             return
         }
+        if (isSpoiler(element)) {
+            walkSpoiler(element)
+            return
+        }
 
         val link = if (tag == "a") linkFor(element) else null
         val style = styleFor(tag, link != null)
@@ -157,6 +185,30 @@ private class Builder(private val emotePaths: Map<String, String>) {
         element.childNodes().forEach { walk(it) }
         if (link != null) text.pop()
         if (style != null) text.pop()
+    }
+
+    private fun isSpoiler(element: Element): Boolean =
+        element.normalName() == "span" && element.hasAttr(SPOILER_ATTR)
+
+    private fun walkSpoiler(element: Element) {
+        val index = spoilers++
+
+        if (conceal != null && index !in revealed) {
+            text.pushStyle(SpanStyle(brush = SolidColor(conceal)))
+            text.pushLink(
+                LinkAnnotation.Clickable(
+                    tag = SPOILER_TAG,
+                    linkInteractionListener = { onReveal(index); it }
+                )
+            )
+        }
+
+        element.childNodes().forEach { walk(it) }
+
+        if (conceal != null && index !in revealed) {
+            text.pop()
+            text.pop()
+        }
     }
 
     private fun linkFor(element: Element): String? {
@@ -241,6 +293,10 @@ private fun EmoteImage(emote: EmoteRef) {
 /**
  * Renders a message body, preferring `formatted_body` when the sender supplied
  * one and falling back to the plaintext `body` otherwise.
+ *
+ * Spoilers start concealed and are revealed by tapping them, which is the
+ * disclosure the spec asks for. The conceal colour is drawn from the bubble's
+ * own text colour so it stays legible in both themes.
  */
 @Composable
 fun FormattedBodyText(
@@ -251,8 +307,15 @@ fun FormattedBodyText(
     style: TextStyle = MaterialTheme.typography.bodyMedium,
     onLinkClick: ((String) -> Unit)? = null
 ) {
-    val parsed = remember(formattedBody, emotePaths) {
-        formattedBody?.takeIf { it.isNotBlank() }?.let { parseFormattedBody(it, emotePaths) }
+    val conceal = color.copy(alpha = 0.85f)
+    val revealed = remember { mutableStateSetOf<Int>() }
+
+    // A concealed spoiler carries a clickable annotation that reveals it, so
+    // the parse only has to be redone when the set of revealed ones changes.
+    val parsed = remember(formattedBody, emotePaths, conceal, revealed.toList()) {
+        formattedBody?.takeIf { it.isNotBlank() }?.let { html ->
+            parseFormattedBody(html, emotePaths, conceal, revealed.toSet()) { revealed.add(it) }
+        }
     }
 
     if (parsed == null) {

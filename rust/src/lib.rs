@@ -974,6 +974,11 @@ impl Client {
         }
     }
 
+    pub fn upload_bytes(&self, bytes: Vec<u8>, mime: String) -> Result<String, FfiError> {
+        crate::check_not_on_runtime(stringify!(upload_bytes))?;
+        RT.block_on(self.core.upload_bytes(bytes, &mime))
+    }
+
     pub fn recent_emoji(&self) -> Result<Vec<RecentEmojiEntry>, FfiError> {
         RT.block_on(self.core.recent_emoji())
     }

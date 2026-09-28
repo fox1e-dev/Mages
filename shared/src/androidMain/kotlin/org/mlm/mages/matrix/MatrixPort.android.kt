@@ -1642,6 +1642,10 @@ class RustMatrixPort : MatrixPort, VerificationService {
             runWithFfiResult { withClient { it.setPresence(presence.toFfi(), status) } }.map { }
         }
 
+    override suspend fun uploadBytes(bytes: ByteArray, mime: String): Result<String> =
+        withContext(mediaDispatcher) {
+            runWithFfiResult { withClient { it.uploadBytes(bytes, mime) } }
+        }
     override suspend fun applySyncPresence(presence: Presence) {
         withContext(matrixDispatcher) {
             withClient { it.applySyncPresence(presence.toFfi()) }

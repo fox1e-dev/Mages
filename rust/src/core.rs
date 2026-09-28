@@ -2444,6 +2444,19 @@ impl CoreClient {
         true
     }
 
+    /// Uploads arbitrary bytes and returns the resulting `mxc://` URI.
+    ///
+    /// The spec wants a spoiler's plaintext `body` fallback to point at a
+    /// placeholder image so the redacted text is absent from notifications and
+    /// from clients that only read `body`.
+    pub async fn upload_bytes(&self, bytes: Vec<u8>, mime: &str) -> Result<String, FfiError> {
+        let parsed: mime::Mime = mime
+            .parse()
+            .map_err(|_| FfiError::Msg(format!("unsupported media type {mime:?}")))?;
+        let response = self.sdk.media().upload(&parsed, bytes, None).await.ffi()?;
+        Ok(response.content_uri.to_string())
+    }
+
     pub async fn send_existing_attachment(
         &self,
         room_id: String,

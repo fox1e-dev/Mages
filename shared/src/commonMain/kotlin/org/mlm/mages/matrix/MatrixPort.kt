@@ -1135,6 +1135,8 @@ interface MatrixPort {
     suspend fun spaceInviteUser(spaceId: String, userId: String): Result<Unit>
 
     suspend fun setPresence(presence: Presence, status: String?): Result<Unit>
+    /** Uploads arbitrary bytes and returns the resulting `mxc://` URI. */
+    suspend fun uploadBytes(bytes: ByteArray, mime: String): Result<String>
     suspend fun applySyncPresence(presence: Presence)
     suspend fun mediaPreviewConfig(): MediaPreviewMode?
     suspend fun setMediaPreviewConfig(previews: MediaPreviewMode): Result<Unit>

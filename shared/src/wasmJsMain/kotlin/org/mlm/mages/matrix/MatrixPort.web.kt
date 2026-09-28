@@ -1349,6 +1349,14 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         return unitResult(result.ok, "set presence", result.error)
     }
 
+    override suspend fun uploadBytes(bytes: ByteArray, mime: String): Result<String> {
+        return requireClient()
+            .uploadBytes(bytes.toJsUint8Array(), mime)
+            .awaitStringValue()
+            ?.let { Result.success(it) }
+            ?: Result.failure(IllegalStateException("media upload failed"))
+    }
+
     override suspend fun applySyncPresence(presence: Presence) {
         requireClient().applySyncPresence(presence.name).await()
     }

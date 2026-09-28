@@ -1188,6 +1188,18 @@ impl WasmClient {
         webffi_value(s.core.upload_pack_image(bytes, mime).await)
     }
 
+    #[wasm_bindgen(js_name = uploadBytes)]
+    pub async fn upload_bytes(
+        &self,
+        bytes: Vec<u8>,
+        mime: String,
+    ) -> JsValue {
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        webffi_value(s.core.upload_bytes(bytes, &mime).await)
+    }
+
     #[wasm_bindgen(js_name = recentEmoji)]
     pub async fn recent_emoji(&self) -> JsValue {
         let Some(s) = self.state() else {
