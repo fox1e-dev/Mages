@@ -1,6 +1,5 @@
 package org.mlm.mages.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,15 +59,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import org.mlm.mages.matrix.ImagePackImageEntry
 import org.mlm.mages.ui.ImagePackEditorUiState
 import org.mlm.mages.ui.PackEditorEntry
 import org.mlm.mages.ui.PendingPackImage
+import org.mlm.mages.ui.components.core.PackImageTile
 import org.mlm.mages.ui.components.dialogs.ConfirmationDialog
+import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.viewmodel.ImagePackEditorViewModel
 import mages.shared.generated.resources.Res
@@ -91,6 +88,10 @@ import mages.shared.generated.resources.sticker_pack_unencrypted_notice
 import mages.shared.generated.resources.sticker_pack_usage
 import mages.shared.generated.resources.sticker_pack_usage_any
 import org.jetbrains.compose.resources.stringResource
+
+private val CELL_TILE = 88.dp
+private val CELL_CAPTION = 80.dp
+private val HEADER_FIELD = 56.dp
 
 @Composable
 fun ImagePackEditorRoute(
@@ -277,7 +278,7 @@ private fun PackEditorGrid(
     val gridState = rememberLazyGridState()
 
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 88.dp),
+        columns = GridCells.Adaptive(minSize = CELL_TILE),
         state = gridState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -413,11 +414,14 @@ private fun PackHeader(
                         .size(20.dp)
                 )
             } else {
-                IconButton(onClick = onRemovePack, enabled = isEditable) {
+                IconButton(
+                    onClick = onRemovePack,
+                    enabled = isEditable,
+                    modifier = Modifier.height(HEADER_FIELD)
+                ) {
                     Icon(
                         Icons.Default.Delete,
-                        stringResource(Res.string.sticker_pack_remove),
-                        tint = MaterialTheme.colorScheme.error
+                        stringResource(Res.string.sticker_pack_remove)
                     )
                 }
             }
@@ -425,13 +429,15 @@ private fun PackHeader(
 
         Spacer(Modifier.height(Spacing.xs))
 
+        // Label left, control right on every row, so the three controls share
+        // one alignment axis instead of each picking its own.
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 stringResource(Res.string.sticker_pack_usage),
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(Modifier.width(Spacing.sm))
+            Spacer(Modifier.weight(1f))
             UsageSelector(
                 usage = pack.usage,
                 enabled = !isReadOnly && !isSaving,
@@ -445,7 +451,7 @@ private fun PackHeader(
         ) {
             Text(
                 stringResource(Res.string.sticker_pack_enable_globally),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.weight(1f))
@@ -512,36 +518,41 @@ private fun StoredPackImageCell(
         previewPath = requestPreview(image.thumbnailMxcUri, image.mxcUrl)
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(88.dp)
-    ) {
-        PackImageBox(
-            path = previewPath,
-            contentDescription = image.body ?: image.shortcode,
-            modifier = Modifier.fillMaxSize()
-        )
-        if (!isReadOnly) {
-            RemoveChip(
-                onClick = onRemove,
-                modifier = Modifier.align(Alignment.TopEnd)
-            )
-        }
-        // A stored shortcode is not editable here: changing it means renaming
-        // the pack's entry, which is a save-time operation.
-        Surface(
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f),
+    Column(Modifier.fillMaxWidth()) {
+        Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
+                .height(CELL_TILE)
         ) {
+            PackImageTile(
+                path = previewPath,
+                contentDescription = image.body ?: image.shortcode,
+                modifier = Modifier.fillMaxSize()
+            )
+            if (!isReadOnly) {
+                RemoveChip(
+                    onClick = onRemove,
+                    modifier = Modifier.align(Alignment.TopEnd)
+                )
+            }
+        }
+        // Reserves the same slot a pending cell spends on its shortcode field,
+        // so a stored and a pending image in one row stay on a shared baseline.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(CELL_CAPTION),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            // A stored shortcode is not editable here: changing it means
+            // renaming the pack's entry, which is a save-time operation.
             Text(
                 text = image.shortcode,
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 2.dp, vertical = 1.dp)
+                modifier = Modifier.padding(horizontal = Spacing.xs)
             )
         }
     }
@@ -554,16 +565,13 @@ private fun PendingImageCell(
     onSetShortcode: (String) -> Unit,
     onRemove: () -> Unit
 ) {
-    // The shortcode field sits below the tile rather than over it: the field
-    // needs the extra height for its supporting text, and a grid row sizes to
-    // its tallest cell anyway.
-    Column {
+    Column(Modifier.fillMaxWidth()) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(88.dp)
+                .height(CELL_TILE)
         ) {
-            PackImageBox(
+            PackImageTile(
                 path = pending.previewPath ?: pending.path,
                 contentDescription = pending.shortcode,
                 modifier = Modifier.fillMaxSize()
@@ -575,65 +583,57 @@ private fun PendingImageCell(
                 )
             }
         }
+        // The error replaces the placeholder rather than occupying
+        // `supportingText`, so revealing one does not resize the cell and
+        // reflow every row below it.
         OutlinedTextField(
             value = pending.shortcode,
             onValueChange = onSetShortcode,
             enabled = !isReadOnly,
             singleLine = true,
             isError = pending.shortcodeError != null,
-            textStyle = MaterialTheme.typography.labelSmall,
+            textStyle = MaterialTheme.typography.labelMedium,
             placeholder = { Text(stringResource(Res.string.sticker_pack_shortcode)) },
-            supportingText = pending.shortcodeError?.let { error ->
-                { Text(error, style = MaterialTheme.typography.labelSmall) }
+            supportingText = {
+                Text(
+                    text = pending.shortcodeError.orEmpty(),
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(CELL_CAPTION)
         )
-    }
-}
-
-@Composable
-private fun PackImageBox(
-    path: String?,
-    contentDescription: String?,
-    modifier: Modifier = Modifier
-) {
-    val shape = RoundedCornerShape(8.dp)
-    if (path != null) {
-        val ctx = LocalPlatformContext.current
-        val model = remember(path) {
-            ImageRequest.Builder(ctx).data(path).crossfade(true).build()
-        }
-        AsyncImage(
-            model = model,
-            contentDescription = contentDescription,
-            modifier = modifier
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-        )
-    } else {
-        Box(modifier.clip(shape).background(MaterialTheme.colorScheme.surfaceVariant))
     }
 }
 
 @Composable
 private fun RemoveChip(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        shape = RoundedCornerShape(percent = 50),
-        color = MaterialTheme.colorScheme.errorContainer,
+    Box(
         modifier = modifier
-            .padding(2.dp)
-            .size(24.dp)
+            .size(Sizes.touchTarget)
             .clip(RoundedCornerShape(percent = 50))
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.TopEnd
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                Icons.Default.Close,
-                stringResource(Res.string.sticker_pack_remove),
-                modifier = Modifier.size(14.dp),
-                tint = MaterialTheme.colorScheme.onErrorContainer
-            )
+        Surface(
+            shape = RoundedCornerShape(percent = 50),
+            color = MaterialTheme.colorScheme.errorContainer,
+            modifier = Modifier
+                .padding(2.dp)
+                .size(24.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Default.Close,
+                    stringResource(Res.string.sticker_pack_remove),
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
         }
     }
 }

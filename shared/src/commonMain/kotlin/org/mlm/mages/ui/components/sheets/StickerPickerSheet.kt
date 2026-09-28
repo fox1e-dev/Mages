@@ -1,15 +1,13 @@
 package org.mlm.mages.ui.components.sheets
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material3.*
@@ -21,14 +19,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import mages.shared.generated.resources.Res
 import mages.shared.generated.resources.picker_no_sticker_packs
 import mages.shared.generated.resources.sticker_pack_enable_globally
@@ -37,7 +29,12 @@ import mages.shared.generated.resources.sticker_pack_unencrypted_notice
 import org.jetbrains.compose.resources.stringResource
 import org.mlm.mages.matrix.ImagePackImageEntry
 import org.mlm.mages.matrix.ImagePackSummary
+import org.mlm.mages.ui.components.core.EmptyState
+import org.mlm.mages.ui.components.core.PackImageTile
+import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
+
+private val EMPTY_STATE_HEIGHT = 200.dp
 
 /**
  * Picker for image packs (spec v1.19). Only packs that declare sticker usage, or
@@ -77,13 +74,12 @@ fun StickerPickerSheet(
                 stickerPacks.isEmpty() -> Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 160.dp),
+                        .height(EMPTY_STATE_HEIGHT),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = stringResource(Res.string.picker_no_sticker_packs),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    EmptyState(
+                        icon = Icons.Filled.CollectionsBookmark,
+                        title = stringResource(Res.string.picker_no_sticker_packs)
                     )
                 }
 
@@ -91,8 +87,8 @@ fun StickerPickerSheet(
                     columns = GridCells.Adaptive(minSize = 64.dp),
                     modifier = Modifier.heightIn(max = 400.dp),
                     contentPadding = PaddingValues(
-                        start = Spacing.md,
-                        end = Spacing.md,
+                        start = Spacing.lg,
+                        end = Spacing.lg,
                         top = Spacing.sm,
                         bottom = Spacing.xl,
                     ),
@@ -104,7 +100,8 @@ fun StickerPickerSheet(
                             Text(
                                 text = stringResource(Res.string.sticker_pack_unencrypted_notice),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = Spacing.sm)
                             )
                         }
                     }
@@ -148,7 +145,7 @@ private fun LazyGridScope.packHeader(
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false)
+                modifier = Modifier.weight(1f)
             )
             pack.attribution?.let { attribution ->
                 Text(
@@ -160,11 +157,10 @@ private fun LazyGridScope.packHeader(
                     modifier = Modifier.weight(1f, fill = false)
                 )
             }
-            Spacer(Modifier.weight(1f))
             IconButton(
                 onClick = { onSetPackEnabled(pack, !pack.isGlobal) },
                 enabled = !isUpdating,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(Sizes.touchTarget)
             ) {
                 if (isUpdating) {
                     CircularProgressIndicator(
@@ -198,30 +194,15 @@ private fun PackImageCell(
     onSelect: (ImagePackImageEntry) -> Unit,
 ) {
     var previewPath by remember(image.mxcUrl) { mutableStateOf<String?>(null) }
-    val context = LocalPlatformContext.current
 
     LaunchedEffect(image.mxcUrl) {
         previewPath = requestPreview(image.thumbnailMxcUri, image.mxcUrl)
     }
 
-    val modifier = Modifier
-        .size(56.dp)
-        .clip(RoundedCornerShape(8.dp))
-        .background(MaterialTheme.colorScheme.surfaceVariant)
-        .clickable { onSelect(image) }
-
-    val path = previewPath
-    if (path != null) {
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(path)
-                .crossfade(true)
-                .build(),
-            contentDescription = image.body ?: image.shortcode,
-            contentScale = ContentScale.Fit,
-            modifier = modifier
-        )
-    } else {
-        Box(modifier = modifier)
-    }
+    PackImageTile(
+        path = previewPath,
+        contentDescription = image.body ?: image.shortcode,
+        modifier = Modifier.size(56.dp),
+        onClick = { onSelect(image) }
+    )
 }

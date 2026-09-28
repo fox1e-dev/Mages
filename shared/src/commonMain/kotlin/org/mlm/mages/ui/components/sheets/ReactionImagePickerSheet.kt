@@ -1,12 +1,11 @@
 package org.mlm.mages.ui.components.sheets
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddReaction
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,17 +15,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
-import coil3.request.crossfade
+import mages.shared.generated.resources.Res
+import mages.shared.generated.resources.picker_no_reaction_images
+import org.jetbrains.compose.resources.stringResource
 import org.mlm.mages.matrix.ImagePackImageEntry
 import org.mlm.mages.matrix.ImagePackSummary
+import org.mlm.mages.ui.components.core.EmptyState
 import org.mlm.mages.ui.components.core.EmoteRef
+import org.mlm.mages.ui.components.core.PackImageTile
 import org.mlm.mages.ui.theme.Spacing
+
+private val EMPTY_STATE_HEIGHT = 200.dp
 
 /**
  * Picks an image to react with, per MSC4027, where the reaction key is the mxc
@@ -53,13 +53,12 @@ fun ReactionImagePickerSheet(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 160.dp),
+                        .height(EMPTY_STATE_HEIGHT),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "No images available to react with",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    EmptyState(
+                        icon = Icons.Default.AddReaction,
+                        title = stringResource(Res.string.picker_no_reaction_images)
                     )
                 }
                 return@Column
@@ -69,8 +68,8 @@ fun ReactionImagePickerSheet(
                 columns = GridCells.Adaptive(minSize = 64.dp),
                 modifier = Modifier.heightIn(max = 400.dp),
                 contentPadding = PaddingValues(
-                    start = Spacing.md,
-                    end = Spacing.md,
+                    start = Spacing.lg,
+                    end = Spacing.lg,
                     top = Spacing.sm,
                     bottom = Spacing.xl,
                 ),
@@ -111,24 +110,10 @@ private fun ReactionImageCell(
         previewPath = resolvePreview(image.thumbnailMxcUri, image.mxcUrl)
     }
 
-    val modifier = Modifier
-        .size(64.dp)
-        .clip(RoundedCornerShape(8.dp))
-        .background(MaterialTheme.colorScheme.surfaceVariant)
-        .clickable { onClick() }
-
-    val path = previewPath
-    if (path != null) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalPlatformContext.current)
-                .data(path)
-                .crossfade(true)
-                .build(),
-            contentDescription = image.body ?: image.shortcode,
-            contentScale = ContentScale.Fit,
-            modifier = modifier
-        )
-    } else {
-        Box(modifier = modifier)
-    }
+    PackImageTile(
+        path = previewPath,
+        contentDescription = image.body ?: image.shortcode,
+        modifier = Modifier.size(64.dp),
+        onClick = onClick
+    )
 }
