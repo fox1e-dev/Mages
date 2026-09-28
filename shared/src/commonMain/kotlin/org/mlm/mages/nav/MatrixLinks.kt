@@ -29,6 +29,11 @@ private fun looksLikeRoomId(id: String) = id.startsWith("!") && ':' in id
 private fun looksLikeAlias(id: String) = id.startsWith("#") && ':' in id
 private fun looksLikeEvent(id: String) = id.startsWith("$")
 
+fun matrixToUserLink(mxid: String): String? {
+    val id = mxid.trim()
+    return if (looksLikeUser(id)) "https://matrix.to/#/$id" else null
+}
+
 fun parseMatrixLink(urlOrId: String): MatrixLink {
     val raw = urlOrId.trim()
     if (raw.isEmpty()) return MatrixLink.Unsupported

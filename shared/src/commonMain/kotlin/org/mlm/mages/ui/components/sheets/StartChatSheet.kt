@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +23,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.mlm.mages.matrix.DirectoryUser
 import org.mlm.mages.matrix.MatrixPort
+import org.mlm.mages.nav.matrixToUserLink
+import org.mlm.mages.platform.ShareContent
+import org.mlm.mages.platform.rememberShareHandler
 import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
@@ -37,6 +41,7 @@ fun StartChatSheet(
     onJoinByAddress: (String) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
+    val shareHandler = rememberShareHandler()
     var query by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<DirectoryUser>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
@@ -44,6 +49,8 @@ fun StartChatSheet(
     var dmInProgress by remember { mutableStateOf<String?>(null) } // userId being started
     var joinAddress by remember { mutableStateOf("") }
     var showJoinField by remember { mutableStateOf(false) }
+    val myUserId = remember { matrixPort.whoami() }
+    val inviteLink = remember(myUserId) { myUserId?.let(::matrixToUserLink) }
 
     LaunchedEffect(query) {
         val term = query.trim()
@@ -207,6 +214,16 @@ fun StartChatSheet(
                                     onOpenDirectory()
                                 }
                             )
+                        }
+                        if (inviteLink != null) {
+                            item {
+                                ActionButton(
+                                    icon = Icons.Default.Share,
+                                    label = "Invite to chat on Matrix",
+                                    description = myUserId,
+                                    onClick = { shareHandler(ShareContent(text = inviteLink)) }
+                                )
+                            }
                         }
                         item {
                             ActionButton(
