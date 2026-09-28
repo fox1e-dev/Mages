@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.koin.compose.koinInject
+import org.mlm.mages.emoji.RecentEmojiStore
 import org.mlm.mages.ui.theme.Spacing
 
 @Composable
@@ -20,7 +22,18 @@ fun EmojiPickerSheet(
     onDismiss: () -> Unit,
     onEmojiSelected: (String) -> Unit,
 ) {
-    var selectedCategory by remember { mutableStateOf(emojiCategories.first()) }
+    val recentStore: RecentEmojiStore = koinInject()
+    val recent by recentStore.recent.collectAsState()
+
+    val categories = remember(recent) {
+        if (recent.isEmpty()) {
+            emojiCategories
+        } else {
+            listOf(EmojiCategory("Recent", recent.map { it.emoji })) + emojiCategories
+        }
+    }
+
+    var selectedCategory by remember(categories) { mutableStateOf(categories.first()) }
     val gridState = rememberLazyGridState()
 
     // Reset grid scroll when category changes
@@ -33,11 +46,11 @@ fun EmojiPickerSheet(
                 .navigationBarsPadding()
         ) {
             SecondaryScrollableTabRow(
-                selectedTabIndex = emojiCategories.indexOf(selectedCategory),
+                selectedTabIndex = categories.indexOf(selectedCategory),
                 edgePadding = Spacing.md,
                 divider = {},
             ) {
-                emojiCategories.forEach { category ->
+                categories.forEach { category ->
                     Tab(
                         selected = category == selectedCategory,
                         onClick = { selectedCategory = category },

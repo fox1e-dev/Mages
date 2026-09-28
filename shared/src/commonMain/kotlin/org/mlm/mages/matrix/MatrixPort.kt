@@ -543,6 +543,12 @@ data class SpaceParentInfo(
 )
 
 @Serializable
+data class RecentEmojiEntry(
+    val emoji: String,
+    val total: ULong = 0u
+)
+
+@Serializable
 data class ImagePackImageEntry(
     val shortcode: String,
     val mxcUrl: String,
@@ -992,6 +998,12 @@ interface MatrixPort {
         stateKey: String,
         enabled: Boolean
     ): Result<Unit>
+
+    /** `m.recent_emoji`, most recently used first. */
+    suspend fun recentEmoji(): List<RecentEmojiEntry>
+
+    /** Records one use of [emoji], reordering and truncating as the spec asks. */
+    suspend fun recordEmojiUse(emoji: String): Result<Unit>
 
     /** Downloads a pack image into the media cache and returns a local path. */
     suspend fun packImageToCache(

@@ -10,6 +10,7 @@ import org.mlm.mages.accounts.AccountStore
 import org.mlm.mages.accounts.MatrixClients
 import org.mlm.mages.calls.CallManager
 import org.mlm.mages.calls.IncomingCallTracker
+import org.mlm.mages.emoji.RecentEmojiStore
 import org.mlm.mages.settings.AppSettings
 import org.mlm.mages.ui.components.snackbar.SnackbarManager
 import org.mlm.mages.ui.viewmodel.*
@@ -28,6 +29,7 @@ val accountModule = module {
     single { MatrixClients(get()) }
     single { MatrixService(get(), get()) }
     single { VerificationCoordinator(get()) }
+    single { RecentEmojiStore { get<MatrixClients>().portOrNull ?: error("no active account") } }
 
 }
 

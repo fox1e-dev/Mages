@@ -1635,6 +1635,14 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
     ): Result<Unit> =
         requireClient().setImagePackEnabled(roomId, stateKey, enabled).awaitUnitResult()
 
+    override suspend fun recentEmoji(): List<RecentEmojiEntry> =
+        wasmJson.decodeFromJsonElement(
+            requireClient().recentEmoji().await<JsAny?>().toJsonElement()
+        )
+
+    override suspend fun recordEmojiUse(emoji: String): Result<Unit> =
+        requireClient().recordEmojiUse(emoji).awaitUnitResult()
+
     override suspend fun packImageToCache(
         mxcUrl: String,
         width: Int,

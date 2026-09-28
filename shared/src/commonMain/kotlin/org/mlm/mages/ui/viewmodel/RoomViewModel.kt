@@ -13,6 +13,7 @@ import kotlinx.serialization.json.Json
 import org.koin.core.component.inject
 import org.mlm.mages.*
 import org.mlm.mages.calls.CallManager
+import org.mlm.mages.emoji.RecentEmojiStore
 import org.mlm.mages.matrix.*
 import org.mlm.mages.matrix.MatrixPort.RoomCallStateObserver
 import org.mlm.mages.platform.Notifier
@@ -241,6 +242,8 @@ class RoomViewModel(
     private val json: Json by inject()
 
     private val callManager: CallManager by inject()
+
+    private val recentEmoji: RecentEmojiStore by inject()
 
     private val liveLocationSession = LiveLocationSession()
     private val syncedActiveBeaconIds = MutableStateFlow<Set<String>>(emptySet())
@@ -814,6 +817,7 @@ class RoomViewModel(
 
     fun react(event: MessageEvent, emoji: String) {
         if (event.eventId.isBlank()) return
+        recentEmoji.record(emoji)
         launch {
             runSafe { service.port.react(currentState.roomId, event.eventId, emoji) }
         }

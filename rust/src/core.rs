@@ -66,7 +66,7 @@ use crate::{
     MemberActionState, MemberSummary, MessageActionState, MessageEvent, OwnReceipt,
     PasswordLoginKind, PollDefinition,
     PredecessorRoomInfo, Presence, PresenceInfo, PublicRoom, PublicRoomsPage, ReactionSummary,
-    RoomActionState, RoomCallState, RoomDirectoryVisibility, RoomHistoryVisibility,
+    RecentEmojiEntry, RoomActionState, RoomCallState, RoomDirectoryVisibility, RoomHistoryVisibility,
     RoomInfoSnapshot, RoomJoinRule, RoomListEntry, RoomListMembership, RoomPowerLevelChanges,
     RoomPowerLevels, RoomPreview, RoomPreviewMembership, RoomSummary, RoomTags, RoomUpgradeLinks,
     SearchHit, SearchPage, SeenByEntry, SendState, SendUpdate, SpaceChildInfo, SpaceHierarchyPage,
@@ -2691,6 +2691,44 @@ impl CoreClient {
         crate::image_packs::set_image_pack_enabled(&self.sdk, rid, state_key, enabled)
             .await
             .ffi()
+    }
+
+    /// `m.recent_emoji` in the order the spec stores it: most recent first.
+    pub async fn recent_emoji(&self) -> Result<Vec<RecentEmojiEntry>, FfiError> {
+        Ok(self
+            .read_recent_emoji()
+            .await?
+            .recent_emoji
+            .into_iter()
+            .map(|entry| RecentEmojiEntry {
+                emoji: entry.emoji,
+                total: entry.total.try_into().unwrap_or(0),
+            })
+            .collect())
+    }
+
+    /// Records one use, keeping the list ordered and truncated as the spec asks.
+    pub async fn record_emoji_use(&self, emoji: String) -> Result<(), FfiError> {
+        let account = self.sdk.account();
+        let mut content = self.read_recent_emoji().await?;
+        content.increment_emoji_total(&emoji);
+        account.set_account_data(content).await.ffi()?;
+        Ok(())
+    }
+
+    async fn read_recent_emoji(
+        &self,
+    ) -> Result<matrix_sdk::ruma::events::recent_emoji::RecentEmojiEventContent, FfiError> {
+        use matrix_sdk::ruma::events::recent_emoji::RecentEmojiEventContent;
+
+        Ok(self
+            .sdk
+            .account()
+            .account_data::<RecentEmojiEventContent>()
+            .await
+            .ffi()?
+            .and_then(|raw| raw.deserialize().ok())
+            .unwrap_or_else(|| RecentEmojiEventContent::new(Vec::new())))
     }
 
     /// Downloads a pack image as a thumbnail into the media cache.

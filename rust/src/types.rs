@@ -565,6 +565,13 @@ pub struct ImagePackSummary {
     pub images: Vec<ImagePackImageEntry>,
 }
 
+/// One entry of `m.recent_emoji` (spec v1.18).
+#[derive(Clone, Serialize, Deserialize, Record)]
+pub struct RecentEmojiEntry {
+    pub emoji: String,
+    pub total: u64,
+}
+
 #[derive(Clone, Serialize, Deserialize, Record)]
 pub struct PollOption {
     pub id: String,

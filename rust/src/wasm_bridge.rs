@@ -1140,6 +1140,22 @@ impl WasmClient {
         )
     }
 
+    #[wasm_bindgen(js_name = recentEmoji)]
+    pub async fn recent_emoji(&self) -> JsValue {
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        webffi_value(s.core.recent_emoji().await)
+    }
+
+    #[wasm_bindgen(js_name = recordEmojiUse)]
+    pub async fn record_emoji_use(&self, emoji: String) -> JsValue {
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        webffi_unit(s.core.record_emoji_use(emoji).await)
+    }
+
     #[wasm_bindgen(js_name = isEventReadBy)]
     pub async fn is_event_read_by(
         &self,

@@ -1357,6 +1357,18 @@ class RustMatrixPort : MatrixPort, VerificationService {
         }
     }
 
+    override suspend fun recentEmoji(): List<RecentEmojiEntry> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.recentEmoji() } }
+                .getOrElse { emptyList() }
+                .map { RecentEmojiEntry(emoji = it.emoji, total = it.total) }
+        }
+
+    override suspend fun recordEmojiUse(emoji: String): Result<Unit> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.recordEmojiUse(emoji) } }
+        }
+
     override suspend fun packImageToCache(
         mxcUrl: String,
         width: Int,

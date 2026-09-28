@@ -16,6 +16,7 @@ import org.mlm.mages.ReplyPreviewKind
 import org.mlm.mages.matrix.ImagePackSummary
 import org.mlm.mages.matrix.TimelineDiff
 import org.mlm.mages.matrix.allowsMediaPreviews
+import org.mlm.mages.emoji.RecentEmojiStore
 import org.mlm.mages.settings.AppSettings
 import org.mlm.mages.ui.ThreadUiState
 import org.mlm.mages.ui.components.composer.EmoteSuggestion
@@ -57,6 +58,8 @@ class ThreadViewModel(
     private val replyThumbnailFetchInFlight = mutableSetOf<String>()
 
     private val settingsRepo: SettingsRepository<AppSettings> by inject()
+
+    private val recentEmoji: RecentEmojiStore by inject()
 
     private val prefs = settingsRepo.flow
         .stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
@@ -434,6 +437,7 @@ class ThreadViewModel(
      */
     fun react(event: MessageEvent, emoji: String) {
         if (event.eventId.isBlank()) return
+        recentEmoji.record(emoji)
         launch {
             runSafe { service.port.react(roomId, event.eventId, emoji) }
         }

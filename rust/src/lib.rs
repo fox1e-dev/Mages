@@ -930,6 +930,14 @@ impl Client {
         RT.block_on(self.core.set_image_pack_enabled(room_id, state_key, enabled))
     }
 
+    pub fn recent_emoji(&self) -> Result<Vec<RecentEmojiEntry>, FfiError> {
+        RT.block_on(self.core.recent_emoji())
+    }
+
+    pub fn record_emoji_use(&self, emoji: String) -> Result<(), FfiError> {
+        RT.block_on(self.core.record_emoji_use(emoji))
+    }
+
     pub fn pack_image_to_cache(
         &self,
         mxc_url: String,
