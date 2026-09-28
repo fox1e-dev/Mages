@@ -317,6 +317,7 @@ fun FormattedBodyText(
     style: TextStyle = MaterialTheme.typography.bodyMedium,
     onLinkClick: ((String) -> Unit)? = null
 ) {
+    val baseStyle = style.copy(fontSize = LocalMessageFontSize.current.sp)
     val revealed = remember { mutableStateSetOf<Int>() }
 
     // A concealed spoiler carries a clickable annotation that reveals it, so
@@ -331,7 +332,7 @@ fun FormattedBodyText(
         MarkdownText(
             text = fallbackBody,
             color = color,
-            style = style,
+            style = baseStyle,
             onLinkClick = onLinkClick
         )
         return
@@ -340,7 +341,7 @@ fun FormattedBodyText(
     Text(
         text = parsed.text,
         color = color,
-        style = style,
+        style = baseStyle,
         inlineContent = parsed.inlineContent
     )
 }
