@@ -566,6 +566,7 @@ impl Client {
                         backup_download_strategy: BackupDownloadStrategy::OneShot,
                         ..Default::default()
                     })
+                    .dm_room_definition(matrix_sdk_base::DmRoomDefinition::TwoMembers)
                     .handle_refresh_tokens();
                     if enable_share_history_on_invite.unwrap_or(true) {
                         builder = builder.with_enable_share_history_on_invite(true);
@@ -593,6 +594,7 @@ impl Client {
                         backup_download_strategy: BackupDownloadStrategy::OneShot,
                         ..Default::default()
                     })
+                    .dm_room_definition(matrix_sdk_base::DmRoomDefinition::TwoMembers)
                     .handle_refresh_tokens();
 
                     if let Some(ref proxy_url) = proxy {

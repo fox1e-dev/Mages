@@ -1261,7 +1261,7 @@ impl CoreClient {
         let topic = room.topic();
         let member_count = human_member_count(room, room.joined_members_count());
         let is_encrypted = matches!(room.encryption_state(), EncryptionState::Encrypted);
-        let is_dm = room.is_direct().await.unwrap_or(false);
+        let is_dm = room.is_dm();
         let is_public = room.is_public() == Some(true);
         let mut avatar_url = room.avatar_url().map(|m| m.to_string());
         let canonical_alias = room.canonical_alias().map(|a| a.to_string());
@@ -1458,7 +1458,7 @@ impl CoreClient {
             .user_id()
             .ok_or_else(|| FfiError::Msg("not logged in".into()))?;
 
-        let is_dm = room.is_direct().await.unwrap_or(false);
+        let is_dm = room.is_dm();
 
         let power_levels = room.power_levels().await.ffi()?;
         let my_level: i64 = effective_user_level(room, &power_levels, me.as_ref());
@@ -4306,7 +4306,7 @@ impl CoreClient {
         for item in items.iter() {
             let room = &**item;
             let last_ts = room.recency_stamp().map_or(0, |s| s.into());
-            let is_dm = room.is_direct().await.unwrap_or(false);
+            let is_dm = room.is_dm();
             let mut avatar_url = room.avatar_url().map(|mxc| mxc.to_string());
             if avatar_url.is_none() && is_dm {
                 avatar_url = Self::dm_peer_avatar_url(room, self.sdk.user_id()).await;
