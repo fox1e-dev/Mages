@@ -107,6 +107,12 @@ fun MessageBubble(
             )
     val showSenderAvatar = showSenderInfo && showMessageAvatars && !model.sender.id.isNullOrBlank()
 
+    val bubbleContainerColor = if (isMine) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.secondaryContainer
+    }
+
     val bubbleTextColor = if (isMine) {
         MaterialTheme.colorScheme.onPrimaryContainer
     } else {
@@ -162,8 +168,7 @@ fun MessageBubble(
             fractionOfParent = 0.9f
         ) {
             Surface(
-                color = if (isMine) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.secondaryContainer,
+                color = bubbleContainerColor,
                 shape = bubbleShape(isMine, grouping.groupedWithPrev, grouping.groupedWithNext),
                 tonalElevation = if (isMine) 3.dp else 1.dp,
                 modifier = Modifier
@@ -302,7 +307,8 @@ fun MessageBubble(
                                         formattedBody = model.formattedBody,
                                         fallbackBody = model.body,
                                         emotePaths = emotePaths,
-                                        color = bubbleTextColor
+                                        color = bubbleTextColor,
+                                        containerColor = bubbleContainerColor
                                     )
                                 }
                             } else if (model.attachment == null && model.body.isBlank()) {

@@ -295,8 +295,9 @@ private fun EmoteImage(emote: EmoteRef) {
  * one and falling back to the plaintext `body` otherwise.
  *
  * Spoilers start concealed and are revealed by tapping them, which is the
- * disclosure the spec asks for. The conceal colour is drawn from the bubble's
- * own text colour so it stays legible in both themes.
+ * disclosure the spec asks for. Concealing paints the glyphs in the container
+ * colour, so the run keeps its width and the surrounding text does not reflow,
+ * but the hidden words are not legible.
  */
 @Composable
 fun FormattedBodyText(
@@ -304,17 +305,17 @@ fun FormattedBodyText(
     fallbackBody: String,
     emotePaths: Map<String, String> = emptyMap(),
     color: Color = LocalContentColor.current,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     style: TextStyle = MaterialTheme.typography.bodyMedium,
     onLinkClick: ((String) -> Unit)? = null
 ) {
-    val conceal = color.copy(alpha = 0.85f)
     val revealed = remember { mutableStateSetOf<Int>() }
 
     // A concealed spoiler carries a clickable annotation that reveals it, so
     // the parse only has to be redone when the set of revealed ones changes.
-    val parsed = remember(formattedBody, emotePaths, conceal, revealed.toList()) {
+    val parsed = remember(formattedBody, emotePaths, containerColor, revealed.toList()) {
         formattedBody?.takeIf { it.isNotBlank() }?.let { html ->
-            parseFormattedBody(html, emotePaths, conceal, revealed.toSet()) { revealed.add(it) }
+            parseFormattedBody(html, emotePaths, containerColor, revealed.toSet()) { revealed.add(it) }
         }
     }
 
