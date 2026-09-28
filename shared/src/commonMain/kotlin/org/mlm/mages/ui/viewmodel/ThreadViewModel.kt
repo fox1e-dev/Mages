@@ -20,8 +20,10 @@ import org.mlm.mages.emoji.RecentEmojiStore
 import org.mlm.mages.settings.AppSettings
 import org.mlm.mages.ui.ThreadUiState
 import org.mlm.mages.ui.components.composer.EmoteSuggestion
-import org.mlm.mages.ui.components.composer.composerToFormattedBody
+import org.mlm.mages.ui.components.composer.OutgoingText
+import org.mlm.mages.ui.components.composer.SpoilerPlaceholder
 import org.mlm.mages.ui.components.composer.composerToPlainBody
+import org.mlm.mages.ui.components.composer.parseComposerMarkdown
 import org.mlm.mages.ui.components.composer.emoteSuggestionsFrom
 import org.mlm.mages.ui.components.core.emoteMxcUrisFrom
 import org.mlm.mages.ui.components.message.mxcReactionKeys
@@ -657,9 +659,10 @@ class ThreadViewModel(
         val newBody = currentState.input.trim()
         if (newBody.isBlank()) return false
 
-        val plainText = newBody.toPlainComposerText()
-        val formattedBody = newBody.toFormattedBodyOrNull()
-        val result = runSafe { service.edit(roomId, editEvent.eventId, plainText, formattedBody) }
+        val outgoing = newBody.toOutgoingText()
+        val result = runSafe {
+            service.edit(roomId, editEvent.eventId, outgoing?.body.orEmpty(), outgoing?.formattedBody)
+        }
 
         if (result?.isSuccess == true) {
             updateState { copy(editingEvent = null, input = "") }
@@ -690,8 +693,7 @@ class ThreadViewModel(
         val body = text.trim()
         if (body.isBlank()) return false
 
-        val plainText = body.toPlainComposerText()
-        val formattedBody = body.toFormattedBodyOrNull()
+        val outgoing = body.toOutgoingText()
 
         val replyToId = currentState.replyingTo?.eventId
         val replyingTo = currentState.replyingTo
@@ -711,7 +713,14 @@ class ThreadViewModel(
 
         // Send to server - message will appear via timeline diff
         val result = runSafe {
-            service.port.sendThreadText(roomId, rootEventId, plainText, replyToId, latestEventId, formattedBody)
+            service.port.sendThreadText(
+                roomId,
+                rootEventId,
+                outgoing?.body.orEmpty(),
+                replyToId,
+                latestEventId,
+                outgoing?.formattedBody
+            )
         }
 
         if (result?.isSuccess != true) {
@@ -722,10 +731,11 @@ class ThreadViewModel(
         return result?.isSuccess == true
     }
 
-    private fun String.toPlainComposerText(): String = composerToPlainBody(this)
-
-    private fun String.toFormattedBodyOrNull(): String? =
-        composerToFormattedBody(this, currentState.imagePacks.flatMap { it.images })
+    private suspend fun String.toOutgoingText(): OutgoingText? =
+        parseComposerMarkdown(this, currentState.imagePacks.flatMap { it.images })?.let { parsed ->
+            val placeholder = if (parsed.hasSpoilers) SpoilerPlaceholder.upload(service.port) else null
+            OutgoingText(composerToPlainBody(parsed, placeholder), parsed.formattedBody)
+        }
 
     override fun onCleared() {
         super.onCleared()

@@ -41,8 +41,10 @@ import org.mlm.mages.ui.components.AttachmentData
 import org.mlm.mages.ui.mediaCaption
 import org.mlm.mages.ui.components.OutgoingMediaMode
 import org.mlm.mages.ui.components.composer.EmoteSuggestion
-import org.mlm.mages.ui.components.composer.composerToFormattedBody
+import org.mlm.mages.ui.components.composer.OutgoingText
+import org.mlm.mages.ui.components.composer.SpoilerPlaceholder
 import org.mlm.mages.ui.components.composer.composerToPlainBody
+import org.mlm.mages.ui.components.composer.parseComposerMarkdown
 import org.mlm.mages.ui.components.composer.emoteSuggestionsFrom
 import org.mlm.mages.ui.components.core.emoteMxcUrisFrom
 import org.mlm.mages.ui.components.message.mxcReactionKeys
@@ -628,8 +630,6 @@ class RoomViewModel(
         if (pending.isNotEmpty() && !s.isUploadingAttachment) {
             updateState { copy(attachments = emptyList()) }
             val text = s.input.trim()
-            val plainText = text.toPlainComposerText()
-            val formattedBody = text.toFormattedBodyOrNull()
 
             if (hasText) {
                 updateState { copy(input = "") }
@@ -641,27 +641,36 @@ class RoomViewModel(
                 pending.size == 1 &&
                 pending.first().mode == OutgoingMediaMode.Attachment
 
-            if (canUseCaption) {
-                sendAttachmentsInternal(pending, plainText, formattedBody, s.replyingTo?.eventId)
-            } else {
-                sendAttachmentsInternal(pending, replyToEventId = s.replyingTo?.eventId)
-                if (hasText) {
-                    val originalInput = s.input
-                    launch {
-                        val replyTo = s.replyingTo
-                        val result = if (replyTo != null) {
-                            service.reply(s.roomId, replyTo.eventId, plainText, formattedBody)
-                        } else {
-                            service.sendMessage(s.roomId, plainText, formattedBody)
-                        }
-                        if (result?.isSuccess != true) {
-                            updateState { copy(input = originalInput) }
-                            launch { saveDraft(s.roomId, originalInput) }
-                            _events.send(Event.ShowError(result.toUserMessage(if (replyTo != null) "Reply failed" else "Send failed")))
-                        }
-                        updateState { copy(replyingTo = null, seenByEntries = emptyList(), lastOutgoingRead = false) }
-                    }
+            val originalInput = s.input
+            val replyTo = s.replyingTo
+
+            launch {
+                val outgoing = if (hasText) text.toOutgoingText() else null
+
+                if (canUseCaption) {
+                    sendAttachmentsInternal(
+                        pending,
+                        outgoing?.body,
+                        outgoing?.formattedBody,
+                        replyTo?.eventId
+                    )
+                    return@launch
                 }
+
+                sendAttachmentsInternal(pending, replyToEventId = replyTo?.eventId)
+                if (outgoing == null) return@launch
+
+                val result = if (replyTo != null) {
+                    service.reply(s.roomId, replyTo.eventId, outgoing.body, outgoing.formattedBody)
+                } else {
+                    service.sendMessage(s.roomId, outgoing.body, outgoing.formattedBody)
+                }
+                if (result?.isSuccess != true) {
+                    updateState { copy(input = originalInput) }
+                    launch { saveDraft(s.roomId, originalInput) }
+                    _events.send(Event.ShowError(result.toUserMessage(if (replyTo != null) "Reply failed" else "Send failed")))
+                }
+                updateState { copy(replyingTo = null, seenByEntries = emptyList(), lastOutgoingRead = false) }
             }
             return
         }
@@ -669,17 +678,16 @@ class RoomViewModel(
         if (hasText) {
             val originalInput = s.input
             val text = s.input.trim()
-            val plainText = text.toPlainComposerText()
-            val formattedBody = text.toFormattedBodyOrNull()
             updateState { copy(input = "") }
             draftJob?.cancel()
             launch {
                 saveDraft(s.roomId, "")
                 val replyTo = s.replyingTo
+                val outgoing = text.toOutgoingText()
                 val result = if (replyTo != null) {
-                    service.reply(s.roomId, replyTo.eventId, plainText, formattedBody)
+                    service.reply(s.roomId, replyTo.eventId, outgoing?.body.orEmpty(), outgoing?.formattedBody)
                 } else {
-                    service.sendMessage(s.roomId, plainText, formattedBody)
+                    service.sendMessage(s.roomId, outgoing?.body.orEmpty(), outgoing?.formattedBody)
                 }
                 if (result?.isSuccess != true) {
                     updateState { copy(input = originalInput) }
@@ -747,17 +755,21 @@ class RoomViewModel(
         val target = s.editing ?: return
         if (s.editingPoll != null) return
         val rawInput = s.input.trim()
-        val plainText = rawInput.toPlainComposerText()
-        val formattedBody = rawInput.toFormattedBodyOrNull()
         val isCaptionEdit = target.attachment != null
         if (!isCaptionEdit && rawInput.isBlank()) return
 
         launch {
+            val outgoing = rawInput.toOutgoingText()
             val result = if (isCaptionEdit) {
                 val caption = rawInput.takeIf { it.isNotBlank() }
-                service.port.editCaption(s.roomId, target.eventId, caption, formattedBody.takeIf { caption != null })
+                service.port.editCaption(
+                    s.roomId,
+                    target.eventId,
+                    caption,
+                    outgoing?.formattedBody.takeIf { caption != null }
+                )
             } else {
-                service.edit(s.roomId, target.eventId, plainText, formattedBody)
+                service.edit(s.roomId, target.eventId, outgoing?.body.orEmpty(), outgoing?.formattedBody)
             }
             if (result.isSuccess) {
                 updateState {
@@ -766,8 +778,12 @@ class RoomViewModel(
                         copy(editing = null, editingPoll = null, input = "")
                     } else {
                         val updated = allEvents[idx].copy(
-                            body = if (isCaptionEdit) captionOrFallback(rawInput, target) else plainText,
-                            formattedBody = formattedBody,
+                            body = if (isCaptionEdit) {
+                                captionOrFallback(rawInput, target)
+                            } else {
+                                outgoing?.body.orEmpty()
+                            },
+                            formattedBody = outgoing?.formattedBody,
                             isEdited = true,
                         )
                         val newAll = allEvents.toMutableList().also { it[idx] = updated }
@@ -790,10 +806,11 @@ class RoomViewModel(
     private fun captionOrFallback(caption: String, event: MessageEvent): String =
         caption.ifBlank { event.attachment?.fileName ?: event.body }
 
-    private fun String.toPlainComposerText(): String = composerToPlainBody(this)
-
-    private fun String.toFormattedBodyOrNull(): String? =
-        composerToFormattedBody(this, currentState.imagePacks.flatMap { it.images })
+    private suspend fun String.toOutgoingText(): OutgoingText? =
+        parseComposerMarkdown(this, currentState.imagePacks.flatMap { it.images })?.let { parsed ->
+            val placeholder = if (parsed.hasSpoilers) SpoilerPlaceholder.upload(service.port) else null
+            OutgoingText(composerToPlainBody(parsed, placeholder), parsed.formattedBody)
+        }
 
     private var emoteCacheKey: List<ImagePackSummary>? = null
     private var emoteCache: List<EmoteSuggestion> = emptyList()
