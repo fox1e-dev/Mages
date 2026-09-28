@@ -11,7 +11,6 @@ import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -194,10 +193,19 @@ private class Builder(
         val index = spoilers++
 
         if (conceal != null && index !in revealed) {
-            text.pushStyle(SpanStyle(brush = SolidColor(conceal)))
+            text.pushStyle(SpanStyle(color = conceal))
+            // A link annotation with no styles of its own inherits the ambient
+            // link style, which recolours and underlines the range and so would
+            // undo the concealment. The styles have to be spelled out here.
             text.pushLink(
                 LinkAnnotation.Clickable(
                     tag = SPOILER_TAG,
+                    styles = TextLinkStyles(
+                        SpanStyle(
+                            color = conceal,
+                            textDecoration = TextDecoration.None
+                        )
+                    ),
                     linkInteractionListener = { onReveal(index); it }
                 )
             )
