@@ -235,40 +235,11 @@ private fun SpaceChildItem(
 ) {
     ListItem(
         headlineContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    child.name ?: child.alias ?: child.roomId,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-                if (child.suggested) {
-                    Spacer(Modifier.width(Spacing.xs))
-                    Surface(
-                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                        shape = MaterialTheme.shapes.extraSmall
-                    ) {
-                        Text(
-                            stringResource(Res.string.space_child_suggested),
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-                if (!child.isSpace && child.membership == null) {
-                    Spacer(Modifier.width(Spacing.xs))
-                    Surface(
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = MaterialTheme.shapes.extraSmall
-                    ) {
-                        Text(
-                            stringResource(Res.string.space_child_not_joined),
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-            }
+            Text(
+                child.name ?: child.alias ?: child.roomId,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         },
         supportingContent = child.topic?.let {
             { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis) }

@@ -21,7 +21,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -33,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import mages.shared.generated.resources.Res
-import mages.shared.generated.resources.auto_download_previews
 import mages.shared.generated.resources.back
 import mages.shared.generated.resources.media_cache
 import mages.shared.generated.resources.media_cache_clear_confirm_body
@@ -56,7 +54,6 @@ fun MediaCacheRoute(onBack: () -> Unit) {
         state = state,
         onBack = onBack,
         onClearCache = viewModel::clearCache,
-        onAutoDownloadChange = viewModel::setAutoDownloadPreviews,
     )
 }
 
@@ -66,7 +63,6 @@ fun MediaCacheScreen(
     state: MediaCacheUiState,
     onBack: () -> Unit,
     onClearCache: () -> Unit,
-    onAutoDownloadChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showConfirm by remember { mutableStateOf(false) }
@@ -120,20 +116,6 @@ fun MediaCacheScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                }
-            )
-
-            HorizontalDivider()
-
-            ListItem(
-                headlineContent = {
-                    Text(stringResource(Res.string.auto_download_previews))
-                },
-                trailingContent = {
-                    Switch(
-                        checked = state.autoDownloadPreviews,
-                        onCheckedChange = onAutoDownloadChange,
-                    )
                 }
             )
 

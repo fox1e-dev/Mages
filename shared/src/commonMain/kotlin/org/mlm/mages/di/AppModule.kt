@@ -111,7 +111,7 @@ val viewModelModule = module {
 
     viewModel { AccountsViewModel(get(), get()) }
 
-    viewModel { MediaCacheViewModel(get(), get()) }
+    viewModel { MediaCacheViewModel(get()) }
 
     viewModel { params -> ImagePackEditorViewModel(get(), params.get()) }
 }

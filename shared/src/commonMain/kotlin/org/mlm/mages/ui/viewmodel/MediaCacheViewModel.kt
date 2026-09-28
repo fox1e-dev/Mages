@@ -1,33 +1,22 @@
 package org.mlm.mages.ui.viewmodel
 
 import androidx.lifecycle.viewModelScope
-import io.github.mlmgames.settings.core.SettingsRepository
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.MediaCacheOverview
-import org.mlm.mages.settings.AppSettings
-import org.mlm.mages.settings.MediaPreviewsMode
 
 data class MediaCacheUiState(
     val isLoading: Boolean = true,
     val overview: MediaCacheOverview? = null,
-    val autoDownloadPreviews: Boolean = true,
     val isClearing: Boolean = false,
     val error: String? = null,
 )
 
 class MediaCacheViewModel(
     private val service: MatrixService,
-    private val settingsRepository: SettingsRepository<AppSettings>,
 ) : BaseViewModel<MediaCacheUiState>(MediaCacheUiState()) {
 
     init {
-        settingsRepository.flow
-            .onEach { updateState { copy(autoDownloadPreviews = it.mediaPreviews != MediaPreviewsMode.Off) } }
-            .launchIn(viewModelScope)
-
         load()
     }
 
@@ -46,21 +35,6 @@ class MediaCacheViewModel(
             service.port.clearMediaCache()
                 .onSuccess { load() }
                 .onFailure { updateState { copy(isClearing = false, error = it.message) } }
-        }
-    }
-
-    fun setAutoDownloadPreviews(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsRepository.update {
-                val current = it.mediaPreviews
-                it.copy(
-                    mediaPreviews = when {
-                        !enabled -> MediaPreviewsMode.Off
-                        current == MediaPreviewsMode.Off -> MediaPreviewsMode.On
-                        else -> current
-                    }
-                )
-            }
         }
     }
 }
