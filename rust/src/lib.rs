@@ -186,6 +186,8 @@ delegate_unit_result! {
     send_live_location(room_id: String, geo_uri: String);
     send_static_location(room_id: String, geo_uri: String, body: Option<String>);
     set_presence(state: Presence, status_msg: Option<String>);
+    set_display_name(name: Option<String>);
+    remove_avatar();
     accept_knock_request(room_id: String, user_id: String);
     decline_knock_request(room_id: String, user_id: String, reason: Option<String>);
 }
@@ -224,6 +226,7 @@ delegate_result! { Vec<String>; room_join_rule_allow_list(room_id: String); }
 delegate_result! { RoomHistoryVisibility; room_history_visibility(room_id: String); }
 delegate_option! { String; room_inviter(room_id: String); }
 delegate_result! { Vec<SeenByEntry>; seen_by_for_event(room_id: String, event_id: String, limit: u32); }
+delegate_result! { OwnProfile; own_profile(); }
 delegate_result! { String; upgrade_room(room_id: String, new_version: String); ensure_dm(user_id: String); ensure_dm_if_allowed(room_id: String, user_id: String); }
 delegate_result! { RoomActionState; room_action_state(room_id: String); }
 delegate_result! { MemberActionState; member_action_state(room_id: String, user_id: String); }
@@ -973,6 +976,21 @@ impl Client {
             let bytes = std::fs::read(&path)
                 .map_err(|e| FfiError::Msg(format!("cannot read {path}: {e}")))?;
             RT.block_on(self.core.upload_pack_image(bytes, mime))
+        }
+    }
+
+    #[cfg_attr(target_family = "wasm", allow(unused_variables))]
+    pub fn set_avatar_from_path(&self, path: String, mime: String) -> Result<String, FfiError> {
+        crate::check_not_on_runtime(stringify!(set_avatar_from_path))?;
+        #[cfg(target_family = "wasm")]
+        return Err(FfiError::Msg(
+            "set_avatar_from_path: not supported on web".into(),
+        ));
+        #[cfg(not(target_family = "wasm"))]
+        {
+            let bytes = std::fs::read(&path)
+                .map_err(|e| FfiError::Msg(format!("cannot read {path}: {e}")))?;
+            RT.block_on(self.core.set_avatar(bytes, &mime))
         }
     }
 

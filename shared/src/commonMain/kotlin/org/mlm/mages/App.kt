@@ -66,6 +66,7 @@ import org.mlm.mages.platform.platformEmbeddedElementCallParentUrlOrNull
 import org.mlm.mages.platform.platformEmbeddedElementCallUrlOrNull
 import org.mlm.mages.platform.rememberFileOpener
 import org.mlm.mages.platform.rememberQuitApp
+import org.mlm.mages.platform.toTransferItem
 import org.mlm.mages.settings.AppSettings
 import org.mlm.mages.settings.PresenceMode
 import org.mlm.mages.settings.ThemeMode
@@ -86,7 +87,8 @@ import org.mlm.mages.ui.components.snackbar.rememberErrorPoster
 import org.mlm.mages.ui.screens.*
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.mimeType
 import org.mlm.mages.ui.components.AttachmentSourceKind
 import org.mlm.mages.ui.components.toMagesAttachment
 import org.mlm.mages.ui.theme.MainTheme
@@ -411,9 +413,10 @@ private fun AppContent(
                                 picked.map { file ->
                                     // On web a picked file is staged as a blob rather
                                     // than a path on disk, so resolve it here.
-                                    file.toTransferItem().toMagesAttachment(
+                                    val attachment = file.toTransferItem().toMagesAttachment(
                                         AttachmentSourceKind.LocalPath
-                                    ) to (file.mimeType ?: "image/png")
+                                    )
+                                    attachment.path to (file.mimeType()?.toString() ?: "image/png")
                                 }
                             )
                         }

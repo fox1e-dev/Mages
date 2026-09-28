@@ -619,6 +619,15 @@ data class UploadedPackImage(
 )
 
 @Serializable
+data class OwnProfile(
+    val userId: String,
+    val displayName: String? = null,
+    val avatarUrl: String? = null,
+    val canChangeDisplayName: Boolean = true,
+    val canChangeAvatar: Boolean = true
+)
+
+@Serializable
 data class SpaceHierarchyPage(
     val children: List<SpaceChildInfo>,
     val nextBatch: String? = null
@@ -1135,8 +1144,18 @@ interface MatrixPort {
     suspend fun spaceInviteUser(spaceId: String, userId: String): Result<Unit>
 
     suspend fun setPresence(presence: Presence, status: String?): Result<Unit>
+
+    suspend fun ownProfile(): OwnProfile?
+
+    suspend fun setDisplayName(name: String?): Result<Unit>
+
+    suspend fun setAvatarFromPath(path: String, mime: String): Result<String>
+
     /** Uploads arbitrary bytes and returns the resulting `mxc://` URI. */
     suspend fun uploadBytes(bytes: ByteArray, mime: String): Result<String>
+
+    suspend fun removeAvatar(): Result<Unit>
+
     suspend fun applySyncPresence(presence: Presence)
     suspend fun mediaPreviewConfig(): MediaPreviewMode?
     suspend fun setMediaPreviewConfig(previews: MediaPreviewMode): Result<Unit>

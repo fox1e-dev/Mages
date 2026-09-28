@@ -452,6 +452,15 @@ pub struct DirectoryUser {
 }
 
 #[derive(Clone, Serialize, Deserialize, Record)]
+pub struct OwnProfile {
+    pub user_id: String,
+    pub display_name: Option<String>,
+    pub avatar_url: Option<String>,
+    pub can_change_display_name: bool,
+    pub can_change_avatar: bool,
+}
+
+#[derive(Clone, Serialize, Deserialize, Record)]
 pub struct PublicRoom {
     pub room_id: String,
     pub name: Option<String>,

@@ -22,6 +22,7 @@ import org.mlm.mages.settings.ReRegisterUnifiedPushAction
 import org.mlm.mages.settings.RequestNotificationPermissionAction
 import org.mlm.mages.settings.SelectUnifiedPushDistributorAction
 import org.mlm.mages.settings.TestNotificationAction
+import org.mlm.mages.ui.AvatarEdit
 import org.mlm.mages.ui.SecurityUiState
 import org.mlm.mages.verification.VerificationCoordinator
 import kotlin.reflect.KClass
@@ -84,6 +85,7 @@ class SecurityViewModel(
         loadAccountManagementUrl()
         refreshKeyStorageState(forceFetch = true)
         updateShareHistoryState()
+        loadProfile()
     }
 
     private var recoveryStateSub: ULong? = null
@@ -102,6 +104,7 @@ class SecurityViewModel(
         refreshIgnored()
         loadAccountManagementUrl()
         refreshKeyStorageState(forceFetch = true)
+        loadProfile()
     }
 
     private fun clearAccountScopedState() {
@@ -301,6 +304,59 @@ class SecurityViewModel(
             val port = service.portOrNull ?: return@launch
             val url = port.accountManagementUrl()
             updateStateIfCurrent(version) { copy(accountManagementUrl = url) }
+        }
+    }
+
+    fun loadProfile() {
+        val version = accountDataVersion
+        launch { fetchProfile(version) }
+    }
+
+    private suspend fun fetchProfile(version: Long) {
+        val port = service.portOrNull ?: return
+        updateStateIfCurrent(version) { copy(isLoadingProfile = true) }
+        val result = runCatching { port.ownProfile() }
+        updateStateIfCurrent(version) {
+            copy(ownProfile = result.getOrNull(), isLoadingProfile = false, ownAvatarPath = null)
+        }
+        val profile = result.getOrNull()
+        if (profile == null && isCurrentAccountData(version)) {
+            _events.send(
+                Event.ShowError(result.exceptionOrNull()?.message ?: "Could not load your profile")
+            )
+        }
+        val avatarUrl = profile?.avatarUrl ?: return
+        val path = runCatching { service.avatars.resolve(avatarUrl, px = 256) }.getOrNull()
+        updateStateIfCurrent(version) { copy(ownAvatarPath = path) }
+    }
+
+    fun saveProfile(displayName: String, avatar: AvatarEdit) {
+        val version = accountDataVersion
+
+        launch {
+            val port = service.portOrNull ?: return@launch
+            val current = currentState.ownProfile ?: return@launch
+            updateStateIfCurrent(version) { copy(isSavingProfile = true) }
+
+            val failures = mutableListOf<String>()
+            if (displayName.trim() != (current.displayName ?: "").trim()) {
+                port.setDisplayName(displayName)
+                    .onFailure { failures += it.message ?: "Display name was rejected" }
+            }
+            when (avatar) {
+                AvatarEdit.None -> Unit
+                is AvatarEdit.Replace -> port.setAvatarFromPath(avatar.path, avatar.mime)
+                    .onFailure { failures += it.message ?: "Profile picture was rejected" }
+
+                AvatarEdit.Remove -> port.removeAvatar()
+                    .onFailure { failures += it.message ?: "Profile picture could not be removed" }
+            }
+
+            updateStateIfCurrent(version) { copy(isSavingProfile = false) }
+            val failure = failures.firstOrNull()
+            if (failure != null) _events.send(Event.ShowError(failure))
+            else _events.send(Event.ShowSuccess("Profile updated"))
+            fetchProfile(version)
         }
     }
 

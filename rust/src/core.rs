@@ -63,7 +63,7 @@ use tracing::warn;
 use crate::{
     ActionAvailability, ActionPresentation, AttachmentInfo, AttachmentKind, DirectoryUser,
     FfiError, FfiPushRuleKind, FfiRoomNotificationMode, ImagePackSummary, KnockRequestSummary,
-    MemberActionState, MemberSummary, MessageActionState, MessageEvent, OwnReceipt,
+    MemberActionState, MemberSummary, MessageActionState, MessageEvent, OwnProfile, OwnReceipt,
     PasswordLoginKind, PollDefinition,
     PredecessorRoomInfo, Presence, PresenceInfo, PublicRoom, PublicRoomsPage, ReactionSummary,
     RecentEmojiEntry, RoomActionState, RoomCallState, RoomDirectoryVisibility, RoomHistoryVisibility,
@@ -3978,6 +3978,56 @@ impl CoreClient {
     pub async fn account_management_url(&self) -> Result<Option<String>, FfiError> {
         let metadata = self.sdk.oauth().cached_server_metadata().await.ffi()?;
         Ok(metadata.account_management_uri.map(|u| u.to_string()))
+    }
+
+    pub async fn own_profile(&self) -> Result<OwnProfile, FfiError> {
+        let user_id = self.sdk.user_id().or_ffi("No logged-in user")?;
+        let display_name = self.sdk.account().get_display_name().await.ffi()?;
+        let avatar_url = self
+            .sdk
+            .account()
+            .get_avatar_url()
+            .await
+            .ffi()?
+            .map(|url| url.to_string());
+
+        let capabilities = self.sdk.homeserver_capabilities();
+        let (can_change_display_name, can_change_avatar) = match (
+            capabilities.can_change_displayname().await,
+            capabilities.can_change_avatar().await,
+        ) {
+            (Ok(display_name), Ok(avatar)) => (display_name, avatar),
+            _ => (true, true),
+        };
+
+        Ok(OwnProfile {
+            user_id: user_id.to_string(),
+            display_name,
+            avatar_url,
+            can_change_display_name,
+            can_change_avatar,
+        })
+    }
+
+    pub async fn set_display_name(&self, name: Option<String>) -> Result<(), FfiError> {
+        let name = name.map(|n| n.trim().to_owned()).filter(|n| !n.is_empty());
+        self.sdk.account().set_display_name(name.as_deref()).await.ffi()
+    }
+
+    pub async fn set_avatar(&self, bytes: Vec<u8>, mime: &str) -> Result<String, FfiError> {
+        let parsed: mime::Mime = mime
+            .parse()
+            .map_err(|_| FfiError::Msg(format!("unsupported image type {mime:?}")))?;
+        if parsed.type_() != "image" {
+            return Err(FfiError::Msg(format!("{mime} is not an image")));
+        }
+
+        let mxc = self.sdk.account().upload_avatar(&parsed, bytes).await.ffi()?;
+        Ok(mxc.to_string())
+    }
+
+    pub async fn remove_avatar(&self) -> Result<(), FfiError> {
+        self.sdk.account().set_avatar_url(None).await.ffi()
     }
 
     pub async fn thread_replies(

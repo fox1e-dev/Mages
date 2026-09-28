@@ -387,6 +387,11 @@ private fun PackHeader(
     onSetPackGlobal: (Boolean) -> Unit,
     onRemovePack: () -> Unit
 ) {
+    // A pack that has never been written has no state key to name in either
+    // `m.room.image_pack` or `m.image_pack.rooms`, so it can be neither removed
+    // nor subscribed until its first save.
+    val isEditable = !isReadOnly && !isSaving && !pack.isNew
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -401,10 +406,6 @@ private fun PackHeader(
                 label = { Text(stringResource(Res.string.sticker_pack_display_name)) },
                 modifier = Modifier.weight(1f)
             )
-            // A pack that has never been written has no state key to name in
-            // either `m.room.image_pack` or `m.image_pack.rooms`, so it can be
-            // neither removed nor subscribed until its first save.
-            val isEditable = !isReadOnly && !isSaving && !pack.isNew
             if (isSaving) {
                 CircularWavyProgressIndicator(
                     modifier = Modifier
@@ -599,8 +600,9 @@ private fun PackImageBox(
 ) {
     val shape = RoundedCornerShape(8.dp)
     if (path != null) {
+        val ctx = LocalPlatformContext.current
         val model = remember(path) {
-            ImageRequest.Builder(LocalPlatformContext.current).data(path).crossfade(true).build()
+            ImageRequest.Builder(ctx).data(path).crossfade(true).build()
         }
         AsyncImage(
             model = model,

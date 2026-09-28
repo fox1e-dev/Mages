@@ -11,11 +11,13 @@ import org.mlm.mages.RoomSummary
 import org.mlm.mages.matrix.DeviceSummary
 import org.mlm.mages.matrix.EventType
 import org.mlm.mages.matrix.HomeserverLoginDetails
+import org.mlm.mages.matrix.ImagePackImageEntry
 import org.mlm.mages.matrix.ImagePackSummary
 import org.mlm.mages.matrix.LiveLocationShare
 import org.mlm.mages.matrix.SpaceParentInfo
 import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.matrix.MatrixPort
+import org.mlm.mages.matrix.OwnProfile
 import org.mlm.mages.matrix.RoomNotificationMode
 import org.mlm.mages.matrix.RoomPowerLevels
 import org.mlm.mages.matrix.RoomJoinRule
@@ -463,7 +465,19 @@ data class SecurityUiState(
     // Misc
     val ignoredUsers: List<String> = emptyList(),
     val enableShareHistoryOnInvite: Boolean = true,
+
+    // Profile
+    val ownProfile: OwnProfile? = null,
+    val isLoadingProfile: Boolean = false,
+    val isSavingProfile: Boolean = false,
+    val ownAvatarPath: String? = null,
 )
+
+sealed interface AvatarEdit {
+    data object None : AvatarEdit
+    data class Replace(val path: String, val mime: String) : AvatarEdit
+    data object Remove : AvatarEdit
+}
 
 data class SpacesUiState(
     val spaces: List<SpaceInfo> = emptyList(),

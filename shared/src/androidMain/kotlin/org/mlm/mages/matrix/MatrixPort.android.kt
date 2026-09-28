@@ -1642,10 +1642,42 @@ class RustMatrixPort : MatrixPort, VerificationService {
             runWithFfiResult { withClient { it.setPresence(presence.toFfi(), status) } }.map { }
         }
 
+    override suspend fun ownProfile(): OwnProfile? =
+        withContext(matrixDispatcher) {
+            runWithFfiResult {
+                withClient {
+                    val profile = it.ownProfile()
+                    OwnProfile(
+                        userId = profile.userId,
+                        displayName = profile.displayName,
+                        avatarUrl = profile.avatarUrl,
+                        canChangeDisplayName = profile.canChangeDisplayName,
+                        canChangeAvatar = profile.canChangeAvatar
+                    )
+                }
+            }.getOrNull()
+        }
+
+    override suspend fun setDisplayName(name: String?): Result<Unit> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.setDisplayName(name) } }.map { }
+        }
+
+    override suspend fun setAvatarFromPath(path: String, mime: String): Result<String> =
+        withContext(mediaDispatcher) {
+            runWithFfiResult { withClient { it.setAvatarFromPath(path, mime) } }
+        }
+
     override suspend fun uploadBytes(bytes: ByteArray, mime: String): Result<String> =
         withContext(mediaDispatcher) {
             runWithFfiResult { withClient { it.uploadBytes(bytes, mime) } }
         }
+
+    override suspend fun removeAvatar(): Result<Unit> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.removeAvatar() } }.map { }
+        }
+
     override suspend fun applySyncPresence(presence: Presence) {
         withContext(matrixDispatcher) {
             withClient { it.applySyncPresence(presence.toFfi()) }

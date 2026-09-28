@@ -26,10 +26,18 @@ import io.github.mlmgames.settings.core.annotations.SettingAction
 import io.github.mlmgames.settings.core.remote.RemoteFieldState
 import io.github.mlmgames.settings.ui.AutoSettingsScreen
 import io.github.mlmgames.settings.ui.ProvideStringResources
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.mimeType
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.mlm.mages.matrix.DeviceSummary
 import org.mlm.mages.matrix.MatrixPort
+import org.mlm.mages.matrix.OwnProfile
+import org.mlm.mages.platform.toTransferItem
 import org.mlm.mages.settings.*
+import org.mlm.mages.ui.AvatarEdit
+import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.components.core.EmptyState
 import org.mlm.mages.ui.components.sheets.EnterRecoveryKeySheet
 import org.mlm.mages.ui.components.sheets.SetupRecoverySheet
@@ -37,6 +45,7 @@ import org.mlm.mages.ui.components.snackbar.SnackbarManager
 import org.mlm.mages.ui.components.snackbar.snackbarHost
 import org.mlm.mages.ui.components.snackbar.rememberErrorPoster
 import org.mlm.mages.nav.Route
+import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.util.popBack
 import org.mlm.mages.ui.viewmodel.SecurityViewModel
@@ -69,6 +78,18 @@ fun SecurityScreen(
     var showVerifyUserDialog by remember { mutableStateOf(false) }
     var activeSheet by remember { mutableStateOf<SecuritySheet?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    val pickScope = rememberCoroutineScope()
+    var pendingAvatarPick by remember { mutableStateOf<((String, String) -> Unit)?>(null) }
+    val avatarPicker = rememberFilePickerLauncher(type = FileKitType.Image) { file ->
+        val onPicked = pendingAvatarPick ?: return@rememberFilePickerLauncher
+        pendingAvatarPick = null
+        val picked = file ?: return@rememberFilePickerLauncher
+        pickScope.launch {
+            val path = picked.toTransferItem().path ?: return@launch
+            onPicked(path, picked.mimeType()?.toString() ?: "image/png")
+        }
+    }
 
     val isCurrentDeviceVerified = remember(state.devices) {
         state.devices.firstOrNull { it.isOwn }?.verified == true
@@ -139,8 +160,8 @@ fun SecurityScreen(
                     Tab(
                         selected = state.selectedTab == 1,
                         onClick = { viewModel.setSelectedTab(1) },
-                        text = { Text(stringResource(Res.string.privacy)) },
-                        icon = { Icon(Icons.Default.PrivacyTip, null) }
+                        text = { Text(stringResource(Res.string.profile)) },
+                        icon = { Icon(Icons.Default.Person, null) }
                     )
                     Tab(
                         selected = state.selectedTab == 2,
@@ -162,7 +183,6 @@ fun SecurityScreen(
                 0 -> DevicesTab(
                     devices = state.devices,
                     isLoading = state.isLoadingDevices,
-                    accountManagementUrl = state.accountManagementUrl,
                     recoveryState = state.recoveryState,
                     backupState = state.backupState,
                     isKeyStorageEnabled = state.isKeyStorageEnabled,
@@ -176,13 +196,25 @@ fun SecurityScreen(
                     onChangeRecovery = { activeSheet = SecuritySheet.SetupRecovery(isChange = true) },
                     onEnterRecoveryKey = { activeSheet = SecuritySheet.EnterRecoveryKey },
                     onToggleKeyStorage = viewModel::toggleKeyStorage,
-                    onSetEnableShareHistoryOnInvite = viewModel::setEnableShareHistoryOnInvite,
-                    onOpenAccountManagement = { url -> uriHandler.openUri(url) }
+                    onSetEnableShareHistoryOnInvite = viewModel::setEnableShareHistoryOnInvite
                 )
 
-                1 -> PrivacyTab(
+                1 -> ProfileTab(
+                    profile = state.ownProfile,
+                    avatarPath = state.ownAvatarPath,
+                    isLoading = state.isLoadingProfile,
+                    isSaving = state.isSavingProfile,
+                    accountManagementUrl = state.accountManagementUrl,
+                    accountId = activeAccount?.id,
                     ignoredUsers = state.ignoredUsers,
-                    onUnignore = viewModel::unignoreUser
+                    onPickAvatar = { onPicked ->
+                        pendingAvatarPick = onPicked
+                        avatarPicker.launch()
+                    },
+                    onSave = viewModel::saveProfile,
+                    onRetry = viewModel::loadProfile,
+                    onUnignore = viewModel::unignoreUser,
+                    onOpenAccountManagement = { url -> uriHandler.openUri(url) }
                 )
 
                 2 -> SettingsTab(
@@ -264,10 +296,210 @@ fun SecurityScreen(
 }
 
 @Composable
+private fun ProfileTab(
+    profile: OwnProfile?,
+    avatarPath: String?,
+    isLoading: Boolean,
+    isSaving: Boolean,
+    accountManagementUrl: String?,
+    accountId: String?,
+    ignoredUsers: List<String>,
+    onPickAvatar: ((String, String) -> Unit) -> Unit,
+    onSave: (String, AvatarEdit) -> Unit,
+    onRetry: () -> Unit,
+    onUnignore: (String) -> Unit,
+    onOpenAccountManagement: (String) -> Unit
+) {
+    var displayName by remember(accountId, profile?.displayName) {
+        mutableStateOf(profile?.displayName.orEmpty())
+    }
+    var avatarEdit by remember(accountId, profile?.avatarUrl) {
+        mutableStateOf<AvatarEdit>(AvatarEdit.None)
+    }
+
+    if (isLoading && profile == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularWavyProgressIndicator()
+        }
+        return
+    }
+
+    val current = profile
+    if (current == null) {
+        EmptyState(
+            icon = Icons.Default.CloudOff,
+            title = stringResource(Res.string.profile_load_failed),
+            action = { TextButton(onClick = onRetry) { Text(stringResource(Res.string.retry)) } }
+        )
+        return
+    }
+
+    val nameChanged = displayName.trim() != current.displayName.orEmpty().trim()
+    val canSave = !isSaving && (nameChanged || avatarEdit != AvatarEdit.None)
+    val previewPath = when (val edit = avatarEdit) {
+        is AvatarEdit.Replace -> edit.path
+        AvatarEdit.Remove -> null
+        AvatarEdit.None -> avatarPath
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding(),
+        contentPadding = PaddingValues(bottom = Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md)
+    ) {
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = Spacing.xl),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                Box {
+                    Avatar(
+                        name = displayName.ifBlank { current.userId },
+                        avatarPath = previewPath,
+                        size = Sizes.avatarLarge * 2,
+                    )
+                    if (current.canChangeAvatar) {
+                        FilledIconButton(
+                            onClick = { onPickAvatar { path, mime -> avatarEdit = AvatarEdit.Replace(path, mime) } },
+                            modifier = Modifier.align(Alignment.BottomEnd)
+                        ) {
+                            Icon(Icons.Default.PhotoCamera, stringResource(Res.string.profile_change_photo))
+                        }
+                    }
+                }
+                Text(
+                    current.userId,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        item {
+            OutlinedTextField(
+                value = displayName,
+                onValueChange = { displayName = it },
+                enabled = current.canChangeDisplayName && !isSaving,
+                singleLine = true,
+                label = { Text(stringResource(Res.string.profile_display_name)) },
+                placeholder = { Text(stringResource(Res.string.profile_display_name_placeholder)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.lg)
+            )
+        }
+
+        if (current.canChangeAvatar && current.avatarUrl != null) {
+            item {
+                ListItem(
+                    headlineContent = { Text(stringResource(Res.string.profile_remove_photo)) },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.DeleteOutline,
+                            null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    modifier = Modifier.clickable(enabled = !isSaving) {
+                        avatarEdit = AvatarEdit.Remove
+                    }
+                )
+            }
+        }
+
+        item {
+            Button(
+                onClick = { onSave(displayName, avatarEdit) },
+                enabled = canSave,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.lg)
+            ) {
+                if (isSaving) {
+                    CircularWavyProgressIndicator(modifier = Modifier.size(20.dp))
+                } else {
+                    Text(stringResource(Res.string.save))
+                }
+            }
+        }
+
+        if (accountManagementUrl != null) {
+            item {
+                HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.sm))
+                ListItem(
+                    headlineContent = { Text(stringResource(Res.string.manage_account)) },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.OpenInNew,
+                            null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    modifier = Modifier.clickable { onOpenAccountManagement(accountManagementUrl) }
+                )
+            }
+        }
+
+        item {
+            Text(
+                stringResource(Res.string.ignored_users),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(horizontal = Spacing.lg)
+                    .padding(top = Spacing.lg)
+            )
+        }
+
+        if (ignoredUsers.isEmpty()) {
+            item {
+                Column(
+                    modifier = Modifier.padding(horizontal = Spacing.lg),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                ) {
+                    Text(
+                        stringResource(Res.string.no_ignored_users),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        stringResource(Res.string.ignored_users_subtitle),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            items(ignoredUsers, key = { it }) { mxid ->
+                ListItem(
+                    headlineContent = { Text(mxid, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.Block,
+                            null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingContent = {
+                        TextButton(onClick = { onUnignore(mxid) }) {
+                            Text(stringResource(Res.string.unignore))
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun DevicesTab(
     devices: List<DeviceSummary>,
     isLoading: Boolean,
-    accountManagementUrl: String?,
     recoveryState: MatrixPort.RecoveryState,
     backupState: MatrixPort.BackupState,
     isKeyStorageEnabled: Boolean?,
@@ -281,8 +513,7 @@ private fun DevicesTab(
     onChangeRecovery: () -> Unit,
     onEnterRecoveryKey: () -> Unit,
     onToggleKeyStorage: () -> Unit,
-    onSetEnableShareHistoryOnInvite: (Boolean) -> Unit,
-    onOpenAccountManagement: (String) -> Unit
+    onSetEnableShareHistoryOnInvite: (Boolean) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -423,24 +654,6 @@ private fun DevicesTab(
                     )
                 }
             )
-        }
-
-
-        if (accountManagementUrl != null) {
-            item {
-                HorizontalDivider()
-                ListItem(
-                    headlineContent = { Text(stringResource(Res.string.manage_account)) },
-                    leadingContent = {
-                        Icon(
-                            Icons.Default.Person,
-                            null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    modifier = Modifier.clickable { onOpenAccountManagement(accountManagementUrl) }
-                )
-            }
         }
 
         item {
@@ -628,53 +841,6 @@ private fun DeviceCard(
                     "Verified",
                     tint = Color(0xFF4CAF50)
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun PrivacyTab(
-    ignoredUsers: List<String>,
-    onUnignore: (String) -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(Spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(Spacing.md)
-    ) {
-        item {
-            Text(
-                stringResource(Res.string.ignored_users),
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-
-        if (ignoredUsers.isEmpty()) {
-            item {
-                EmptyState(
-                    icon = Icons.Default.Block,
-                    title = stringResource(Res.string.no_ignored_users),
-                    subtitle = stringResource(Res.string.ignored_users_subtitle)
-                )
-            }
-        } else {
-            items(ignoredUsers) { mxid ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(Spacing.md),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Person, null)
-                        Spacer(Modifier.width(Spacing.md))
-                        Text(mxid, Modifier.weight(1f))
-                        TextButton(onClick = { onUnignore(mxid) }) {
-                            Text(stringResource(Res.string.unignore))
-                        }
-                    }
-                }
             }
         }
     }

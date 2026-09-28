@@ -502,6 +502,8 @@ wasm_delegate_result_bool! {
     "acceptInvite"         => accept_invite(room_id: String);
     "declineCall"          => decline_call(room_id: String, notification_event_id: String);
     "editCaption"          => edit_caption(room_id: String, target_event_id: String, caption: Option<String>, formatted_caption: Option<String>);
+    "setDisplayName"       => set_display_name(name: Option<String>);
+    "removeAvatar"         => remove_avatar();
 }
 
 wasm_delegate_json! {
@@ -527,6 +529,7 @@ wasm_delegate_result_json! {
     "roomJoinRuleAllowList" => room_join_rule_allow_list(room_id: String);
     "listImagePacks"   => list_image_packs(room_id: String);
     "sendStickerMxc"   => send_sticker_mxc(room_id: String, mxc_url: String, body: String, info_json: Option<String>, thread_root_event_id: Option<String>);
+    "ownProfile"       => own_profile();
 }
 
 wasm_delegate_option_json! {
@@ -1186,6 +1189,18 @@ impl WasmClient {
             return webffi_not_init();
         };
         webffi_value(s.core.upload_pack_image(bytes, mime).await)
+    }
+
+    #[wasm_bindgen(js_name = setAvatarBytes)]
+    pub async fn set_avatar_bytes(
+        &self,
+        bytes: Vec<u8>,
+        mime: String,
+    ) -> JsValue {
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        webffi_value(s.core.set_avatar(bytes, &mime).await)
     }
 
     #[wasm_bindgen(js_name = uploadBytes)]

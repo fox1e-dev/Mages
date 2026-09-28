@@ -1349,12 +1349,35 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         return unitResult(result.ok, "set presence", result.error)
     }
 
+    override suspend fun ownProfile(): OwnProfile? =
+        requireClient().ownProfile().awaitValue<OwnProfile>()
+
+    override suspend fun setDisplayName(name: String?): Result<Unit> {
+        val result = requireClient().setDisplayName(name).awaitResult()
+        return unitResult(result.ok, "set display name", result.error)
+    }
+
+    override suspend fun setAvatarFromPath(path: String, mime: String): Result<String> {
+        val bytes = retrieveWebBlob(path)
+            ?: return Result.failure(IllegalStateException("image no longer available"))
+        return requireClient()
+            .setAvatarBytes(bytes.toJsUint8Array(), mime)
+            .awaitStringValue()
+            ?.let { Result.success(it) }
+            ?: Result.failure(IllegalStateException("avatar upload failed"))
+    }
+
     override suspend fun uploadBytes(bytes: ByteArray, mime: String): Result<String> {
         return requireClient()
             .uploadBytes(bytes.toJsUint8Array(), mime)
             .awaitStringValue()
             ?.let { Result.success(it) }
             ?: Result.failure(IllegalStateException("media upload failed"))
+    }
+
+    override suspend fun removeAvatar(): Result<Unit> {
+        val result = requireClient().removeAvatar().awaitResult()
+        return unitResult(result.ok, "remove avatar", result.error)
     }
 
     override suspend fun applySyncPresence(presence: Presence) {
