@@ -140,7 +140,7 @@ delegate_unit_result! {
     edit_caption(room_id: String, target_event_id: String, caption: Option<String>, formatted_caption: Option<String>);
     edit_poll(room_id: String, poll_event_id: String, def: PollDefinition);
     redact(room_id: String, event_id: String, reason: Option<String>);
-    react(room_id: String, event_id: String, emoji: String);
+    react(room_id: String, event_id: String, emoji: String, shortcode: Option<String>);
     send_thread_text(room_id: String, root_event_id: String, body: String,
                      reply_to_event_id: Option<String>, latest_event_id: Option<String>,
                      formatted_body: Option<String>);
@@ -928,6 +928,50 @@ impl Client {
         enabled: bool,
     ) -> Result<(), FfiError> {
         RT.block_on(self.core.set_image_pack_enabled(room_id, state_key, enabled))
+    }
+
+    pub fn can_edit_image_packs(&self, room_id: String) -> Result<bool, FfiError> {
+        RT.block_on(self.core.can_edit_image_packs(room_id))
+    }
+
+    pub fn save_image_pack(
+        &self,
+        room_id: String,
+        write_json: String,
+    ) -> Result<String, FfiError> {
+        RT.block_on(self.core.save_image_pack(room_id, write_json))
+    }
+
+    pub fn remove_image_pack(&self, room_id: String, state_key: String) -> Result<(), FfiError> {
+        RT.block_on(self.core.remove_image_pack(room_id, state_key))
+    }
+
+    pub fn suggest_image_shortcodes(
+        &self,
+        bases: Vec<String>,
+        taken: Vec<String>,
+    ) -> Result<Vec<String>, FfiError> {
+        RT.block_on(self.core.suggest_image_shortcodes(bases, taken))
+    }
+
+    /// Web has no filesystem to read a picked file from, so the wasm bridge
+    /// takes the bytes directly and this is native-only.
+    #[cfg_attr(target_family = "wasm", allow(unused_variables))]
+    pub fn upload_pack_image_from_path(
+        &self,
+        path: String,
+        mime: String,
+    ) -> Result<image_packs::UploadedPackImage, FfiError> {
+        #[cfg(target_family = "wasm")]
+        return Err(FfiError::Msg(
+            "upload_pack_image_from_path: not supported on web".into(),
+        ));
+        #[cfg(not(target_family = "wasm"))]
+        {
+            let bytes = std::fs::read(&path)
+                .map_err(|e| FfiError::Msg(format!("cannot read {path}: {e}")))?;
+            RT.block_on(self.core.upload_pack_image(bytes, mime))
+        }
     }
 
     pub fn recent_emoji(&self) -> Result<Vec<RecentEmojiEntry>, FfiError> {

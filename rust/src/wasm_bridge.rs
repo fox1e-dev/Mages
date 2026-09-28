@@ -474,7 +474,7 @@ wasm_delegate_result_bool! {
     "inviteUser"           => invite_user(room_id: String, user_id: String);
     "enableRoomEncryption" => enable_room_encryption(room_id: String);
     "knock"                => knock(id_or_alias: String, via: Vec<String>);
-    "react"                => react(room_id: String, event_id: String, emoji: String);
+    "react"                => react(room_id: String, event_id: String, emoji: String, shortcode: Option<String>);
     "spaceInviteUser"      => space_invite_user(space_id: String, user_id: String);
     "redact"               => redact(room_id: String, event_id: String, reason: Option<String>);
 }
@@ -1138,6 +1138,54 @@ impl WasmClient {
                 .set_image_pack_enabled(room_id, state_key, enabled)
                 .await,
         )
+    }
+
+    #[wasm_bindgen(js_name = canEditImagePacks)]
+    pub async fn can_edit_image_packs(&self, room_id: String) -> JsValue {
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        webffi_value(s.core.can_edit_image_packs(room_id).await)
+    }
+
+    #[wasm_bindgen(js_name = saveImagePack)]
+    pub async fn save_image_pack(&self, room_id: String, write_json: String) -> JsValue {
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        webffi_value(s.core.save_image_pack(room_id, write_json).await)
+    }
+
+    #[wasm_bindgen(js_name = removeImagePack)]
+    pub async fn remove_image_pack(&self, room_id: String, state_key: String) -> JsValue {
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        webffi_unit(s.core.remove_image_pack(room_id, state_key).await)
+    }
+
+    #[wasm_bindgen(js_name = suggestImageShortcodes)]
+    pub async fn suggest_image_shortcodes(
+        &self,
+        bases: Vec<String>,
+        taken: Vec<String>,
+    ) -> JsValue {
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        webffi_value(s.core.suggest_image_shortcodes(bases, taken).await)
+    }
+
+    #[wasm_bindgen(js_name = uploadPackImageBytes)]
+    pub async fn upload_pack_image_bytes(
+        &self,
+        bytes: Vec<u8>,
+        mime: String,
+    ) -> JsValue {
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        webffi_value(s.core.upload_pack_image(bytes, mime).await)
     }
 
     #[wasm_bindgen(js_name = recentEmoji)]

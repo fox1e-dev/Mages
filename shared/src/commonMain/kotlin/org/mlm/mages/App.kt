@@ -84,6 +84,11 @@ import org.mlm.mages.ui.components.snackbar.LauncherSnackbarHost
 import org.mlm.mages.ui.components.snackbar.SnackbarManager
 import org.mlm.mages.ui.components.snackbar.rememberErrorPoster
 import org.mlm.mages.ui.screens.*
+import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.rememberFilePickerLauncher
+import org.mlm.mages.ui.components.AttachmentSourceKind
+import org.mlm.mages.ui.components.toMagesAttachment
 import org.mlm.mages.ui.theme.MainTheme
 import org.mlm.mages.ui.util.popBack
 import org.mlm.mages.ui.viewmodel.*
@@ -387,6 +392,33 @@ private fun AppContent(
                         LauncherSnackbarHost(hostState = snackbarHostState, manager = snackbarManager)
                     }
                 ) { _ ->
+                    // The picker lives here because it needs a coroutine to turn
+                    // a picked file into a resolvable path; the editor only ever
+                    // asks for it to be launched and hands over a callback.
+                    val packPickScope = rememberCoroutineScope()
+                    var pendingPackPick by remember {
+                        mutableStateOf<((List<Pair<String, String>>) -> Unit)?>(null)
+                    }
+                    val packImagePicker = rememberFilePickerLauncher(
+                        mode = FileKitMode.Multiple(),
+                        type = FileKitType.Image
+                    ) { files ->
+                        val onPicked = pendingPackPick ?: return@rememberFilePickerLauncher
+                        val picked = files.orEmpty()
+                        if (picked.isEmpty()) return@rememberFilePickerLauncher
+                        packPickScope.launch {
+                            onPicked(
+                                picked.map { file ->
+                                    // On web a picked file is staged as a blob rather
+                                    // than a path on disk, so resolve it here.
+                                    file.toTransferItem().toMagesAttachment(
+                                        AttachmentSourceKind.LocalPath
+                                    ) to (file.mimeType ?: "image/png")
+                                }
+                            )
+                        }
+                    }
+
                     NavDisplay(
                     backStack = backStack,
                     entryDecorators = listOf(
@@ -727,11 +759,39 @@ private fun AppContent(
                                 onBack = backStack::popBack,
                                 onLeaveSuccess = { backStack.popUntil { it is Route.Rooms } },
                                 onOpenMediaGallery = { backStack.add(Route.MediaGallery(key.roomId)) },
+                                onOpenImagePackEditor = { backStack.add(Route.ImagePackEditor(key.roomId)) },
                                 onOpenSpace = { spaceId ->
                                     val name = viewModel.state.value.parentSpaces
                                         .firstOrNull { it.spaceId == spaceId }?.name.orEmpty()
                                     backStack.add(Route.SpaceDetail(spaceId, name))
                                 }
+                            )
+                        }
+
+                        entry<Route.ImagePackEditor> { key ->
+                            val viewModel: ImagePackEditorViewModel = koinViewModel(
+                                parameters = { parametersOf(key.roomId) }
+                            )
+
+                            LaunchedEffect(Unit) {
+                                viewModel.events.collect { event ->
+                                    when (event) {
+                                        is ImagePackEditorViewModel.Event.ShowError ->
+                                            postError(event.message)
+
+                                        is ImagePackEditorViewModel.Event.ShowSuccess ->
+                                            snackbarManager.show(event.message)
+                                    }
+                                }
+                            }
+
+                            ImagePackEditorRoute(
+                                onBack = backStack::popBack,
+                                onPickImages = { onPicked ->
+                                    pendingPackPick = onPicked
+                                    packImagePicker.launch()
+                                },
+                                viewModel = viewModel
                             )
                         }
 

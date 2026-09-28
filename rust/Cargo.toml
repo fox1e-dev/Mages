@@ -28,6 +28,16 @@ uuid = { version = "1.26", features = ["v4"] }
 mime = "0.3"
 js_int = "0.2"
 thiserror = "2"
+# Header-only dimension reads for `info` on uploaded pack images. No decode,
+# no re-encode: the picker already previews through the homeserver's
+# `/thumbnail` endpoint, so nothing here needs pixel data.
+imagesize = { version = "0.15", default-features = false, features = [
+    "jpeg",
+    "png",
+    "gif",
+    "webp",
+    "bmp",
+] }
 futures-util = "0.3"
 tracing = { version = "0.1", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = [

@@ -137,8 +137,12 @@ class MatrixService(
     suspend fun markRoomSeenLatest(roomId: String, sendPublicReceipt: Boolean): Result<Boolean> =
         port.markRoomSeenLatest(roomId, sendPublicReceipt)
 
-    suspend fun react(roomId: String, eventId: String, emoji: String): Result<Unit> =
-        port.react(roomId, eventId, emoji)
+    suspend fun react(
+        roomId: String,
+        eventId: String,
+        key: String,
+        shortcode: String? = null
+    ): Result<Unit> = port.react(roomId, eventId, key, shortcode)
 
     suspend fun reply(roomId: String, inReplyToEventId: String, body: String, formattedBody: String? = null): Result<Unit> =
         port.reply(roomId, inReplyToEventId, body, formattedBody)

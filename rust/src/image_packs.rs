@@ -1,9 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use matrix_sdk::{
-    Client,
+    Client, Room,
     ruma::{
-        OwnedRoomId,
+        OwnedMxcUri, OwnedRoomId, UInt,
         api::client::state::{
             get_state_event_for_key::v3 as state_event_for_key,
             get_state_events::v3 as state_events,
@@ -12,7 +12,7 @@ use matrix_sdk::{
             StateEventType,
             image_pack::rooms::{ImagePackRoomsEventContent, RoomImagePackMeta},
             room::{
-                MediaSource,
+                ImageInfo, MediaSource,
                 image_pack::{ImagePackImage, PackUsage, RoomImagePackEventContent},
             },
             space::parent::SpaceParentEventContent,
@@ -23,7 +23,8 @@ use once_cell::sync::Lazy;
 use serde::de::DeserializeOwned;
 use tracing::warn;
 
-use crate::{ImagePackImageEntry, ImagePackSummary};
+use crate::errors::IntoFfi;
+use crate::{FfiError, ImagePackImageEntry, ImagePackSummary};
 
 static ROOM_IMAGE_PACK: Lazy<StateEventType> =
     Lazy::new(|| StateEventType::from("m.room.image_pack"));
@@ -34,6 +35,283 @@ static SPACE_PARENT: Lazy<StateEventType> = Lazy::new(|| StateEventType::from("m
 const MAX_SPACE_DEPTH: usize = 8;
 
 const PACK_ID_SEP: char = '\u{1f}';
+
+/// Spec v1.19 "Shortcode grammar": must match `[a-zA-Z0-9-_]+` and must not
+/// exceed 100 bytes. The character set deliberately excludes `:`, `/` and
+/// space.
+fn valid_shortcode(shortcode: &str) -> bool {
+    !shortcode.is_empty()
+        && shortcode.len() <= 100
+        && shortcode.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+}
+
+/// Collapse an arbitrary label down to something inside the shortcode grammar,
+/// so a filename or pack name can seed one.
+fn slugify_shortcode(base: &str) -> String {
+    let mut out = String::with_capacity(base.len());
+    // Any run of non-alphanumerics becomes a single separator, which covers
+    // spaces, the grammar's own `-`/`_`, and filename punctuation like `.`.
+    let mut last_was_sep = true;
+    for ch in base.chars() {
+        if ch.is_ascii_alphanumeric() {
+            out.push(ch.to_ascii_lowercase());
+            last_was_sep = false;
+        } else if !last_was_sep {
+            out.push('_');
+            last_was_sep = true;
+        }
+    }
+    while out.ends_with('_') {
+        out.pop();
+    }
+    if out.is_empty() { "sticker".to_owned() } else { out }
+}
+
+fn suffixed(base: &str, taken: impl Fn(&str) -> bool) -> String {
+    for n in 2..10_000u32 {
+        let candidate = format!("{base}_{n}");
+        if !taken(&candidate) {
+            return candidate;
+        }
+    }
+    format!("{base}_{}", uuid::Uuid::new_v4().simple())
+}
+
+/// Assign a collision-free state key to a brand-new pack. The spec only asks
+/// for "a unique identifier for the pack itself", so the display name is
+/// reused when free and suffixed otherwise.
+pub(crate) fn assign_state_key(existing: &BTreeSet<String>, display_name: &str) -> String {
+    let base = if display_name.trim().is_empty() { "pack" } else { display_name.trim() };
+    if !existing.contains(base) {
+        return base.to_owned();
+    }
+    suffixed(base, |candidate| existing.contains(candidate))
+}
+
+/// Resolve a shortcode for each entry of a batch being added to a pack.
+///
+/// `taken` are the shortcodes already in the pack, and each result is reserved
+/// as it is produced. Reserving incrementally is the point: a multi-file drop
+/// seeds the same base for every file, and inserting them verbatim would
+/// collapse all but the last into a single map entry. Bases that do not fit
+/// the grammar are slugified; a base that is already valid is kept verbatim so
+/// a user's explicit shortcode is never rewritten behind their back.
+pub(crate) fn suggest_image_shortcodes(bases: &[String], taken: &[String]) -> Vec<String> {
+    let mut used: HashSet<String> = taken.iter().cloned().collect();
+    let mut out = Vec::with_capacity(bases.len());
+    for base in bases {
+        let cleaned = if valid_shortcode(base) {
+            base.clone()
+        } else {
+            let slug = slugify_shortcode(base);
+            if valid_shortcode(&slug) { slug } else { continue }
+        };
+        let mut candidate = cleaned.clone();
+        if used.contains(&candidate) {
+            candidate = suffixed(&cleaned, |c| used.contains(c));
+        }
+        used.insert(candidate.clone());
+        out.push(candidate);
+    }
+    out
+}
+
+fn parse_usage(usage: &[String]) -> BTreeSet<PackUsage> {
+    usage
+        .iter()
+        .filter_map(|u| match u.as_str() {
+            "emoticon" => Some(PackUsage::Emoticon),
+            "sticker" => Some(PackUsage::Sticker),
+            _ => None,
+        })
+        .collect()
+}
+
+fn parse_info(info_json: Option<&str>) -> Option<ImageInfo> {
+    serde_json::from_str::<ImageInfo>(info_json?).ok()
+}
+
+/// Whether the signed-in user may write `m.room.image_pack` in this room.
+///
+/// The MSC says nothing about permissions, so ordinary state-event auth
+/// applies: the type has no `events` entry unless the room grants one, which
+/// leaves `state_default` (50) as the bar. False on any uncertainty.
+pub(crate) async fn can_edit_room_packs(client: &Client, room: &Room) -> bool {
+    let Some(user_id) = client.user_id() else { return false };
+    let Ok(levels) = room.power_levels().await else { return false };
+    let required: i64 = levels.for_state(ROOM_IMAGE_PACK.clone()).into();
+    crate::core::effective_user_level(room, &levels, &user_id) >= required
+}
+
+/// One image of a pack, as the editor stages it.
+#[derive(Clone, serde::Deserialize)]
+pub(crate) struct PackImageDraft {
+    pub shortcode: String,
+    pub mxc_url: String,
+    #[serde(default)]
+    pub body: Option<String>,
+    #[serde(default)]
+    pub info_json: Option<String>,
+}
+
+/// The complete desired contents of one pack.
+///
+/// This is a replacement, not a merge: a shortcode absent from `images` is
+/// removed from the pack. `state_key` empty means a new pack, and the assigned
+/// key is returned by [`save_image_pack`].
+#[derive(Clone, serde::Deserialize)]
+pub(crate) struct PackWrite {
+    #[serde(default)]
+    pub state_key: String,
+    pub display_name: String,
+    #[serde(default)]
+    pub usage: Vec<String>,
+    #[serde(default)]
+    pub images: Vec<PackImageDraft>,
+}
+
+impl PackWrite {
+    /// Reject the whole write rather than silently dropping an entry, so a
+    /// shortcode the spec would not accept is reported instead of swallowed.
+    fn into_content(self) -> Result<(String, RoomImagePackEventContent), FfiError> {
+        let mut images: BTreeMap<String, ImagePackImage> = BTreeMap::new();
+        for draft in self.images {
+            if !valid_shortcode(&draft.shortcode) {
+                return Err(FfiError::Msg(format!(
+                    "invalid shortcode {:?}: must match [a-zA-Z0-9-_]+ and be at most 100 bytes",
+                    draft.shortcode
+                )));
+            }
+            // Pack URLs arrive from arbitrary homeservers, so a non-`mxc://`
+            // source is rejected here rather than trusted downstream.
+            let url = OwnedMxcUri::from(draft.mxc_url.as_str());
+            if !url.is_valid() {
+                return Err(FfiError::Msg(format!(
+                    "image {:?} has an invalid mxc uri",
+                    draft.shortcode
+                )));
+            }
+            if images.contains_key(&draft.shortcode) {
+                return Err(FfiError::Msg(format!("duplicate shortcode {:?}", draft.shortcode)));
+            }
+            let mut image = ImagePackImage::new(url);
+            image.body = draft.body.filter(|b| !b.is_empty());
+            image.info = parse_info(draft.info_json.as_deref());
+            images.insert(draft.shortcode, image);
+        }
+
+        let mut content = RoomImagePackEventContent::new(images);
+        let name = self.display_name.trim();
+        if !name.is_empty() {
+            content.pack.display_name = Some(name.to_owned());
+        }
+        content.pack.usage = parse_usage(&self.usage);
+        Ok((self.state_key, content))
+    }
+}
+
+/// Create or replace one of a room's packs, returning the state key it landed
+/// under.
+///
+/// The `images` map is rebuilt from `write` rather than merged onto what the
+/// room already holds, which is what makes a removed image actually disappear.
+/// An empty `images` is the spec's signal for removing state, so callers that
+/// mean to delete a pack go through [`remove_image_pack`].
+pub(crate) async fn save_image_pack(
+    room: &Room,
+    write: PackWrite,
+) -> Result<String, FfiError> {
+    let (requested_key, content) = write.into_content()?;
+
+    let state_key = if requested_key.is_empty() {
+        let taken = existing_state_keys(room).await;
+        assign_state_key(&taken, content.pack.display_name.as_deref().unwrap_or(""))
+    } else {
+        requested_key
+    };
+
+    room.send_state_event_for_key(&state_key, content).await.ffi()?;
+    Ok(state_key)
+}
+
+/// Every state key already carrying a pack in this room, so a new pack can be
+/// given a free one.
+async fn existing_state_keys(room: &Room) -> BTreeSet<String> {
+    let request = state_events::Request::new(room.room_id().to_owned());
+    let Ok(resp) = room.client().send(request).await else { return BTreeSet::new() };
+    let wanted = ROOM_IMAGE_PACK.clone();
+    resp.room_state
+        .iter()
+        .filter_map(|raw| serde_json::from_str::<serde_json::Value>(raw.json().get()).ok())
+        .filter(|event| {
+            event.get("type").and_then(|t| t.as_str()).is_some_and(|t| StateEventType::from(t) == wanted)
+        })
+        .filter_map(|event| event.get("state_key").and_then(|k| k.as_str()).map(str::to_owned))
+        .collect()
+}
+
+/// Empty a pack's `images` map. A state event cannot be deleted, only emptied,
+/// and the spec defines an empty pack as its removal.
+pub(crate) async fn remove_image_pack(room: &Room, state_key: String) -> Result<(), FfiError> {
+    room.send_state_event_for_key(&state_key, RoomImagePackEventContent::new(BTreeMap::new()))
+        .await
+        .ffi()
+        .map(|_| ())
+}
+
+/// An uploaded image, ready to be staged into a pack.
+#[derive(Clone, serde::Serialize, serde::Deserialize, uniffi::Record)]
+pub struct UploadedPackImage {
+    pub mxc_url: String,
+    /// Serialised `ImageInfo`, ready to be carried as an `info_json` draft.
+    pub info_json: String,
+}
+
+/// Upload one image for a pack and describe it for the pack's `info`.
+///
+/// Pack media is never encrypted — the MSC puts E2EE of packs explicitly out
+/// of scope — so this is always a plain upload.
+///
+/// `w`/`h` come from the file header rather than a decode: nothing in the
+/// client needs pixel data, since previews are fetched through the homeserver's
+/// own thumbnail endpoint.
+pub(crate) async fn upload_pack_image(
+    client: &Client,
+    bytes: Vec<u8>,
+    mime: &str,
+) -> Result<UploadedPackImage, FfiError> {
+    let parsed: mime::Mime = mime
+        .parse()
+        .map_err(|_| FfiError::Msg(format!("unsupported image type {mime:?}")))?;
+    if parsed.type_() != "image" {
+        return Err(FfiError::Msg(format!("{mime} is not an image")));
+    }
+
+    let byte_len = bytes.len();
+    let dimensions = imagesize::blob_size(&bytes).ok();
+    let upload = client.media().upload(&parsed, bytes, None).await.ffi()?;
+
+    // A client that cannot tell whether an image animates should leave the flag
+    // unset, so only the formats that can animate claim to.
+    let is_animated = match parsed.subtype().as_str() {
+        "gif" | "webp" | "apng" => Some(true),
+        _ => None,
+    };
+
+    let mut info = ImageInfo::new();
+    info.mimetype = Some(parsed.to_string());
+    // `UInt::new` is fallible for values past 2^53-1; a byte count or pixel
+    // dimension can never get there, so a dropped dimension just stays unset.
+    info.size = UInt::new(byte_len as u64);
+    info.width = dimensions.and_then(|d| UInt::new(d.width as u64));
+    info.height = dimensions.and_then(|d| UInt::new(d.height as u64));
+    info.is_animated = is_animated;
+
+    Ok(UploadedPackImage {
+        mxc_url: upload.content_uri.to_string(),
+        info_json: serde_json::to_string(&info).unwrap_or_else(|_| "{}".to_owned()),
+    })
+}
 
 /// Per-call cache of whole-room state. The protocol has no per-type state
 /// endpoint, so every type has to be filtered out of a full dump; caching it
@@ -281,21 +559,20 @@ pub(crate) async fn set_image_pack_enabled(
     room_id: OwnedRoomId,
     state_key: String,
     enabled: bool,
-) -> Result<(), matrix_sdk::Error> {
+) -> Result<(), FfiError> {
     let account = client.account();
 
-    let mut rooms = match account
-        .account_data::<ImagePackRoomsEventContent>()
-        .await?
-    {
+    let mut rooms = match account.account_data::<ImagePackRoomsEventContent>().await.ffi()? {
         Some(raw) => match raw.deserialize() {
             Ok(content) => content.rooms,
             Err(e) => {
-                // The blob is user-writable, so it can be unreadable. There is
-                // nothing to preserve if it cannot be parsed, but overwriting
-                // it silently would drop every other subscription.
-                warn!("image pack: account data unparseable, rewriting: {e}");
-                BTreeMap::new()
+                // The blob is user-writable, so it can be unreadable. Writing an
+                // empty map over it would silently drop every other room's
+                // subscriptions, which is the one outcome worse than failing.
+                return Err(FfiError::Msg(format!(
+                    "existing image pack subscriptions failed to parse, refusing to \
+                     overwrite: {e}"
+                )));
             }
         },
         None => BTreeMap::new(),
@@ -318,6 +595,7 @@ pub(crate) async fn set_image_pack_enabled(
     account
         .set_account_data(ImagePackRoomsEventContent::new(rooms))
         .await
+        .ffi()
         .map(|_| ())
 }
 
@@ -355,4 +633,199 @@ async fn canonical_space_ancestors(
     }
 
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shortcode_grammar_accepts_ascii_alnum_dash_underscore() {
+        assert!(valid_shortcode("cat"));
+        assert!(valid_shortcode("cat_wave"));
+        assert!(valid_shortcode("cat-wave"));
+        assert!(valid_shortcode("CatWave2"));
+        assert!(valid_shortcode("_leading"));
+    }
+
+    #[test]
+    fn shortcode_grammar_rejects_empty_overlong_and_reserved_chars() {
+        // The grammar excludes `:`, `/` and space on purpose, and an empty
+        // shortcode would break lookup.
+        assert!(!valid_shortcode(""));
+        assert!(!valid_shortcode("cat wave"));
+        assert!(!valid_shortcode("cat:wave"));
+        assert!(!valid_shortcode("cat/wave"));
+        assert!(valid_shortcode(&"a".repeat(100)));
+        assert!(!valid_shortcode(&"a".repeat(101)));
+    }
+
+    #[test]
+    fn slugify_collapses_separators_and_falls_back() {
+        assert_eq!(slugify_shortcode("Happy Face"), "happy_face");
+        assert_eq!(slugify_shortcode("a - b"), "a_b");
+        assert_eq!(slugify_shortcode("Already_Fine"), "already_fine");
+        assert_eq!(slugify_shortcode("Happy Face.gif"), "happy_face_gif");
+        assert_eq!(slugify_shortcode("trailing__"), "trailing");
+        assert_eq!(slugify_shortcode(""), "sticker");
+    }
+
+    #[test]
+    fn state_key_uses_display_name_then_suffixes_on_collision() {
+        let empty = BTreeSet::new();
+        assert_eq!(assign_state_key(&empty, "Stickers"), "Stickers");
+
+        let mut taken = BTreeSet::new();
+        taken.insert("Stickers".to_owned());
+        assert_eq!(assign_state_key(&taken, "Stickers"), "Stickers_2");
+
+        taken.insert("Stickers_2".to_owned());
+        assert_eq!(assign_state_key(&taken, "Stickers"), "Stickers_3");
+
+        assert_eq!(assign_state_key(&taken, "   "), "pack");
+    }
+
+    #[test]
+    fn batch_of_identical_bases_does_not_collapse() {
+        // A multi-file drop seeds the same base for every file. Without
+        // reserving each result as it is produced, all but the last would
+        // overwrite the same map entry and the pack would silently lose images.
+        let out = suggest_image_shortcodes(&["cat".into(), "cat".into(), "cat".into()], &[]);
+        assert_eq!(out, vec!["cat", "cat_2", "cat_3"]);
+    }
+
+    #[test]
+    fn batch_avoids_shortcodes_already_in_the_pack() {
+        let out =
+            suggest_image_shortcodes(&["cat".into(), "cat".into()], &["cat".into(), "cat_2".into()]);
+        assert_eq!(out, vec!["cat_3", "cat_4"]);
+    }
+
+    #[test]
+    fn explicit_valid_shortcodes_are_never_rewritten() {
+        // A shortcode the user typed that already fits the grammar is kept
+        // verbatim, so case and separators survive.
+        let out = suggest_image_shortcodes(&["Cat-Wave".into()], &[]);
+        assert_eq!(out, vec!["Cat-Wave"]);
+    }
+
+    #[test]
+    fn batch_slugifies_bases_outside_the_grammar() {
+        let out =
+            suggest_image_shortcodes(&["Happy Face.gif".into(), "happy face.gif".into()], &[]);
+        assert_eq!(out, vec!["happy_face_gif", "happy_face_gif_2"]);
+    }
+
+    #[test]
+    fn usage_drops_unknown_values() {
+        let parsed = parse_usage(&["sticker".into(), "bogus".into(), "emoticon".into()]);
+        assert!(parsed.contains(&PackUsage::Sticker));
+        assert!(parsed.contains(&PackUsage::Emoticon));
+        assert_eq!(parsed.len(), 2);
+        assert!(parse_usage(&[]).is_empty());
+    }
+
+    fn draft(shortcode: &str, mxc: &str) -> PackImageDraft {
+        PackImageDraft {
+            shortcode: shortcode.into(),
+            mxc_url: mxc.into(),
+            body: None,
+            info_json: None,
+        }
+    }
+
+    #[test]
+    fn write_builds_images_and_pack_metadata() {
+        let write = PackWrite {
+            state_key: "cats".into(),
+            display_name: "  Cats  ".into(),
+            usage: vec!["sticker".into()],
+            images: vec![draft("cat", "mxc://h/cat"), draft("cat2", "mxc://h/cat2")],
+        };
+        let (key, content) = write.into_content().expect("valid write");
+        assert_eq!(key, "cats");
+        assert_eq!(content.images.len(), 2);
+        // The name is trimmed, so the state key it would derive stays tidy.
+        assert_eq!(content.pack.display_name.as_deref(), Some("Cats"));
+        assert!(content.pack.usage.contains(&PackUsage::Sticker));
+    }
+
+    #[test]
+    fn write_rejects_an_invalid_shortcode_rather_than_dropping_it() {
+        let write = PackWrite {
+            state_key: String::new(),
+            display_name: "Cats".into(),
+            usage: vec![],
+            images: vec![draft("ok", "mxc://h/a"), draft("not ok", "mxc://h/b")],
+        };
+        let err = write.into_content().expect_err("must reject");
+        assert!(err.to_string().contains("not ok"), "{err}");
+    }
+
+    #[test]
+    fn write_rejects_a_non_mxc_source() {
+        // Pack URLs come from arbitrary homeservers, so a `javascript:` or
+        // remote URL must never reach the media layer.
+        for hostile in ["https://evil.example/x.png", "javascript:alert(1)", "not-a-uri"] {
+            let write = PackWrite {
+                state_key: String::new(),
+                display_name: "Cats".into(),
+                usage: vec![],
+                images: vec![draft("cat", hostile)],
+            };
+            assert!(write.into_content().is_err(), "{hostile} was accepted");
+        }
+    }
+
+    #[test]
+    fn write_rejects_duplicate_shortcodes() {
+        let write = PackWrite {
+            state_key: String::new(),
+            display_name: "Cats".into(),
+            usage: vec![],
+            images: vec![draft("cat", "mxc://h/a"), draft("cat", "mxc://h/b")],
+        };
+        assert!(write.into_content().is_err());
+    }
+
+    #[test]
+    fn write_keeps_info_and_body_and_omits_empty_ones() {
+        let write = PackWrite {
+            state_key: String::new(),
+            display_name: "Cats".into(),
+            usage: vec![],
+            images: vec![
+                PackImageDraft {
+                    shortcode: "with_info".into(),
+                    mxc_url: "mxc://h/a".into(),
+                    body: Some("a cat".into()),
+                    info_json: Some(r#"{"w":128,"h":128}"#.into()),
+                },
+                draft("bare", "mxc://h/b"),
+            ],
+        };
+        let (_, content) = write.into_content().expect("valid write");
+        let with_info = &content.images["with_info"];
+        assert_eq!(with_info.body.as_deref(), Some("a cat"));
+        assert!(with_info.info.is_some());
+        // An empty body is omitted rather than serialised as "", which would
+        // otherwise read back as an explicit empty description.
+        assert!(content.images["bare"].body.is_none());
+    }
+
+    #[test]
+    fn write_carries_the_requested_state_key_through_untouched() {
+        // An empty key is what asks for allocation; anything else is the
+        // caller's existing pack and must be written where it already lives.
+        for key in ["cats", "some key/with slashes", ""] {
+            let write = PackWrite {
+                state_key: key.into(),
+                display_name: "Cats".into(),
+                usage: vec![],
+                images: vec![draft("cat", "mxc://h/a")],
+            };
+            let (got, _) = write.into_content().expect("valid write");
+            assert_eq!(got, key);
+        }
+    }
 }

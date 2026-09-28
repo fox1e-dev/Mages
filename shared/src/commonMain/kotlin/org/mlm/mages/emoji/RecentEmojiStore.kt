@@ -25,7 +25,10 @@ class RecentEmojiStore(private val port: () -> MatrixPort) {
 
     fun refresh() {
         scope.launch {
-            _recent.value = runCatching { port().recentEmoji() }.getOrDefault(emptyList())
+            val stored = runCatching { port().recentEmoji() }.getOrDefault(emptyList())
+            // Another client following MSC4027 may have recorded an mxc URI
+            // here, which belongs in the image picker rather than the emoji one.
+            _recent.value = stored.filterNot { it.emoji.startsWith("mxc://") }
         }
     }
 
@@ -33,9 +36,14 @@ class RecentEmojiStore(private val port: () -> MatrixPort) {
      * Records a use and updates the local list immediately, so the picker does
      * not wait on the round trip. The server copy is authoritative and wins on
      * the next refresh.
+     *
+     * Image reactions are skipped. MSC4027 allows an mxc URI here, but only as
+     * an option, and the merged `m.recent_emoji` spec describes the field as a
+     * Unicode emoji, so recording one would put a raw URI into other clients'
+     * emoji pickers.
      */
     fun record(emoji: String) {
-        if (emoji.isEmpty()) return
+        if (emoji.isEmpty() || emoji.startsWith("mxc://")) return
         scope.launch {
             val updated = runCatching { port().recordEmojiUse(emoji) }
             if (updated.isFailure) return@launch

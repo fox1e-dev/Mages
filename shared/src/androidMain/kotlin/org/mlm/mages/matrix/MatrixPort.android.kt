@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNamingStrategy
 import mages.FfiException
 import mages.FfiPushRuleKind
 import mages.FfiRoomNotificationMode
@@ -44,6 +45,9 @@ class TlsUnavailableException(message: String) : IllegalStateException(message)
 
 private val matrixDispatcher = Dispatchers.IO.limitedParallelism(4)
 private val mediaDispatcher = Dispatchers.IO.limitedParallelism(2)
+
+/** Structured payloads cross the uniffi boundary as JSON, snake_cased to match Rust. */
+private val packJson = Json { ignoreUnknownKeys = true; namingStrategy = JsonNamingStrategy.SnakeCase }
 
 class RustMatrixPort : MatrixPort, VerificationService {
     @Volatile
@@ -376,9 +380,14 @@ class RustMatrixPort : MatrixPort, VerificationService {
             runWithFfiResult { withClient { it.markReadAt(roomId, eventId, sendPublicReceipt) } }
         }
 
-    override suspend fun react(roomId: String, eventId: String, emoji: String): Result<Unit> =
+    override suspend fun react(
+        roomId: String,
+        eventId: String,
+        key: String,
+        shortcode: String?
+    ): Result<Unit> =
         withContext(matrixDispatcher) {
-            runWithFfiResult { withClient { it.react(roomId, eventId, emoji) } }
+            runWithFfiResult { withClient { it.react(roomId, eventId, key, shortcode) } }
         }
 
     override suspend fun reply(roomId: String, inReplyToEventId: String, body: String, formattedBody: String?): Result<Unit> =
@@ -1356,6 +1365,38 @@ class RustMatrixPort : MatrixPort, VerificationService {
             withClient { it.setImagePackEnabled(roomId, stateKey, enabled) }
         }
     }
+
+    override suspend fun canEditImagePacks(roomId: String): Boolean =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.canEditImagePacks(roomId) } }
+                .getOrDefault(false)
+        }
+
+    override suspend fun saveImagePack(roomId: String, write: PackWrite): Result<String> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult {
+                withClient { it.saveImagePack(roomId, packJson.encodeToString(write)) }
+            }
+        }
+
+    override suspend fun removeImagePack(roomId: String, stateKey: String): Result<Unit> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.removeImagePack(roomId, stateKey) } }
+        }
+
+    override suspend fun suggestImageShortcodes(
+        bases: List<String>,
+        taken: List<String>
+    ): List<String> = withContext(matrixDispatcher) {
+        runWithFfiResult { withClient { it.suggestImageShortcodes(bases, taken) } }
+            .getOrElse { emptyList() }
+    }
+
+    override suspend fun uploadPackImage(path: String, mime: String): Result<UploadedPackImage> =
+        withContext(mediaDispatcher) {
+            runWithFfiResult { withClient { it.uploadPackImageFromPath(path, mime) } }
+                .map { UploadedPackImage(mxcUrl = it.mxcUrl, infoJson = it.infoJson) }
+        }
 
     override suspend fun recentEmoji(): List<RecentEmojiEntry> =
         withContext(matrixDispatcher) {

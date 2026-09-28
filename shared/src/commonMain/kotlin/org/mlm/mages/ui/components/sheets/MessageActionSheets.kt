@@ -29,6 +29,7 @@ import mages.shared.generated.resources.message_info
 import mages.shared.generated.resources.retry
 import org.jetbrains.compose.resources.stringResource
 import org.mlm.mages.MessageEvent
+import org.mlm.mages.matrix.ImagePackSummary
 import org.mlm.mages.matrix.SendState
 import org.mlm.mages.ui.displayPreview
 import org.mlm.mages.ui.hasCaption
@@ -64,9 +65,25 @@ fun MessageActionSheet(
     onShare: (() -> Unit)? = null,
     onForward: (() -> Unit)? = null,
     onRetry: (() -> Unit)? = null,
+    reactionImagePacks: List<ImagePackSummary> = emptyList(),
+    resolveReactionPreview: suspend (thumbnailMxcUri: String?, mxcUrl: String) -> String? = { _, _ -> null },
 ) {
     val clipboardManager = LocalClipboardManager.current
     var showEmojiPicker by remember { mutableStateOf(false) }
+    var showImagePicker by remember { mutableStateOf(false) }
+
+    if (showImagePicker) {
+        ReactionImagePickerSheet(
+            packs = reactionImagePacks,
+            resolvePreview = resolveReactionPreview,
+            onImageSelected = { ref ->
+                onReact(ref.mxcUri)
+                onDismiss()
+            },
+            onDismiss = { showImagePicker = false }
+        )
+        return
+    }
 
     if (showEmojiPicker) {
         EmojiPickerSheet(
@@ -90,7 +107,8 @@ fun MessageActionSheet(
             Spacer(Modifier.height(Spacing.lg))
             QuickReactionsRow(
                 onReact = { emoji -> onReact(emoji); onDismiss() },
-                onOpenPicker = { showEmojiPicker = true }
+                onOpenPicker = { showEmojiPicker = true },
+                onOpenImagePicker = { showImagePicker = true }
             )
             Spacer(Modifier.height(Spacing.lg))
             HorizontalDivider(Modifier.padding(horizontal = Spacing.lg))
@@ -183,7 +201,11 @@ private fun MessagePreview(event: MessageEvent) {
 }
 
 @Composable
-private fun QuickReactionsRow(onReact: (String) -> Unit, onOpenPicker: () -> Unit) {
+private fun QuickReactionsRow(
+    onReact: (String) -> Unit,
+    onOpenPicker: () -> Unit,
+    onOpenImagePicker: () -> Unit
+) {
     Text("Quick reactions", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = Spacing.lg), fontWeight = FontWeight.Medium)
     Spacer(Modifier.height(Spacing.sm))
     LazyRow(contentPadding = PaddingValues(horizontal = Spacing.lg), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
@@ -196,6 +218,13 @@ private fun QuickReactionsRow(onReact: (String) -> Unit, onOpenPicker: () -> Uni
             Surface(onClick = onOpenPicker, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.size(48.dp)) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Add, contentDescription = "More emoji", modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+        item {
+            Surface(onClick = onOpenImagePicker, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.size(48.dp)) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Image, contentDescription = "React with an image", modifier = Modifier.size(20.dp))
                 }
             }
         }

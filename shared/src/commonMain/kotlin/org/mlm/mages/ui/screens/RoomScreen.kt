@@ -1059,6 +1059,8 @@ fun RoomScreen(
                     ?.let { onOpenForwardPicker(state.roomId, listOf(it)) }
             },
             onSelect = { viewModel.enterSelectionMode(event.eventId) },
+            reactionImagePacks = state.imagePacks,
+            resolveReactionPreview = viewModel::packImagePreview,
         )
     }
 
@@ -1516,6 +1518,7 @@ private fun MessageItem(
 
         // Message bubble
         val chips = event.reactions
+        LaunchedEffect(chips) { viewModel.ensureReactionImages(chips) }
         val allUserIdsFromReactions = chips.flatMap { it.userIds }.distinct()
         val reactionAvatarMap = allUserIdsFromReactions.associateWith { userId ->
             state.avatarByUserId[userId]
@@ -1675,6 +1678,8 @@ private fun MessageItem(
                             reactions = chips,
                             reactionAvatarsByUserId = reactionAvatarMap,
                             showReactionAvatars = showReactionAvatars,
+                            reactionImagePaths = state.reactionImagePathByMxc,
+                            reactionShortcodes = viewModel.reactionShortcodes,
                             threadCount = state.threadCount[event.eventId],
                             variant = MessageBubbleVariant.Timeline,
                             resolvedPreviewPath = state.thumbByEvent[event.eventId],

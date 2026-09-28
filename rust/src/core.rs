@@ -78,6 +78,15 @@ use crate::{
 };
 
 const REACTION_NOTIFY_RULE_ID: &str = "org.mlm.mages.reaction.notify";
+
+/// MSC4027 caps the optional reaction `shortcode` at 100 bytes; longer values
+/// are dropped rather than sent, since the spec has servers reject them.
+const MSC4027_SHORTCODE_MAX_BYTES: usize = 100;
+
+/// MSC4027's unstable field name for the reaction shortcode, which sits at the
+/// root of the event content rather than inside `m.relates_to`.
+const MSC4027_SHORTCODE_FIELD: &str = "com.beeper.reaction.shortcode";
+
 use crate::{
     RoomProfile,
     errors::{IntoFfi, OptionFfi, ffi_err},
@@ -839,11 +848,15 @@ impl CoreClient {
             .map(|_| ())
     }
 
+    /// Toggles a reaction. [shortcode] is MSC4027's optional textual name, only
+    /// meaningful when [emoji] is an mxc URI, and is sent under the unstable
+    /// field name until the MSC merges.
     pub async fn react(
         &self,
         room_id: String,
         event_id: String,
         emoji: String,
+        shortcode: Option<String>,
     ) -> Result<(), FfiError> {
         let tl = self
             .timeline(&room_id)
@@ -855,10 +868,27 @@ impl CoreClient {
             .item_by_event_id(&eid)
             .await
             .ok_or_else(|| FfiError::Msg("event not found".into()))?;
-        tl.toggle_reaction(&item.identifier(), &emoji)
-            .await
-            .ffi()
-            .map(|_| ())
+
+        let extra = shortcode
+            .filter(|_| emoji.starts_with("mxc://"))
+            .filter(|s| !s.is_empty() && s.len() <= MSC4027_SHORTCODE_MAX_BYTES)
+            .map(|shortcode| {
+                let mut map = serde_json::Map::new();
+                map.insert(
+                    MSC4027_SHORTCODE_FIELD.to_owned(),
+                    serde_json::Value::String(shortcode),
+                );
+                map
+            });
+
+        match extra {
+            Some(extra) => tl
+                .toggle_reaction_with_extra_content(&item.identifier(), &emoji, Some(extra))
+                .await
+                .ffi()
+                .map(|_| ()),
+            None => tl.toggle_reaction(&item.identifier(), &emoji).await.ffi().map(|_| ()),
+        }
     }
 
     pub async fn send_thread_text(
@@ -2688,9 +2718,53 @@ impl CoreClient {
         enabled: bool,
     ) -> Result<(), FfiError> {
         let rid = Self::parse_rid(&room_id)?;
-        crate::image_packs::set_image_pack_enabled(&self.sdk, rid, state_key, enabled)
-            .await
-            .ffi()
+        crate::image_packs::set_image_pack_enabled(&self.sdk, rid, state_key, enabled).await
+    }
+
+    pub async fn can_edit_image_packs(&self, room_id: String) -> Result<bool, FfiError> {
+        let room = self.require_room(&room_id)?;
+        Ok(crate::image_packs::can_edit_room_packs(&self.sdk, &room).await)
+    }
+
+    /// Create or replace one of a room's packs, returning the state key used.
+    /// An empty `state_key` in [write](crate::image_packs::PackWrite) creates a
+    /// new pack under a free key.
+    pub async fn save_image_pack(
+        &self,
+        room_id: String,
+        write_json: String,
+    ) -> Result<String, FfiError> {
+        let room = self.require_room(&room_id)?;
+        let write: crate::image_packs::PackWrite = serde_json::from_str(&write_json)
+            .map_err(|e| FfiError::Msg(format!("invalid image pack payload: {e}")))?;
+        crate::image_packs::save_image_pack(&room, write).await
+    }
+
+    pub async fn remove_image_pack(
+        &self,
+        room_id: String,
+        state_key: String,
+    ) -> Result<(), FfiError> {
+        let room = self.require_room(&room_id)?;
+        crate::image_packs::remove_image_pack(&room, state_key).await
+    }
+
+    /// Resolve collision-free shortcodes for a batch of images being added to
+    /// one pack, so a multi-file drop cannot collapse onto a single entry.
+    pub async fn suggest_image_shortcodes(
+        &self,
+        bases: Vec<String>,
+        taken: Vec<String>,
+    ) -> Result<Vec<String>, FfiError> {
+        Ok(crate::image_packs::suggest_image_shortcodes(&bases, &taken))
+    }
+
+    pub async fn upload_pack_image(
+        &self,
+        bytes: Vec<u8>,
+        mime: String,
+    ) -> Result<crate::image_packs::UploadedPackImage, FfiError> {
+        crate::image_packs::upload_pack_image(&self.sdk, bytes, &mime).await
     }
 
     /// `m.recent_emoji` in the order the spec stores it: most recent first.

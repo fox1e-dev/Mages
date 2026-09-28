@@ -90,6 +90,10 @@ data class MessageBubbleRenderContext(
     val reactions: List<ReactionSummary> = emptyList(),
     val reactionAvatarsByUserId: Map<String, String> = emptyMap(),
     val showReactionAvatars: Boolean = false,
+    /** Resolved MSC4027 image reactions, keyed by their mxc reaction key. */
+    val reactionImagePaths: Map<String, String> = emptyMap(),
+    /** Shortcodes for MSC4027 image reactions, where the key is a known pack image. */
+    val reactionShortcodes: Map<String, String> = emptyMap(),
     val threadCount: Int? = null,
     val variant: MessageBubbleVariant = MessageBubbleVariant.Timeline,
     val resolvedPreviewPath: String? = null,
@@ -114,6 +118,8 @@ data class MessageBubbleModel(
     val reactions: List<ReactionSummary> = emptyList(),
     val reactionAvatarsByUserId: Map<String, String> = emptyMap(),
     val showReactionAvatars: Boolean = false,
+    val reactionImagePaths: Map<String, String> = emptyMap(),
+    val reactionShortcodes: Map<String, String> = emptyMap(),
     val reply: MessageReplyUi? = null,
     val sendState: SendState? = null,
     val attachment: MessageAttachmentUi? = null,

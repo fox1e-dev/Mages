@@ -109,6 +109,8 @@ internal fun TimelineContent.Bubble.toBubbleModel(
         reactions = ctx.reactions,
         reactionAvatarsByUserId = ctx.reactionAvatarsByUserId,
         showReactionAvatars = ctx.showReactionAvatars,
+        reactionImagePaths = ctx.reactionImagePaths,
+        reactionShortcodes = ctx.reactionShortcodes,
         reply = MessageReplyUi(
             sender = event.replyToSenderDisplayName,
             body = event.replyToBody,

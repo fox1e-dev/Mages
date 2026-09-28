@@ -52,6 +52,9 @@ fun composerToFormattedBody(text: String, emoteImages: List<ImagePackImageEntry>
     }
 
     val tree = MarkdownParser(markdownFlavour).buildMarkdownTreeFromString(processed)
+    // The tree is rooted at MARKDOWN_FILE, which the CommonMark flavour maps to
+    // a <body> tag, and each top-level paragraph is wrapped in <p>. Neither
+    // belongs in formatted_body.
     var html = HtmlGenerator(processed, tree, markdownFlavour, false).generateHtml()
     html = html.removeSurrounding("<body>", "</body>")
     html = html.removeSurrounding("<p>", "</p>")
@@ -74,7 +77,7 @@ private fun markEmoteImages(html: String, emoteImages: List<ImagePackImageEntry>
     var changed = false
     val out = IMG_TAG.replace(html) { match ->
         val raw = IMG_SRC.find(match.value)?.groupValues?.get(1) ?: return@replace match.value
-        val image = known[raw] ?: known[raw.decodePercentEscapes()] ?: return@replace match.value
+        val image = known[raw] ?: return@replace match.value
         changed = true
         val alt = escapeHtmlAttribute(image.body ?: image.shortcode)
         "<img data-mx-emoticon src=\"${escapeHtmlAttribute(image.mxcUrl)}\" alt=\"$alt\" " +
@@ -90,23 +93,3 @@ private fun escapeHtml(text: String): String = text
     .replace("\"", "&quot;")
 
 private fun escapeHtmlAttribute(text: String): String = escapeHtml(text)
-
-private fun String.decodePercentEscapes(): String {
-    if (!contains('%')) return this
-    val out = StringBuilder(length)
-    var i = 0
-    while (i < length) {
-        val c = this[i]
-        if (c == '%' && i + 2 < length) {
-            val hex = substring(i + 1, i + 3).toIntOrNull(16)
-            if (hex != null) {
-                out.append(hex.toChar())
-                i += 3
-                continue
-            }
-        }
-        out.append(c)
-        i++
-    }
-    return out.toString()
-}

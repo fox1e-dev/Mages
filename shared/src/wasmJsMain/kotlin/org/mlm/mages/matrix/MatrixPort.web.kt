@@ -682,8 +682,13 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
     override suspend fun markRoomSeenLatest(roomId: String, sendPublicReceipt: Boolean): Result<Boolean> =
         requireClient().markRoomSeenLatest(roomId, sendPublicReceipt).awaitBoolResult()
 
-    override suspend fun react(roomId: String, eventId: String, emoji: String): Result<Unit> =
-        requireClient().react(roomId, eventId, emoji).awaitUnitResult()
+    override suspend fun react(
+        roomId: String,
+        eventId: String,
+        key: String,
+        shortcode: String?
+    ): Result<Unit> =
+        requireClient().react(roomId, eventId, key, shortcode).awaitUnitResult()
 
     override suspend fun reply(
         roomId: String,
@@ -1634,6 +1639,40 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         enabled: Boolean
     ): Result<Unit> =
         requireClient().setImagePackEnabled(roomId, stateKey, enabled).awaitUnitResult()
+
+    override suspend fun canEditImagePacks(roomId: String): Boolean =
+        requireClient().canEditImagePacks(roomId).awaitPlainBool()
+
+    override suspend fun saveImagePack(roomId: String, write: PackWrite): Result<String> =
+        requireClient()
+            .saveImagePack(roomId, wasmJson.encodeToString(write))
+            .awaitStringResult()
+
+    override suspend fun removeImagePack(roomId: String, stateKey: String): Result<Unit> =
+        requireClient().removeImagePack(roomId, stateKey).awaitUnitResult()
+
+    override suspend fun suggestImageShortcodes(
+        bases: List<String>,
+        taken: List<String>
+    ): List<String> = wasmJson.decodeFromJsonElement(
+        requireClient()
+            .suggestImageShortcodes(bases.toJsArray(), taken.toJsArray())
+            .await<JsAny?>()
+            .toJsonArray()
+    )
+
+    override suspend fun uploadPackImage(path: String, mime: String): Result<UploadedPackImage> {
+        // Picked files are staged as blobs rather than written to disk, so the
+        // bytes come from that cache instead of a path. The blob is left in
+        // place: the editor can retry a failed save without re-picking.
+        val bytes = retrieveWebBlob(path)
+            ?: return Result.failure(IllegalStateException("image no longer available"))
+        return requireClient()
+            .uploadPackImageBytes(bytes.toJsUint8Array(), mime)
+            .awaitValue<UploadedPackImage>()
+            ?.let { Result.success(it) }
+            ?: Result.failure(IllegalStateException("image upload failed"))
+    }
 
     override suspend fun recentEmoji(): List<RecentEmojiEntry> =
         wasmJson.decodeFromJsonElement(

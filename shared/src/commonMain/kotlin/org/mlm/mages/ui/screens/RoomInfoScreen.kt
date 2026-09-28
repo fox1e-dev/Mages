@@ -57,6 +57,7 @@ fun RoomInfoRoute(
     onBack: () -> Unit,
     onLeaveSuccess: () -> Unit,
     onOpenMediaGallery: () -> Unit,
+    onOpenImagePackEditor: () -> Unit,
     onOpenSpace: (String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
@@ -103,6 +104,7 @@ fun RoomInfoRoute(
         onOpenRoom = viewModel::openRoom,
         onOpenSpace = onOpenSpace,
         onOpenMediaGallery = onOpenMediaGallery,
+        onOpenImagePackEditor = onOpenImagePackEditor,
         onShowNotificationSettings = viewModel::showNotificationSettings,
         onHideNotificationSettings = viewModel::hideNotificationSettings,
         onSetNotificationMode = viewModel::setNotificationMode,
@@ -153,6 +155,7 @@ fun RoomInfoScreen(
     onOpenRoom: (String) -> Unit,
     onOpenSpace: (String) -> Unit,
     onOpenMediaGallery: () -> Unit,
+    onOpenImagePackEditor: () -> Unit,
     onShowNotificationSettings: () -> Unit,
     onHideNotificationSettings: () -> Unit,
     onSetNotificationMode: (RoomNotificationMode) -> Unit,
@@ -328,6 +331,12 @@ fun RoomInfoScreen(
                             icon = Icons.Default.PhotoLibrary,
                             title = "Media & Files",
                             onClick = onOpenMediaGallery
+                        )
+                        HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
+                        SettingsNavRow(
+                            icon = Icons.Default.CollectionsBookmark,
+                            title = "Image packs",
+                            onClick = onOpenImagePackEditor
                         )
                     }
                 }

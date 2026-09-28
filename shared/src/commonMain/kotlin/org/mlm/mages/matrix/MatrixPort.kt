@@ -583,6 +583,41 @@ data class ForwardResult(
     val failed: List<String>
 )
 
+/** One image of a pack, as the editor stages it before saving. */
+@Serializable
+data class PackImageDraft(
+    val shortcode: String,
+    val mxcUrl: String,
+    val body: String? = null,
+    /** Serialised `ImageInfo`, carried into the pack's `info` verbatim. */
+    val infoJson: String? = null,
+    /** Local path, for the editor's own preview. Never sent. */
+    val previewPath: String? = null
+)
+
+/**
+ * The complete desired contents of one pack.
+ *
+ * This is a replacement, not a diff: an image absent from [images] is removed
+ * from the pack.
+ */
+@Serializable
+data class PackWrite(
+    /** Empty allocates a free state key server-side. */
+    val stateKey: String = "",
+    val displayName: String = "",
+    /** Empty means both stickers and emoticons, per the spec's default. */
+    val usage: List<String> = emptyList(),
+    val images: List<PackImageDraft> = emptyList()
+)
+
+/** An uploaded pack image, ready to be staged. */
+@Serializable
+data class UploadedPackImage(
+    val mxcUrl: String,
+    val infoJson: String = "{}"
+)
+
 @Serializable
 data class SpaceHierarchyPage(
     val children: List<SpaceChildInfo>,
@@ -767,7 +802,16 @@ interface MatrixPort {
     suspend fun paginateForward(roomId: String, count: Int): Result<Boolean>
     suspend fun markRead(roomId: String, sendPublicReceipt: Boolean = false): Result<Unit>
     suspend fun markReadAt(roomId: String, eventId: String, sendPublicReceipt: Boolean = false): Result<Unit>
-    suspend fun react(roomId: String, eventId: String, emoji: String): Result<Unit>
+    /**
+     * Toggles a reaction keyed by [key]. When [key] is an mxc URI, [shortcode]
+     * is sent as MSC4027's optional textual name alongside it.
+     */
+    suspend fun react(
+        roomId: String,
+        eventId: String,
+        key: String,
+        shortcode: String? = null
+    ): Result<Unit>
     suspend fun reply(roomId: String, inReplyToEventId: String, body: String, formattedBody: String? = null): Result<Unit>
     suspend fun edit(roomId: String, targetEventId: String, newBody: String, formattedBody: String? = null): Result<Unit>
     suspend fun editCaption(
@@ -998,6 +1042,49 @@ interface MatrixPort {
         stateKey: String,
         enabled: Boolean
     ): Result<Unit>
+
+    /**
+     * Whether the signed-in user may write `m.room.image_pack` in this room.
+     *
+     * The spec is silent on permissions, so ordinary state-event auth applies
+     * and the bar is `state_default` (50) unless the room lowers it. False on
+     * any uncertainty, so the editor opens read-only rather than failing a save.
+     */
+    suspend fun canEditImagePacks(roomId: String): Boolean
+
+    /**
+     * Creates or replaces one of a room's packs, returning the state key it
+     * landed under.
+     *
+     * [write] replaces the pack's contents wholesale rather than merging, which
+     * is what makes a removed image actually disappear. An empty
+     * [PackWrite.stateKey] allocates a free one.
+     */
+    suspend fun saveImagePack(roomId: String, write: PackWrite): Result<String>
+
+    /**
+     * Empties a pack's `images` map. A state event cannot be deleted, only
+     * emptied, and the spec defines an empty pack as its removal.
+     */
+    suspend fun removeImagePack(roomId: String, stateKey: String): Result<Unit>
+
+    /**
+     * Resolves collision-free shortcodes for a batch of images being added to
+     * one pack, reserving each result as it is produced. Passing a whole batch
+     * in one call is what stops a multi-file drop from resolving every file to
+     * the same shortcode.
+     */
+    suspend fun suggestImageShortcodes(bases: List<String>, taken: List<String>): List<String>
+
+    /**
+     * Uploads one image for a pack and describes it for the pack's `info`.
+     *
+     * Pack media is never encrypted — the spec puts E2EE of packs explicitly
+     * out of scope — so this is always a plain upload. On web a picked file is
+     * staged as a blob rather than a path on disk, so [path] is whatever the
+     * picker produced and the platform resolves it.
+     */
+    suspend fun uploadPackImage(path: String, mime: String): Result<UploadedPackImage>
 
     /** `m.recent_emoji`, most recently used first. */
     suspend fun recentEmoji(): List<RecentEmojiEntry>

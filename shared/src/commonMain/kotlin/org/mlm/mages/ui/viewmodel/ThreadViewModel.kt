@@ -24,6 +24,9 @@ import org.mlm.mages.ui.components.composer.composerToFormattedBody
 import org.mlm.mages.ui.components.composer.composerToPlainBody
 import org.mlm.mages.ui.components.composer.emoteSuggestionsFrom
 import org.mlm.mages.ui.components.core.emoteMxcUrisFrom
+import org.mlm.mages.ui.components.message.mxcReactionKeys
+import org.mlm.mages.ui.components.message.reactionShortcodesFrom
+import org.mlm.mages.matrix.ReactionSummary
 import kotlin.getValue
 
 class ThreadViewModel(
@@ -439,7 +442,40 @@ class ThreadViewModel(
         if (event.eventId.isBlank()) return
         recentEmoji.record(emoji)
         launch {
-            runSafe { service.port.react(roomId, event.eventId, emoji) }
+            runSafe { service.port.react(roomId, event.eventId, emoji, reactionShortcodeFor(emoji)) }
+        }
+    }
+
+    /** MSC4027's shortcode for an mxc reaction key, when it is a known pack image. */
+    fun reactionShortcodeFor(key: String): String? {
+        if (!key.startsWith("mxc://")) return null
+        return currentState.imagePacks
+            .flatMap { it.images }
+            .firstOrNull { it.mxcUrl == key }
+            ?.shortcode
+    }
+
+    val reactionShortcodes: Map<String, String>
+        get() = reactionShortcodesFrom(currentState.imagePacks)
+
+    private val reactionImageFetchInFlight = mutableSetOf<String>()
+
+    fun ensureReactionImages(chips: List<ReactionSummary>) {
+        val missing = mxcReactionKeys(chips)
+            .filterNot { currentState.reactionImagePathByMxc.containsKey(it) }
+            .filter { reactionImageFetchInFlight.add(it) }
+        if (missing.isEmpty()) return
+
+        launch {
+            val resolved = missing
+                .mapNotNull { mxc ->
+                    runSafe { service.port.mxcThumbnailToCache(mxc, 64, 64, false) }
+                        ?.let { mxc to it }
+                }
+                .toMap()
+            missing.forEach { reactionImageFetchInFlight.remove(it) }
+            if (resolved.isEmpty()) return@launch
+            updateState { copy(reactionImagePathByMxc = reactionImagePathByMxc + resolved) }
         }
     }
 

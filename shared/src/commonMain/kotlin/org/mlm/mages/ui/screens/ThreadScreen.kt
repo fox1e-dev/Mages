@@ -95,6 +95,8 @@ fun ThreadRoute(
         showReactionAvatars = settings.showReactionAvatars,
         emoteSuggestions = viewModel.emoteSuggestions,
         resolveEmotePreview = { thumbnail, mxc -> viewModel.emotePreview(thumbnail, mxc) },
+        reactionShortcodes = viewModel.reactionShortcodes,
+        onReactionImages = { chips -> viewModel.ensureReactionImages(chips) },
     )
 }
 
@@ -118,6 +120,8 @@ fun ThreadScreen(
     showReactionAvatars: Boolean = true,
     emoteSuggestions: List<EmoteSuggestion> = emptyList(),
     resolveEmotePreview: suspend (thumbnailMxcUri: String?, mxcUrl: String) -> String? = { _, _ -> null },
+    reactionShortcodes: Map<String, String> = emptyMap(),
+    onReactionImages: (List<ReactionSummary>) -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     var sheetEvent by remember { mutableStateOf<MessageEvent?>(null) }
@@ -141,6 +145,9 @@ fun ThreadScreen(
     }
 
     val focusedEventId = state.focusedEventId
+    LaunchedEffect(state.replies, state.rootMessage) {
+        onReactionImages(state.allMessages.flatMap { it.reactions })
+    }
     var focusedLoadAttempts by remember { mutableIntStateOf(0) }
     LaunchedEffect(focusedEventId, state.hasInitialLoad, state.replies.size, state.nextBatch, state.isLoading) {
         val target = focusedEventId ?: return@LaunchedEffect
@@ -306,6 +313,8 @@ fun ThreadScreen(
                                         avatarByUserId = state.avatarByUserId,
                                         replyThumbByEvent = state.replyThumbByEvent,
                                         emotePaths = state.emotePathByMxc,
+                                        reactionImagePaths = state.reactionImagePathByMxc,
+                                        reactionShortcodes = reactionShortcodes,
                                         onReact = { emoji -> onReact(bubbleItem.event, emoji) },
                                         onLongPress = { sheetEvent = bubbleItem.event },
                                         grouped = shouldGroup,
@@ -654,6 +663,8 @@ private fun ThreadReplyMessage(
     avatarByUserId: Map<String, String>,
     replyThumbByEvent: Map<String, String>,
     emotePaths: Map<String, String>,
+    reactionImagePaths: Map<String, String>,
+    reactionShortcodes: Map<String, String>,
     onReact: (String) -> Unit,
     onLongPress: () -> Unit,
     grouped: Boolean = false,
@@ -700,6 +711,8 @@ private fun ThreadReplyMessage(
                     resolvedPreviewPath = null,
                     resolvedReplyPreviewPath = event.replyToEventId?.let { replyThumbByEvent[it] },
                     senderVisible = !grouped,
+                    reactionImagePaths = reactionImagePaths,
+                    reactionShortcodes = reactionShortcodes,
                 )
             ).copy(
                 sendState = event.sendState,

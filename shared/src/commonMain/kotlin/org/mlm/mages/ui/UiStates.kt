@@ -309,6 +309,7 @@ data class RoomUiState(
     val isLoadingImagePacks: Boolean = false,
     val imagePacks: List<ImagePackSummary> = emptyList(),
     val packIdsBeingUpdated: Set<String> = emptySet(),
+    val reactionImagePathByMxc: Map<String, String> = emptyMap(),
     val showPollCreator: Boolean = false,
     val showLiveLocation: Boolean = false,
     val showShareLocation: Boolean = false,
@@ -587,6 +588,7 @@ data class ThreadUiState(
     val focusedEventMissing: Boolean = false,
     val imagePacks: List<ImagePackSummary> = emptyList(),
     val emotePathByMxc: Map<String, String> = emptyMap(),
+    val reactionImagePathByMxc: Map<String, String> = emptyMap(),
 ) {
     val messageCount: Int get() = (if (rootMessage != null) 1 else 0) + replies.size
 
@@ -648,4 +650,45 @@ data class SearchUiState(
     // For scoped search
     val scopedRoomId: String? = null,
     val scopedRoomName: String? = null
+)
+
+/**
+ * One pack as the editor sees it. A pack with an empty [stateKey] is one this
+ * session has staged but not yet written, and carries its images in
+ * [pendingImages] until the first save allocates a key.
+ */
+data class PackEditorEntry(
+    val stateKey: String = "",
+    val displayName: String = "",
+    val usage: List<String> = emptyList(),
+    val images: List<ImagePackImageEntry> = emptyList(),
+    /** Staged additions, uploaded on save rather than held as bytes. */
+    val pendingImages: List<PendingPackImage> = emptyList(),
+    val isEnabledGlobally: Boolean = false
+) {
+    val isNew: Boolean get() = stateKey.isEmpty()
+    val imageCount: Int get() = images.size + pendingImages.size
+}
+
+/** An image the user picked but has not uploaded yet. */
+data class PendingPackImage(
+    val localId: String,
+    val path: String,
+    val mime: String,
+    val shortcode: String = "",
+    /** Set when the shortcode the user typed is not one the spec accepts. */
+    val shortcodeError: String? = null,
+    val previewPath: String? = null
+)
+
+data class ImagePackEditorUiState(
+    val isLoading: Boolean = true,
+    /** False when the user's power level is below the bar for room state. */
+    val canEdit: Boolean = false,
+    val packs: List<PackEditorEntry> = emptyList(),
+    val stateKeysBeingSaved: Set<String> = emptySet(),
+    val isUploading: Boolean = false,
+    /** 0f..1f across the pending images of the save in flight. */
+    val uploadProgress: Float = 0f,
+    val hasUnsavedChanges: Boolean = false
 )
