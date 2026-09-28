@@ -31,6 +31,8 @@ private fun MessageEvent.toAttachmentUi(
     resolvedAudioWaveform: List<Float>,
 ): MessageAttachmentUi? {
     val info = attachment ?: return null
+    val caption = toMediaCaption()
+    val captionFormattedBody = formattedBody?.takeIf { it.isNotBlank() && caption != null }
 
     return when (val kind = info.kind) {
         AttachmentKind.File -> MessageAttachmentUi.File(
@@ -40,26 +42,30 @@ private fun MessageEvent.toAttachmentUi(
             title = info.fileName?.takeIf { it.isNotBlank() }
                 ?: body.trim().ifBlank { "File" },
             subtitle = buildAttachmentSubtitle(info.mime, info.sizeBytes),
-            caption = toMediaCaption(),
+            caption = caption,
+            captionFormattedBody = captionFormattedBody,
         )
         AttachmentKind.Image -> MessageAttachmentUi.Image(
             previewPath = resolvedPreviewPath ?: info.thumbnailMxcUri,
             width = info.width,
             height = info.height,
-            caption = toMediaCaption(),
+            caption = caption,
+            captionFormattedBody = captionFormattedBody,
         )
         AttachmentKind.Video -> MessageAttachmentUi.Video(
             previewPath = resolvedPreviewPath ?: info.thumbnailMxcUri,
             width = info.width,
             height = info.height,
             durationMs = info.durationMs,
-            caption = toMediaCaption(),
+            caption = caption,
+            captionFormattedBody = captionFormattedBody,
         )
         AttachmentKind.Audio -> MessageAttachmentUi.Audio(
             filePath = resolvedAudioPath,
             durationMs = info.durationMs,
             waveform = resolvedAudioWaveform.ifEmpty { info.waveform.orEmpty() },
-            caption = toMediaCaption(),
+            caption = caption,
+            captionFormattedBody = captionFormattedBody,
             fileName = info.fileName,
             mime = info.mime,
             sizeBytes = info.sizeBytes,

@@ -37,6 +37,7 @@ sealed interface MessageAttachmentUi {
         val title: String,
         val subtitle: String?,
         val caption: String? = null,
+        val captionFormattedBody: String? = null,
     ) : MessageAttachmentUi
 
     data class Image(
@@ -44,6 +45,7 @@ sealed interface MessageAttachmentUi {
         val width: Int?,
         val height: Int?,
         val caption: String?,
+        val captionFormattedBody: String? = null,
     ) : MessageAttachmentUi
 
     data class Video(
@@ -52,6 +54,7 @@ sealed interface MessageAttachmentUi {
         val height: Int?,
         val durationMs: Long?,
         val caption: String?,
+        val captionFormattedBody: String? = null,
     ) : MessageAttachmentUi
 
     data class Audio(
@@ -59,6 +62,7 @@ sealed interface MessageAttachmentUi {
         val durationMs: Long?,
         val waveform: List<Float>,
         val caption: String? = null,
+        val captionFormattedBody: String? = null,
         val fileName: String? = null,
         val mime: String? = null,
         val sizeBytes: Long? = null,

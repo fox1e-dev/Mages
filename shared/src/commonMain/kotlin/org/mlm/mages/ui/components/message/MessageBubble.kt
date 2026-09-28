@@ -45,7 +45,6 @@ import org.mlm.mages.ReplyPreviewKind
 import org.mlm.mages.matrix.SendState
 import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.components.core.FormattedBodyText
-import org.mlm.mages.ui.components.core.MarkdownText
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.components.voice.VoiceMessageBubble
 import org.mlm.mages.ui.theme.Spacing
@@ -212,9 +211,11 @@ fun MessageBubble(
                                             position = TimestampPosition.Aligned,
                                             timestamp = timestampContent,
                                         ) {
-                                            MarkdownText(
-                                                text = attachment.caption,
-                                                color = bubbleTextColor
+                                            FormattedBodyText(
+                                                formattedBody = attachment.captionFormattedBody,
+                                                fallbackBody = attachment.caption,
+                                                color = bubbleTextColor,
+                                                containerColor = bubbleContainerColor
                                             )
                                         }
                                     } else {
@@ -234,7 +235,8 @@ fun MessageBubble(
                                         attachment = attachment,
                                         isMine = isMine,
                                         onOpen = onOpenAttachment,
-                                        timestamp = timestampContent
+                                        timestamp = timestampContent,
+                                        containerColor = bubbleContainerColor
                                     )
                                 }
                                 is MessageAttachmentUi.Video -> {
@@ -242,7 +244,8 @@ fun MessageBubble(
                                         attachment = attachment,
                                         isMine = isMine,
                                         onOpen = onOpenAttachment,
-                                        timestamp = timestampContent
+                                        timestamp = timestampContent,
+                                        containerColor = bubbleContainerColor
                                     )
                                 }
                                 null -> { /* no attachment */ }
@@ -263,9 +266,11 @@ fun MessageBubble(
                                             position = TimestampPosition.Aligned,
                                             timestamp = timestampContent,
                                         ) {
-                                            MarkdownText(
-                                                text = attachment.caption,
-                                                color = bubbleTextColor
+                                            FormattedBodyText(
+                                                formattedBody = attachment.captionFormattedBody,
+                                                fallbackBody = attachment.caption,
+                                                color = bubbleTextColor,
+                                                containerColor = bubbleContainerColor
                                             )
                                         }
                                     } else {
@@ -648,6 +653,7 @@ private fun ImageAttachmentBubble(
     isMine: Boolean,
     onOpen: (() -> Unit)?,
     timestamp: @Composable () -> Unit,
+    containerColor: Color,
 ) {
     val contentColor = if (isMine) MaterialTheme.colorScheme.onPrimaryContainer
     else MaterialTheme.colorScheme.onSecondaryContainer
@@ -706,9 +712,11 @@ private fun ImageAttachmentBubble(
                     position = TimestampPosition.Aligned,
                     timestamp = timestamp,
                 ) {
-                    MarkdownText(
-                        text = attachment.caption!!,
-                        color = contentColor
+                    FormattedBodyText(
+                        formattedBody = attachment.captionFormattedBody,
+                        fallbackBody = attachment.caption!!,
+                        color = contentColor,
+                        containerColor = containerColor
                     )
                 }
             }
@@ -727,6 +735,7 @@ private fun VideoAttachmentBubble(
     isMine: Boolean,
     onOpen: (() -> Unit)?,
     timestamp: @Composable () -> Unit,
+    containerColor: Color,
 ) {
     val contentColor = if (isMine) MaterialTheme.colorScheme.onPrimaryContainer
     else MaterialTheme.colorScheme.onSecondaryContainer
@@ -790,9 +799,11 @@ private fun VideoAttachmentBubble(
                     position = TimestampPosition.Aligned,
                     timestamp = timestamp,
                 ) {
-                    MarkdownText(
-                        text = attachment.caption!!,
-                        color = contentColor
+                    FormattedBodyText(
+                        formattedBody = attachment.captionFormattedBody,
+                        fallbackBody = attachment.caption!!,
+                        color = contentColor,
+                        containerColor = containerColor
                     )
                 }
             }
