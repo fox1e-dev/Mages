@@ -9,37 +9,46 @@ import java.awt.datatransfer.StringSelection
 import java.io.File
 
 @Composable
-actual fun rememberShareHandler(): (ShareContent) -> Unit {
+actual fun rememberShareHandler(): suspend (ShareContent) -> ShareOutcome {
     return remember {
         { content ->
             try {
                 val files = content.allFilePaths.map { File(it) }.filter { it.exists() && it.canRead() }
 
-                when {
-                    files.isNotEmpty() -> {
-                        // Open containing folder of the first file (simple, predictable)
-                        val parent = files.first().parentFile
-                        if (parent != null && Desktop.isDesktopSupported()) {
-                            Desktop.getDesktop().open(parent)
-                        }
-
-                        // Also copy paths to clipboard as a convenience for multi-file cases
-                        if (files.size > 1) {
-                            val text = files.joinToString("\n") { it.absolutePath }
-                            val selection = StringSelection(text)
-                            Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, selection)
-                        }
+                if (files.isNotEmpty()) {
+                    val parent = files.first().parentFile
+                    if (parent != null && Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().open(parent)
                     }
 
-                    content.text != null -> {
-                        val selection = StringSelection(content.text)
-                        val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-                        clipboard.setContents(selection, selection)
+                    if (files.size > 1) {
+                        copyToClipboard(files.joinToString("\n") { it.absolutePath })
+                        return@remember ShareOutcome.Copied
                     }
+
+                    return@remember if (parent != null && Desktop.isDesktopSupported()) {
+                        ShareOutcome.Shared
+                    } else {
+                        ShareOutcome.Failed
+                    }
+                }
+
+                val text = content.text
+                if (text == null) {
+                    ShareOutcome.Failed
+                } else {
+                    copyToClipboard(text)
+                    ShareOutcome.Copied
                 }
             } catch (e: Throwable) {
                 Logger.w { "ShareContent.jvm: share failed: ${e.message}" }
+                ShareOutcome.Failed
             }
         }
     }
+}
+
+private fun copyToClipboard(text: String) {
+    val selection = StringSelection(text)
+    Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, selection)
 }

@@ -1,27 +1,19 @@
 package org.mlm.mages.platform
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.download
 import kotlinx.browser.document
 import kotlinx.coroutines.await
-import kotlinx.coroutines.launch
 import org.w3c.dom.HTMLTextAreaElement
 import kotlin.js.JsAny
 
 @Composable
-actual fun rememberShareHandler(): (ShareContent) -> Unit {
-    val scope = rememberCoroutineScope()
-
-    return { content ->
-        scope.launch {
-            shareContent(content)
-        }
-    }
+actual fun rememberShareHandler(): suspend (ShareContent) -> ShareOutcome {
+    return { content -> shareContent(content) }
 }
 
-private suspend fun shareContent(content: ShareContent) {
+private suspend fun shareContent(content: ShareContent): ShareOutcome {
     val title = content.subject?.trim()?.takeIf { it.isNotEmpty() }
     val text = content.text?.trim()?.takeIf { it.isNotEmpty() }
     val url = content.url?.trim()?.takeIf { it.isNotEmpty() }
@@ -39,7 +31,7 @@ private suspend fun shareContent(content: ShareContent) {
         if (canShare) {
             try {
                 navigatorShare(shareData).await<JsAny?>()
-                return
+                return ShareOutcome.Shared
             } catch (_: Throwable) {
             }
         }
@@ -49,7 +41,7 @@ private suspend fun shareContent(content: ShareContent) {
         content.webObjectUrls.forEachIndexed { index, objectUrl ->
             downloadUrl(objectUrl, "download_${index + 1}")
         }
-        return
+        return ShareOutcome.Shared
     }
 
     if (content.allFilePaths.isNotEmpty()) {
@@ -74,12 +66,20 @@ private suspend fun shareContent(content: ShareContent) {
             }
         }
 
-        if (downloadedAny) return
+        if (downloadedAny) return ShareOutcome.Shared
     }
 
-    when {
-        !url.isNullOrBlank() -> openUrl(url)
-        !text.isNullOrBlank() -> copyTextToClipboard(text)
+    return when {
+        !url.isNullOrBlank() -> {
+            openUrl(url)
+            ShareOutcome.Shared
+        }
+
+        !text.isNullOrBlank() -> {
+            if (copyTextToClipboard(text)) ShareOutcome.Copied else ShareOutcome.Failed
+        }
+
+        else -> ShareOutcome.Failed
     }
 }
 

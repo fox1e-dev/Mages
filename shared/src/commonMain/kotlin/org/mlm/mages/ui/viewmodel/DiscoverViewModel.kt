@@ -92,12 +92,12 @@ class DiscoverViewModel(
                 )
             }
 
-            val users = if (userLookup != null) {
-                val profile = runSafe { service.port.getUserProfile(userLookup) }
-                if (profile != null) listOf(profile) else emptyList()
-            } else {
-                emptyList()
-            }
+            val users = buildList {
+                if (userLookup != null) {
+                    runSafe { service.port.getUserProfile(userLookup) }?.let(::add)
+                }
+                addAll(runSafe { service.port.searchUsers(term, 20) } ?: emptyList())
+            }.distinctBy { it.userId }
 
             val searchTerm = extractSearchTerm(term)
 

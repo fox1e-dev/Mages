@@ -7,32 +7,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
+import co.touchlab.kermit.Logger
 import java.io.File
 
 @Composable
-actual fun rememberShareHandler(): (ShareContent) -> Unit {
+actual fun rememberShareHandler(): suspend (ShareContent) -> ShareOutcome {
     val context = LocalContext.current
 
-    return remember {
+    return remember(context) {
         { content ->
             try {
                 val files = content.allFilePaths
                     .map { File(it) }
                     .filter { it.exists() && it.canRead() }
 
-                // Text-only
-                if (files.isEmpty() && content.text != null) {
+                if (files.isEmpty()) {
+                    val text = content.text
+                    if (text == null) return@remember ShareOutcome.Failed
+
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         content.subject?.let { putExtra(Intent.EXTRA_SUBJECT, it) }
-                        putExtra(Intent.EXTRA_TEXT, content.text)
+                        putExtra(Intent.EXTRA_TEXT, text)
                     }
                     context.startActivity(Intent.createChooser(intent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    return@remember
+                    return@remember ShareOutcome.Shared
                 }
-
-                // Nothing to share
-                if (files.isEmpty()) return@remember
 
                 val uris: List<Uri> = files.map { file ->
                     FileProvider.getUriForFile(
@@ -69,8 +69,10 @@ actual fun rememberShareHandler(): (ShareContent) -> Unit {
 
                 val chooser = Intent.createChooser(intent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 context.startActivity(chooser)
+                ShareOutcome.Shared
             } catch (e: Throwable) {
-                e.printStackTrace()
+                Logger.w { "ShareContent.android: share failed: ${e.message}" }
+                ShareOutcome.Failed
             }
         }
     }

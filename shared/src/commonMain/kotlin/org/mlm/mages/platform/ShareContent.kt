@@ -41,5 +41,11 @@ data class ShareContent(
         }
 }
 
+enum class ShareOutcome {
+    Shared,
+    Copied,
+    Failed
+}
+
 @Composable
-expect fun rememberShareHandler(): (ShareContent) -> Unit
+expect fun rememberShareHandler(): suspend (ShareContent) -> ShareOutcome

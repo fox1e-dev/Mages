@@ -117,6 +117,8 @@ fun RoomScreen(
     var progressText by remember { mutableStateOf<String?>(null) }
     val snackbarManager: SnackbarManager = koinInject()
     val postError = rememberErrorPoster(snackbarManager)
+    val copiedLabel = stringResource(Res.string.copied_to_clipboard)
+    val shareFailedLabel = stringResource(Res.string.share_failed)
     val listState = rememberLazyListState()
     val settingsRepository: SettingsRepository<AppSettings> = koinInject()
     var persistedSettings by remember { mutableStateOf<AppSettings?>(null) }
@@ -443,13 +445,17 @@ fun RoomScreen(
                 }
 
                 is RoomViewModel.Event.ShareMessage -> {
-                    shareHandler(
+                    when (shareHandler(
                         ShareContent(
                             text = event.text,
                             filePath = event.filePath,
                             mimeType = event.mimeType
                         )
-                    )
+                    )) {
+                        ShareOutcome.Shared -> Unit
+                        ShareOutcome.Copied -> snackbarManager.show(copiedLabel)
+                        ShareOutcome.Failed -> snackbarManager.showError(shareFailedLabel)
+                    }
                 }
 
                 is RoomViewModel.Event.JumpToEvent -> {
@@ -467,7 +473,11 @@ fun RoomScreen(
 
                 is RoomViewModel.Event.ShareContentEvent -> {
                     progressText = null
-                    shareHandler(event.content)
+                    when (shareHandler(event.content)) {
+                        ShareOutcome.Shared -> Unit
+                        ShareOutcome.Copied -> snackbarManager.show(copiedLabel)
+                        ShareOutcome.Failed -> snackbarManager.showError(shareFailedLabel)
+                    }
                 }
 
                 is RoomViewModel.Event.OpenForwardPicker -> {

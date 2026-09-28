@@ -39,8 +39,7 @@ import org.mlm.mages.ui.components.dialogs.DeclineInviteDialog
 fun RoomsScreen(
     viewModel: RoomsViewModel = koinViewModel(),
     onOpenSecurity: () -> Unit,
-    onOpenDiscover: () -> Unit,
-    onOpenCreateRoom: () -> Unit,
+    onOpenStartChat: () -> Unit,
     onOpenSpaces: () -> Unit,
     onOpenSearch: () -> Unit,
 ) {
@@ -99,9 +98,8 @@ fun RoomsScreen(
                 unreadDmsCount = state.unreadDmsCount,
                 onOpenSpaces = onOpenSpaces,
                 onOpenSecurity = onOpenSecurity,
-                onOpenDiscover = onOpenDiscover,
+                onOpenStartChat = onOpenStartChat,
                 inviteCount = state.inviteItems.size,
-                onOpenCreateRoom = onOpenCreateRoom,
                 onOpenSearch = onOpenSearch
             )
         },
@@ -155,7 +153,7 @@ fun RoomsScreen(
                     modifier = Modifier.padding(innerPadding),
                     action = if (state.roomSearchQuery.isBlank()) {
                         {
-                            Button(onClick = onOpenDiscover) {
+                            Button(onClick = onOpenStartChat) {
                                 Icon(Icons.Default.Search, null)
                                 Spacer(Modifier.width(Spacing.sm))
                                 Text(stringResource(Res.string.discover_rooms))
@@ -328,8 +326,7 @@ private fun RoomsTopBar(
     onSetTypeFilter: (RoomTypeFilter) -> Unit,
     onOpenSpaces: () -> Unit,
     onOpenSecurity: () -> Unit,
-    onOpenDiscover: () -> Unit,
-    onOpenCreateRoom: () -> Unit,
+    onOpenStartChat: () -> Unit,
     onOpenSearch: () -> Unit
 ) {
     Column {
@@ -342,11 +339,8 @@ private fun RoomsTopBar(
                 IconButton(onClick = onOpenSecurity) {
                     Icon(Icons.Default.Settings, stringResource(Res.string.settings))
                 }
-                IconButton(onClick = onOpenDiscover) {
+                IconButton(onClick = onOpenStartChat) {
                     Icon(Icons.Default.Explore, stringResource(Res.string.discover))
-                }
-                IconButton(onClick = onOpenCreateRoom) {
-                    Icon(Icons.Default.Add, stringResource(Res.string.start_chat))
                 }
                 IconButton(onClick = onOpenSearch) {
                     Icon(Icons.Default.Search, stringResource(Res.string.search_messages))

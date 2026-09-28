@@ -36,6 +36,7 @@ import org.koin.compose.koinInject
 import org.mlm.mages.AttachmentKind
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.platform.ShareContent
+import org.mlm.mages.platform.ShareOutcome
 import org.mlm.mages.platform.rememberShareHandler
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.util.monthYearLabel
@@ -62,6 +63,8 @@ fun MediaGalleryScreen(
     var selectedTab by remember { mutableStateOf(MediaTab.Images) }
     val snackbarManager: SnackbarManager = koinInject()
     val postError = rememberErrorPoster(snackbarManager)
+    val copiedLabel = stringResource(Res.string.copied_to_clipboard)
+    val shareFailedLabel = stringResource(Res.string.share_failed)
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -73,13 +76,17 @@ fun MediaGalleryScreen(
                     snackbarManager.show(event.message)
                 }
                 is MediaGalleryViewModel.Event.ShareFiles -> {
-                    shareHandler(
+                    when (shareHandler(
                         ShareContent(
                             filePaths = event.paths,
                             mimeTypes = event.mimeTypes,
                             subject = "Mages"
                         )
-                    )
+                    )) {
+                        ShareOutcome.Shared -> Unit
+                        ShareOutcome.Copied -> snackbarManager.show(copiedLabel)
+                        ShareOutcome.Failed -> snackbarManager.showError(shareFailedLabel)
+                    }
                 }
                 is MediaGalleryViewModel.Event.OpenForwardPicker -> {
                     onForward(event.events)
