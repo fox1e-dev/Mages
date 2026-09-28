@@ -49,20 +49,13 @@ fun SpaceDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            state.space?.name ?: state.spaceName,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            "${state.hierarchy.size} items",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        state.space?.name ?: state.spaceName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
