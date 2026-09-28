@@ -2,12 +2,14 @@ package org.mlm.mages.platform
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.location.Location
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.mp.KoinPlatform
@@ -25,6 +27,10 @@ actual object LiveLocationSharingCoordinator {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private var lastDispatchMs = 0L
+    private var lastDispatchLat = Double.NaN
+    private var lastDispatchLon = Double.NaN
+    private var minDistanceMeters = 10f
+    private var settingsJob: Job? = null
     private val THROTTLE_MS = 3000L
     private val PREFIX = "share_"
 
@@ -103,6 +109,8 @@ actual object LiveLocationSharingCoordinator {
         prefs.edit().remove(PREFIX + roomId).apply()
         val count = activeShares.size
         if (count == 0) {
+            lastDispatchLat = Double.NaN
+            lastDispatchLon = Double.NaN
             onAllStopped?.invoke()
             onChanged?.invoke(false, 0)
         } else {
@@ -113,9 +121,13 @@ actual object LiveLocationSharingCoordinator {
 
     actual fun dispatchLocation(lat: Double, lon: Double, accuracy: Float?) {
         if (activeShares.isEmpty()) return
+        trackMinDistance()
         val now = currentTimeMillis()
         if (now - lastDispatchMs < THROTTLE_MS) return
+        if (!movedFarEnough(lat, lon)) return
         lastDispatchMs = now
+        lastDispatchLat = lat
+        lastDispatchLon = lon
         val port = matrixPort() ?: return
         onLocationDispatched?.invoke(lat, lon)
         val geoUri = "geo:$lat,$lon"
@@ -124,6 +136,25 @@ actual object LiveLocationSharingCoordinator {
             pendingLocations[roomId] = PendingLocation(geoUri, now)
             ensureRetryLoop(roomId, port)
         }
+    }
+
+    private fun trackMinDistance() {
+        if (settingsJob?.isActive == true) return
+        settingsJob = scope.launch {
+            val repository = runCatching {
+                SettingsProvider.get(KoinPlatform.getKoin().get())
+            }.getOrNull() ?: return@launch
+            repository.flow.collect { minDistanceMeters = it.liveLocationMinDistanceMeters }
+        }
+    }
+
+    private fun movedFarEnough(lat: Double, lon: Double): Boolean {
+        val minDistance = minDistanceMeters
+        if (minDistance <= 0f) return true
+        if (lastDispatchLat.isNaN() || lastDispatchLon.isNaN()) return true
+        val meters = FloatArray(1)
+        Location.distanceBetween(lastDispatchLat, lastDispatchLon, lat, lon, meters)
+        return meters[0] >= minDistance
     }
 
     private fun ensureRetryLoop(roomId: String, port: MatrixPort) {
