@@ -34,6 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -108,6 +109,10 @@ class IncomingCallActivity : ComponentActivity() {
     private val service: MatrixService by inject()
     private val incomingCalls: IncomingCallTracker by inject()
     private val callManager: CallManager by inject()
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(ContextCompat.getContextForLanguage(newBase))
+    }
 
     private var uiState by mutableStateOf<IncomingCallUiState?>(null)
 

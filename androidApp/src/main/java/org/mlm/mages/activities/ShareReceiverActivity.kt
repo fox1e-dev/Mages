@@ -68,6 +68,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -87,6 +88,10 @@ import java.util.UUID
 class ShareReceiverActivity : ComponentActivity() {
 
     private val service: MatrixService by inject()
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(ContextCompat.getContextForLanguage(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

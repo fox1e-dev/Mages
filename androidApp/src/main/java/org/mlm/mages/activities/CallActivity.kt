@@ -1,6 +1,7 @@
 package org.mlm.mages.activities
 
 import android.app.PictureInPictureParams
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.util.Rational
@@ -14,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import org.koin.android.ext.android.inject
 import org.mlm.mages.calls.CallManager
 import org.mlm.mages.ui.GlobalCallOverlay
@@ -22,6 +24,10 @@ import org.mlm.mages.ui.theme.MainTheme
 class CallActivity : ComponentActivity() {
 
     private val callManager: CallManager by inject()
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(ContextCompat.getContextForLanguage(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

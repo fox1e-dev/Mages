@@ -1,5 +1,6 @@
 package org.mlm.mages.activities
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -32,6 +34,10 @@ import org.mlm.mages.ui.viewmodel.RoomViewModel
 
 class BubbleConversationActivity : ComponentActivity() {
     private val service: MatrixService by inject()
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(ContextCompat.getContextForLanguage(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

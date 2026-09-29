@@ -107,6 +107,7 @@ kotlin {
                 implementation(libs.okio)
                 implementation(libs.connector)
                 implementation(libs.androidx.core.ktx)
+                implementation(libs.androidx.appcompat)
                 implementation(libs.androidx.work.runtime.ktx)
                 implementation(libs.androidx.browser)
                 implementation(libs.koin.android)

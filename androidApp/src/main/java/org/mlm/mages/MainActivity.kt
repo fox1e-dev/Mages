@@ -19,6 +19,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import io.github.mlmgames.settings.core.SettingsRepository
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -34,10 +35,12 @@ import org.mlm.mages.nav.parseMatrixLink
 import org.mlm.mages.platform.SettingsProvider
 import org.mlm.mages.platform.AndroidBrowserAuthCoordinator
 import org.mlm.mages.platform.CurrentActivityHolder
+import org.mlm.mages.platform.applyAppLocale
 import org.mlm.mages.push.AndroidNotificationHelper
 import org.mlm.mages.push.PREF_INSTANCE
 import org.mlm.mages.push.PusherReconciler
 import org.mlm.mages.settings.AppSettings
+import org.mlm.mages.settings.appLanguageTagOrNull
 import org.mlm.mages.ui.components.snackbar.SnackbarManager
 import org.unifiedpush.android.connector.LinkActivityHelper
 import org.unifiedpush.android.connector.UnifiedPush
@@ -193,6 +196,12 @@ class MainActivity : AppCompatActivity() {
 
         val settingsRepository: SettingsRepository<AppSettings> =
             SettingsProvider.get(applicationContext)
+
+        lifecycleScope.launch {
+            settingsRepository.flow.collect { settings ->
+                applyAppLocale(settings.appLanguageTagOrNull())
+            }
+        }
 
         lifecycleScope.launch { handleIntent(intent) }
 

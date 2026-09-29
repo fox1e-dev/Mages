@@ -1,34 +1,28 @@
 package org.mlm.mages.platform
 
-import android.content.res.Configuration
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ProvidedValue
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.core.os.LocaleListCompat
 import java.util.Locale
-import androidx.compose.ui.platform.LocalResources
 
 actual object LocalAppLocale {
-    private var defaultLocale: Locale? = null
+    private val appLocale = staticCompositionLocalOf { Locale.getDefault().toLanguageTag() }
 
     actual val current: String
-        @Composable get() = Locale.getDefault().toLanguageTag()
+        @Composable get() = appLocale.current
 
     @Composable
-    actual infix fun provides(value: String?): ProvidedValue<*> {
-        val currentConfiguration = LocalConfiguration.current
-        if (defaultLocale == null) {
-            defaultLocale = Locale.getDefault()
-        }
+    actual infix fun provides(value: String?): ProvidedValue<*> =
+        appLocale.provides(value ?: Locale.getDefault().toLanguageTag())
+}
 
-        val locale = value?.let(Locale::forLanguageTag) ?: defaultLocale!!
-        val configuration = Configuration(currentConfiguration).apply {
-            setLocale(locale)
-        }
-
-        Locale.setDefault(locale)
-        val resources = LocalResources.current
-        resources.updateConfiguration(configuration, resources.displayMetrics)
-        return LocalConfiguration.provides(configuration)
+fun applyAppLocale(languageTag: String?) {
+    val target = languageTag?.let(LocaleListCompat::forLanguageTags)
+        ?: LocaleListCompat.getEmptyLocaleList()
+    val applied = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+    if (applied != target.toLanguageTags()) {
+        AppCompatDelegate.setApplicationLocales(target)
     }
 }
