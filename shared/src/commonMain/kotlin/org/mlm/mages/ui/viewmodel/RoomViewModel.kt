@@ -257,6 +257,7 @@ class RoomViewModel(
     private val thumbnailFetchInFlight = mutableSetOf<String>()
     private val previewPathByMxc = mutableMapOf<String, String>()
     private val previewLock = Mutex()
+    private val previewInFlight = mutableMapOf<String, CompletableDeferred<String?>>()
 
     init {
         LiveLocationSharingCoordinator.onLocationDispatched = { lat, lon ->
@@ -331,6 +332,7 @@ class RoomViewModel(
             observeTimeline()
         }
         launch {
+            loadRoomEncryption()
             loadImagePacks()
         }
         launch {
@@ -473,15 +475,18 @@ class RoomViewModel(
             )
         }
         launch {
-            val roomId = currentState.roomId
-            val encrypted = service.port.roomProfile(roomId)?.isEncrypted == true
-            updateState { copy(isRoomEncrypted = encrypted) }
+            loadRoomEncryption()
             loadImagePacks()
         }
     }
 
     fun refreshImagePacks() {
         launch { loadImagePacks() }
+    }
+
+    private suspend fun loadRoomEncryption() {
+        val encrypted = service.port.roomProfile(currentState.roomId)?.isEncrypted == true
+        updateState { copy(isRoomEncrypted = encrypted) }
     }
 
     private suspend fun loadImagePacks() {
@@ -516,15 +521,24 @@ class RoomViewModel(
      */
     suspend fun packImagePreview(thumbnailMxcUri: String?, mxcUrl: String): String? {
         val key = thumbnailMxcUri ?: mxcUrl
-        previewLock.withLock { previewPathByMxc[key] }?.let { return it }
+        val request = previewLock.withLock {
+            previewPathByMxc[key]?.let { return it }
+            previewInFlight.getOrPut(key) {
+                CompletableDeferred<String?>().also { startPreviewFetch(key, it) }
+            }
+        }
+        return request.await()
+    }
 
-        val path = service.port
-            .packImageToCache(thumbnailMxcUri ?: mxcUrl, 128, 128)
-            .getOrNull()
-            ?: return null
-
-        previewLock.withLock { previewPathByMxc[key] = path }
-        return path
+    private fun startPreviewFetch(key: String, request: CompletableDeferred<String?>) {
+        launch {
+            val path = service.port.packImageToCache(key, 128, 128).getOrNull()
+            previewLock.withLock {
+                if (path != null) previewPathByMxc[key] = path
+                previewInFlight.remove(key)
+            }
+            request.complete(path)
+        }
     }
 
     fun sendPackSticker(image: ImagePackImageEntry, threadRootEventId: String? = null) {

@@ -608,6 +608,7 @@ data class ThreadUiState(
     val imagePacks: List<ImagePackSummary> = emptyList(),
     val emotePathByMxc: Map<String, String> = emptyMap(),
     val reactionImagePathByMxc: Map<String, String> = emptyMap(),
+    val isRoomEncrypted: Boolean = false,
 ) {
     val messageCount: Int get() = (if (rootMessage != null) 1 else 0) + replies.size
 

@@ -73,6 +73,7 @@ class ThreadViewModel(
     init {
         preloadRoomMembers()
         loadImagePacks()
+        loadRoomEncryption()
         observeTimeline()
         // Load initial thread data after a short delay to let timeline sync
         launch {
@@ -113,6 +114,13 @@ class ThreadViewModel(
         launch {
             val packs = runSafe { service.port.listImagePacks(roomId) }.orEmpty()
             updateState { copy(imagePacks = packs) }
+        }
+    }
+
+    private fun loadRoomEncryption() {
+        launch {
+            val encrypted = runSafe { service.port.roomProfile(roomId) }?.isEncrypted == true
+            updateState { copy(isRoomEncrypted = encrypted) }
         }
     }
 

@@ -25,6 +25,9 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import mages.shared.generated.resources.Res
+import mages.shared.generated.resources.emote_pack_unencrypted_notice
+import org.jetbrains.compose.resources.stringResource
 import org.mlm.mages.matrix.ImagePackSummary
 import org.mlm.mages.ui.components.core.EmoteRef
 import org.mlm.mages.ui.theme.Sizes
@@ -74,7 +77,9 @@ fun emoteSuggestionsFrom(packs: List<ImagePackSummary>): List<EmoteSuggestion> {
         }
     }
     return byShortcode.keys.sorted().flatMap { key ->
-        val siblings = byShortcode.getValue(key)
+        // The same image may sit in several packs; one row per shortcode and
+        // media URI keeps the popup's item keys unique.
+        val siblings = byShortcode.getValue(key).distinctBy { it.ref.mxcUri }
         if (siblings.size > 1) siblings else siblings.map { it.copy(packName = null) }
     }
 }
@@ -84,7 +89,8 @@ fun ComposerEmotePopup(
     suggestions: List<EmoteSuggestion>,
     resolvePreview: suspend (thumbnailMxcUri: String?, mxcUrl: String) -> String?,
     onEmoteSelected: (EmoteSuggestion) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showUnencryptedNotice: Boolean = false,
 ) {
     if (suggestions.isEmpty()) return
 
@@ -95,23 +101,39 @@ fun ComposerEmotePopup(
         shadowElevation = 2.dp,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
-        LazyRow(
-            modifier = Modifier.heightIn(max = 96.dp),
-            contentPadding = PaddingValues(
-                horizontal = Spacing.sm,
-                vertical = Spacing.xs
-            ),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-        ) {
-            items(
-                suggestions,
-                key = { "${it.shortcode}|${it.ref.mxcUri}|${it.packName.orEmpty()}" }
-            ) { suggestion ->
-                EmoteSuggestionItem(
-                    suggestion = suggestion,
-                    resolvePreview = resolvePreview,
-                    onClick = { onEmoteSelected(suggestion) }
+        Column {
+            if (showUnencryptedNotice) {
+                Text(
+                    text = stringResource(Res.string.emote_pack_unencrypted_notice),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(
+                        horizontal = Spacing.sm,
+                        vertical = Spacing.xs
+                    )
                 )
+            }
+
+            LazyRow(
+                modifier = Modifier.heightIn(max = 96.dp),
+                contentPadding = PaddingValues(
+                    horizontal = Spacing.sm,
+                    vertical = Spacing.xs
+                ),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                items(
+                    suggestions,
+                    key = { "${it.shortcode}|${it.ref.mxcUri}|${it.packName.orEmpty()}" }
+                ) { suggestion ->
+                    EmoteSuggestionItem(
+                        suggestion = suggestion,
+                        resolvePreview = resolvePreview,
+                        onClick = { onEmoteSelected(suggestion) }
+                    )
+                }
             }
         }
     }

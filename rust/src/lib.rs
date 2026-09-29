@@ -5765,26 +5765,21 @@ fn classify_notification_content(
             };
             NotificationContent::sticker(&extract_sticker(&orig.content))
         }
+        // MSC3489. The catch-all probe below cannot tell a beacon from a plain
+        // location: a beacon carries its coordinates under
+        // "org.matrix.msc3488.location" and has no "m.beacon" key of its own, so
+        // the flag it derives always came out false and live location announced
+        // itself as a one-off location share.
+        AnySyncMessageLikeEvent::Beacon(ev) => {
+            let Some(orig) = ev.as_original() else {
+                return NotificationContent::unknown();
+            };
+            NotificationContent::location(orig.content.location.uri.to_owned(), true)
+        }
         _ => {
-            let geo_uri = text_at(
-                &content,
-                &[
-                    "m.location",
-                    "org.matrix.msc3488.location",
-                    "m.beacon",
-                    "org.matrix.msc3672.beacon",
-                ],
-            );
+            let geo_uri = text_at(&content, &["m.location", "org.matrix.msc3488.location"]);
             if geo_uri.is_some() {
-                return NotificationContent::location(
-                    geo_uri.unwrap_or_default(),
-                    content
-                        .as_ref()
-                        .and_then(|c| {
-                            c.get("m.beacon").or_else(|| c.get("org.matrix.msc3672.beacon"))
-                        })
-                        .is_some(),
-                );
+                return NotificationContent::location(geo_uri.unwrap_or_default(), false);
             }
             NotificationContent::unknown()
         }

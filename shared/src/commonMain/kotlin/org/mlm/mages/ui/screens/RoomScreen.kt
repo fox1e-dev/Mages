@@ -1072,6 +1072,7 @@ fun RoomScreen(
             },
             onSelect = { viewModel.enterSelectionMode(event.eventId) },
             reactionImagePacks = state.imagePacks,
+            isEncryptedRoom = state.isRoomEncrypted,
             resolveReactionPreview = viewModel::packImagePreview,
         )
     }
@@ -1442,6 +1443,7 @@ private fun RoomBottomBar(
             onVoiceRecordingComplete = onVoiceRecordingComplete,
             emoteSuggestions = emoteSuggestions,
             resolveEmotePreview = resolveEmotePreview,
+            isEncryptedRoom = state.isRoomEncrypted,
         )
     }
 }

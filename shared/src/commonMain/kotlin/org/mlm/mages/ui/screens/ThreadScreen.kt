@@ -216,6 +216,7 @@ fun ThreadScreen(
                     avatarPathByUserId = state.avatarByUserId,
                     emoteSuggestions = emoteSuggestions,
                     resolveEmotePreview = resolveEmotePreview,
+                    isEncryptedRoom = state.isRoomEncrypted,
                 )
             }
         },

@@ -62,6 +62,7 @@ fun MessageComposer(
     onVoiceRecordingComplete: ((filePath: String, durationMs: Long, waveform: List<Float>) -> Unit)? = null,
     emoteSuggestions: List<EmoteSuggestion> = emptyList(),
     resolveEmotePreview: suspend (thumbnailMxcUri: String?, mxcUrl: String) -> String? = { _, _ -> null },
+    isEncryptedRoom: Boolean = false,
 ) {
     val scope = rememberCoroutineScope()
     var fieldValue by remember { mutableStateOf(TextFieldValue(value)) }
@@ -131,6 +132,7 @@ fun MessageComposer(
                 ComposerEmotePopup(
                     suggestions = visibleEmotes,
                     resolvePreview = resolveEmotePreview,
+                    showUnencryptedNotice = isEncryptedRoom,
                     onEmoteSelected = { suggestion ->
                         val query = emoteQuery ?: return@ComposerEmotePopup
                         val updated = insertEmoteInternal(fieldValue, suggestion, query)
