@@ -257,10 +257,9 @@ fun SpaceSettingsScreen(
                             }
                         }
                     }
-                }
-
-                item(key = "divider2") {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.md))
+                    item(key = "divider2") {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.md))
+                    }
                 }
 
                 // Children
