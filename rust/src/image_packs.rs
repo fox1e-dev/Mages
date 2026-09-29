@@ -447,21 +447,28 @@ pub(crate) async fn list_image_packs(
             .extend(packs.into_keys());
     }
 
+    // Spec source priority puts account data above room state, so the room
+    // being viewed belongs in this tier too rather than being demoted below
+    // every other subscribed room.
+    let own_global: Vec<String> = subscribed_by_room.remove(&room_id).unwrap_or_default();
+    if !own_global.is_empty() {
+        targets.push((
+            room_id.clone(),
+            Some(own_global.clone()),
+            own_global.iter().cloned().collect(),
+        ));
+    }
+
     // Sorted so the picker does not reshuffle packs between loads.
     let mut subscribed_rooms: Vec<OwnedRoomId> = subscribed_by_room.keys().cloned().collect();
     subscribed_rooms.sort();
     for room in subscribed_rooms {
-        // The room being viewed is resolved by the own-state tier below, which
-        // lists every pack there rather than only the subscribed ones.
-        if room == room_id {
-            continue;
-        }
         let keys: Vec<String> = subscribed_by_room.remove(&room).unwrap_or_default();
         targets.push((room, Some(keys.clone()), keys.into_iter().collect()));
     }
 
-    // A pack defined in the room being viewed is available there whether or not
-    let own_global: Vec<String> = subscribed_by_room.remove(&room_id).unwrap_or_default();
+    // Then every pack in the room being viewed; the subscribed ones emitted
+    // above are dropped by `seen`.
     targets.push((room_id.clone(), None, own_global.into_iter().collect()));
     // Space packs are not individually subscribable, so none of them is global.
     for space in canonical_space_ancestors(&mut cache, &room_id).await {

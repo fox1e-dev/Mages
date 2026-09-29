@@ -13,7 +13,7 @@ import org.mlm.mages.matrix.MatrixPort
 
 
 class AvatarLoader(
-    private val port: MatrixPort,
+    val port: MatrixPort,
     parallelism: Int = 4,
     dispatcher: CoroutineDispatcher = Dispatchers.Default.limitedParallelism(parallelism),
     private val maxCacheEntries: Int = 1024

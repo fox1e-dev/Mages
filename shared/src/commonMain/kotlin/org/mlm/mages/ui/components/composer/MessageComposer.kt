@@ -18,6 +18,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -79,6 +80,10 @@ fun MessageComposer(
     val emoteQuery = remember(fieldValue) { findEmoteQueryInternal(fieldValue) }
     val visibleEmotes = remember(emoteQuery, emoteSuggestions) {
         if (emoteQuery == null) emptyList() else filterEmoteSuggestionsInternal(emoteSuggestions, emoteQuery.query)
+    }
+
+    val visualTransformation = remember(emoteSuggestions) {
+        ComposerVisualTransformation(emoteSuggestions.mapTo(mutableSetOf<String>()) { it.ref.mxcUri })
     }
 
     if (isRecordingVoice && onStartVoiceRecording != null && onCancelVoiceRecording != null && onVoiceRecordingComplete != null) {
@@ -158,6 +163,7 @@ fun MessageComposer(
                 editing = editing,
                 replyingTo = replyingTo,
                 onStartVoiceRecording = onStartVoiceRecording,
+                visualTransformation = visualTransformation,
             )
         }
     }
@@ -180,6 +186,7 @@ private fun ComposerInputRow(
     editing: MessageEvent?,
     replyingTo: MessageEvent?,
     onStartVoiceRecording: (() -> Unit)?,
+    visualTransformation: VisualTransformation,
 ) {
     Row(
         modifier = Modifier
@@ -228,6 +235,7 @@ private fun ComposerInputRow(
             onValueChange = onValueChange,
             modifier = textFieldModifier,
             enabled = enabled && !isUploadingAttachment,
+            visualTransformation = visualTransformation,
             placeholder = {
                 ComposerPlaceholder(isUploadingAttachment, isOffline, editing, replyingTo)
             },

@@ -13,7 +13,7 @@ import org.mlm.mages.matrix.ImagePackImageEntry
 private val markdownFlavour = SpoilerFlavour()
 
 /** A mention stands in as a markdown link while composing. */
-private val MENTION_MARKDOWN = Regex("""\[([^\]]+)]\(https://matrix\.to/#/(@[^)]+)\)""")
+val MENTION_MARKDOWN = Regex("""\[([^\]]+)]\(https://matrix\.to/#/(@[^)]+)\)""")
 
 /**
  * The same mention, after [MENTION_MARKDOWN] has turned it into a real anchor

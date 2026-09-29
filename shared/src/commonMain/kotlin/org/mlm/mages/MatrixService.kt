@@ -33,23 +33,19 @@ class MatrixService(
     private val _syncStatus = MutableStateFlow<MatrixPort.SyncStatus?>(null)
     val syncStatus: StateFlow<MatrixPort.SyncStatus?> = _syncStatus.asStateFlow()
 
+    @Volatile
     private var _avatars: AvatarLoader? = null
     val avatars: AvatarLoader
         get() {
-            val current = _avatars
-            if (current != null && clients.portOrNull != null) return current
-            val newLoader = AvatarLoader(port)
-            _avatars = newLoader
-            return newLoader
+            val currentPort = clients.port
+            val loader = _avatars
+            if (loader != null && loader.port === currentPort) return loader
+            loader?.shutdown()
+            return AvatarLoader(currentPort).also { _avatars = it }
         }
 
-    suspend fun initFromDisk(proxyUrl: String? = null): Boolean {
-        val result = clients.initFromDisk(proxyUrl)
-        if (result && clients.portOrNull != null) {
-            _avatars = AvatarLoader(port)
-        }
-        return result
-    }
+    suspend fun initFromDisk(proxyUrl: String? = null): Boolean =
+        clients.initFromDisk(proxyUrl)
 
     suspend fun init(hs: String) {
         port.init(hs.trim())
@@ -96,10 +92,10 @@ class MatrixService(
 
     suspend fun switchAccount(account: MatrixAccount): Result<Unit> {
         resetSyncState()
+        _avatars?.shutdown()
         _avatars = null
         val ok = clients.switchTo(account)
         return if (ok) {
-            _avatars = AvatarLoader(port)
             Result.success(Unit)
         } else {
             Result.failure(Exception("Failed to switch account"))
@@ -109,12 +105,10 @@ class MatrixService(
     suspend fun removeAccount(accountId: String) {
         if (clients.activeAccount.value?.id == accountId) {
             resetSyncState()
+            _avatars?.shutdown()
             _avatars = null
         }
         clients.removeAccount(accountId)
-        if (clients.hasActiveClient()) {
-            _avatars = AvatarLoader(port)
-        }
     }
 
     fun timelineDiffs(roomId: String): Flow<TimelineDiff<MessageEvent>> = port.timelineDiffs(roomId)
