@@ -63,6 +63,21 @@ fun <T : NavKey> NavBackStack<T>.popUntil(predicate: (T) -> Boolean) {
     }
 }
 
+// A link switches the open conversation rather than stacking one on top of another, so back
+// leaves the chat instead of walking into the room it was opened from. Whatever the chat was
+// reached through (room list, search, a space) is kept as the new bottom of the stack.
+fun <T : NavKey> NavBackStack<T>.openRoom(key: T) {
+    val chatIndex = indexOfLast { it is Route.Room }
+    if (chatIndex < 0) {
+        add(key)
+        return
+    }
+    while (size > chatIndex + 1) {
+        removeAt(lastIndex)
+    }
+    set(chatIndex, key)
+}
+
 data class DeepLinkAction(
     val roomId: String,
     val eventId: String? = null,
@@ -98,7 +113,7 @@ fun BindDeepLinks(
                     ))
                 }
             } else {
-                backStack.add(Route.Room(
+                backStack.openRoom(Route.Room(
                     roomId = action.roomId,
                     name = action.roomId, // Will be updated by RoomViewModel
                     eventId = action.eventId
