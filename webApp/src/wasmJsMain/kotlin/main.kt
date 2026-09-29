@@ -16,6 +16,7 @@ import org.mlm.mages.nav.MatrixLink
 import org.mlm.mages.nav.parseMatrixLink
 import org.mlm.mages.platform.Notifier
 import org.mlm.mages.platform.SettingsProvider
+import org.mlm.mages.platform.installWebImageLoader
 import org.mlm.mages.platform.requestNotificationPermissionFromUserGesture
 import org.mlm.mages.settings.RequestNotificationPermissionAction
 import org.mlm.mages.settings.TestNotificationAction
@@ -23,6 +24,8 @@ import org.mlm.mages.ui.util.nowMs
 
 @OptIn(ExperimentalComposeUiApi::class, FlowPreview::class)
 fun main() {
+    installWebImageLoader()
+
     val settingsRepo = SettingsProvider.get()
 
     val appScope = MainScope()

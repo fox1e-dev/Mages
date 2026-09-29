@@ -17,10 +17,15 @@ import org.mlm.mages.content.TransferItem
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.url.URL
 
-private val webBlobCache = mutableMapOf<String, ByteArray>()
+private class WebBlob(val bytes: ByteArray, val mimeType: String)
+
+private const val WEB_BLOB_PREFIX = "web_blob_"
+private const val WEB_BLOB_URI_PREFIX = "webblob:"
+
+private val webBlobCache = mutableMapOf<String, WebBlob>()
 private var blobCounter = 0
 
-private fun generateBlobId(): String = "web_blob_${blobCounter++}"
+private fun generateBlobId(): String = "$WEB_BLOB_PREFIX${blobCounter++}"
 
 actual val audioPlayerDispatcher: CoroutineDispatcher = Dispatchers.Default
 
@@ -138,19 +143,26 @@ actual fun rememberCameraPickerLauncher(
 
 actual suspend fun PlatformFile.toTransferItem(): TransferItem {
     val bytes = readBytes()
+    val mime = mimeType()?.toString() ?: "application/octet-stream"
     val blobId = generateBlobId()
-    webBlobCache[blobId] = bytes
+    webBlobCache[blobId] = WebBlob(bytes, mime)
 
     return TransferItem(
         fileName = name,
         path = blobId,
-        mimeType = mimeType()?.toString() ?: "application/octet-stream",
+        mimeType = mime,
         sizeBytes = bytes.size.toLong(),
-        webObjectUrl = "webblob:$blobId",
+        webObjectUrl = "$WEB_BLOB_URI_PREFIX$blobId",
     )
 }
 
-fun retrieveWebBlob(path: String): ByteArray? = webBlobCache[path]
+fun retrieveWebBlob(path: String): ByteArray? = webBlobCache[path]?.bytes
+
+fun retrieveWebBlobMimeType(path: String): String? = webBlobCache[path]?.mimeType
+
+fun webBlobKey(data: String): String? = data
+    .removePrefix(WEB_BLOB_URI_PREFIX)
+    .takeIf { it.startsWith(WEB_BLOB_PREFIX) }
 
 fun clearWebBlob(path: String) {
     webBlobCache.remove(path)
