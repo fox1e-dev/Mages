@@ -1,3 +1,22 @@
+## v5.0.0
+
+- add an option to hide spaces' rooms in room list
+- feat: Add issue template forms
+- add image packs emotes and reactions
+- fix: pass the property name to addValueTransform
+- desktop deeplinks
+- Add an option to how space avatars in rooms next to their name
+- fix new room creation in spaces
+- Make the RoomScreen's top title bar clickable (#130)
+- fix(ci): exclude scoped conventional commits
+- poll and create sheet
+- better reply previews
+- fix non-text (like polls) notifications falling back to "New Event"
+- wire attachment retry
+- hide edit action for stickers
+- Add translations
+
+
 ## v4.11.9
 
 - fix the attachment send issue
