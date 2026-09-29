@@ -551,6 +551,7 @@ class RustMatrixPort : MatrixPort, VerificationService {
     private fun mages.ImagePackSummary.toModel() = ImagePackSummary(
         packId = packId,
         sourceRoom = sourceRoom,
+        sourceRoomName = sourceRoomName,
         stateKey = stateKey,
         displayName = displayName,
         avatarUrl = avatarUrl,
@@ -1333,6 +1334,13 @@ class RustMatrixPort : MatrixPort, VerificationService {
     override suspend fun listImagePacks(roomId: String): List<ImagePackSummary> =
         withContext(matrixDispatcher) {
             runWithFfiResult { withClient { it.listImagePacks(roomId) } }
+                .getOrElse { emptyList() }
+                .map { it.toModel() }
+        }
+
+    override suspend fun listAllImagePacks(refresh: Boolean): List<ImagePackSummary> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.listAllImagePacks(refresh) } }
                 .getOrElse { emptyList() }
                 .map { it.toModel() }
         }

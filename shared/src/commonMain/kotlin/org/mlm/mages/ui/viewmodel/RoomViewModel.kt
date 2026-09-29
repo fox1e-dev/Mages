@@ -508,7 +508,38 @@ class RoomViewModel(
                 _events.send(Event.ShowError("Failed to update sticker pack"))
             }
             loadImagePacks()
-            updateState { copy(packIdsBeingUpdated = packIdsBeingUpdated - packId) }
+            updateState {
+                copy(
+                    discoveredPacks = discoveredPacks?.map {
+                        if (it.packId == packId) it.copy(isGlobal = enabled) else it
+                    },
+                    packIdsBeingUpdated = packIdsBeingUpdated - packId
+                )
+            }
+        }
+    }
+
+    fun discoverPacks() {
+        if (currentState.isDiscoveringPacks) return
+        if (currentState.discoveredPacks != null) {
+            refreshDiscoveredPacks()
+            return
+        }
+        launch {
+            updateState { copy(isDiscoveringPacks = true) }
+            val cached = runSafe { service.port.listAllImagePacks(refresh = false) }.orEmpty()
+            updateState { copy(discoveredPacks = cached) }
+            val fresh = runSafe { service.port.listAllImagePacks(refresh = true) }.orEmpty()
+            updateState { copy(discoveredPacks = fresh, isDiscoveringPacks = false) }
+        }
+    }
+
+    fun refreshDiscoveredPacks() {
+        if (currentState.isDiscoveringPacks) return
+        launch {
+            updateState { copy(isDiscoveringPacks = true) }
+            val fresh = runSafe { service.port.listAllImagePacks(refresh = true) }.orEmpty()
+            updateState { copy(discoveredPacks = fresh, isDiscoveringPacks = false) }
         }
     }
 

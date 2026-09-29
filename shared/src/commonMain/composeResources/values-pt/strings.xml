@@ -535,6 +535,10 @@
     <string name="picker_photo_sub">Envie uma imagem da galeria</string>
     <string name="picker_sticker">Adesivo</string>
     <string name="picker_sticker_sub">Envie uma imagem como adesivo</string>
+    <string name="sticker_picker_discover">Descubra pacotes em outras salas</string>
+    <string name="sticker_picker_discover_back">Voltar aos pacotes de adesivos</string>
+    <string name="sticker_picker_discover_none">Nenhum outro pacote de adesivos encontrado</string>
+    <string name="sticker_picker_discover_refresh">Procurar pacotes de adesivos novamente</string>
     <string name="picker_video">Vídeo</string>
     <string name="picker_video_sub">Compartilhe um vídeo</string>
     <string name="picker_camera">Câmera</string>

@@ -535,6 +535,10 @@
     <string name="picker_photo_sub">Pošlete obrázek z galerie</string>
     <string name="picker_sticker">Nálepka</string>
     <string name="picker_sticker_sub">Pošlete obrázek jako nálepku</string>
+    <string name="sticker_picker_discover">Objevte sady v jiných místnostech</string>
+    <string name="sticker_picker_discover_back">Zpět k sadám nálepek</string>
+    <string name="sticker_picker_discover_none">Žádné další sady nálepek nenalezeny</string>
+    <string name="sticker_picker_discover_refresh">Hledat sady nálepek znovu</string>
     <string name="picker_video">Video</string>
     <string name="picker_video_sub">Sdílejte video</string>
     <string name="picker_camera">Fotoaparát</string>

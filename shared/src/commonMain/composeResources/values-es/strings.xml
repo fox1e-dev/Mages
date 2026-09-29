@@ -438,6 +438,10 @@
     <string name="picker_photo_sub">Enviar imagen de la galeria</string>
     <string name="picker_sticker">Sticker</string>
     <string name="picker_sticker_sub">Enviar imagen como sticker</string>
+    <string name="sticker_picker_discover">Descubre paquetes en otras salas</string>
+    <string name="sticker_picker_discover_back">Volver a los paquetes de stickers</string>
+    <string name="sticker_picker_discover_none">No se encontraron otros paquetes de stickers</string>
+    <string name="sticker_picker_discover_refresh">Buscar paquetes de stickers de nuevo</string>
     <string name="picker_video">Video</string>
     <string name="picker_video_sub">Compartir un video</string>
     <string name="picker_camera">Camara</string>

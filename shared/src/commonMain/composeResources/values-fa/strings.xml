@@ -535,6 +535,10 @@
     <string name="picker_photo_sub">ارسال تصویر از گالری</string>
     <string name="picker_sticker">استیکر</string>
     <string name="picker_sticker_sub">یک تصویر به عنوان استیکر ارسال کنید</string>
+    <string name="sticker_picker_discover">کشف بسته‌ها در اتاق‌های دیگر</string>
+    <string name="sticker_picker_discover_back">بازگشت به بسته‌های استیکر</string>
+    <string name="sticker_picker_discover_none">هیچ بسته استیکر دیگری پیدا نشد</string>
+    <string name="sticker_picker_discover_refresh">جستجوی بسته‌های استیکر دوباره</string>
     <string name="picker_video">ویدیو</string>
     <string name="picker_video_sub">یک ویدیو را به اشتراک بگذارید</string>
     <string name="picker_camera">دوربین</string>

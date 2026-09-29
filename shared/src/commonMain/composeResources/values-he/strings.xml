@@ -535,6 +535,10 @@
     <string name="picker_photo_sub">Send an image from gallery</string>
     <string name="picker_sticker">מַדבֵּקָה</string>
     <string name="picker_sticker_sub">Send an image as a sticker</string>
+    <string name="sticker_picker_discover">גלו חבילות בחדרים אחרים</string>
+    <string name="sticker_picker_discover_back">חזרה לחבילות המדבקות</string>
+    <string name="sticker_picker_discover_none">לא נמצאו חבילות מדבקות נוספות</string>
+    <string name="sticker_picker_discover_refresh">לחפש חבילות מדבקות שוב</string>
     <string name="picker_video">וִידֵאוֹ</string>
     <string name="picker_video_sub">שתף סרטון</string>
     <string name="picker_camera">מַצלֵמָה</string>

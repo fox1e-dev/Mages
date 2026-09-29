@@ -535,6 +535,10 @@
     <string name="picker_photo_sub">Senden Sie ein Bild aus der Galerie</string>
     <string name="picker_sticker">Aufkleber</string>
     <string name="picker_sticker_sub">Senden Sie ein Bild als Aufkleber</string>
+    <string name="sticker_picker_discover">Pakete in anderen Räumen entdecken</string>
+    <string name="sticker_picker_discover_back">Zurück zu den Aufkleber-Paketen</string>
+    <string name="sticker_picker_discover_none">Keine weiteren Aufkleber-Pakete gefunden</string>
+    <string name="sticker_picker_discover_refresh">Erneut nach Aufkleber-Paketen suchen</string>
     <string name="picker_video">Video</string>
     <string name="picker_video_sub">Teilen Sie ein Video</string>
     <string name="picker_camera">Kamera</string>

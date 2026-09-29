@@ -556,8 +556,8 @@ class ThreadViewModel(
             attachment != null ->
                 attachment.kind == AttachmentKind.Image ||
                     attachment.kind == AttachmentKind.Video ||
-                    (attachment.thumbnailMxcUri ?: attachment.mxcUri) != null
-            sticker != null -> (sticker.thumbnailMxcUri ?: sticker.mxcUri) != null
+                    attachment.thumbnailMxcUri != null
+            sticker != null -> true
             else -> false
         }
         if (!hasValidMedia) return

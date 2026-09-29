@@ -535,6 +535,10 @@
     <string name="picker_photo_sub">Skicka en bild från galleriet</string>
     <string name="picker_sticker">Klistermärke</string>
     <string name="picker_sticker_sub">Skicka en bild som klistermärke</string>
+    <string name="sticker_picker_discover">Upptäck paket i andra rum</string>
+    <string name="sticker_picker_discover_back">Tillbaka till klistermärkespaket</string>
+    <string name="sticker_picker_discover_none">Inga andra klistermärkespaket hittades</string>
+    <string name="sticker_picker_discover_refresh">Sök efter klistermärkespaket igen</string>
     <string name="picker_video">Video</string>
     <string name="picker_video_sub">Dela en video</string>
     <string name="picker_camera">Kamera</string>

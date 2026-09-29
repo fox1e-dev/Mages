@@ -535,6 +535,10 @@
     <string name="picker_photo_sub">发送图库中的图像</string>
     <string name="picker_sticker">贴纸</string>
     <string name="picker_sticker_sub">发送图像作为贴纸</string>
+    <string name="sticker_picker_discover">在其他房间发现贴纸包</string>
+    <string name="sticker_picker_discover_back">返回贴纸包</string>
+    <string name="sticker_picker_discover_none">未找到其他贴纸包</string>
+    <string name="sticker_picker_discover_refresh">重新搜索贴纸包</string>
     <string name="picker_video">视频</string>
     <string name="picker_video_sub">分享视频</string>
     <string name="picker_camera">相机</string>

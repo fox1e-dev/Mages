@@ -214,6 +214,7 @@ delegate_result! { bool; is_user_ignored(user_id: String); is_space(room_id: Str
 }
 
 delegate_result! { Vec<MemberSummary>; list_members(room_id: String); }
+delegate_result! { Vec<MemberSummary>; list_banned_members(room_id: String); }
 delegate_result! { Vec<RoomProfile>; list_invited(); }
 delegate_result! { Vec<String>; ignored_users(); }
 delegate_result! { Vec<DirectoryUser>; search_users(search_term: String, limit: u64); }
@@ -924,6 +925,10 @@ impl Client {
 
     pub fn list_image_packs(&self, room_id: String) -> Result<Vec<ImagePackSummary>, FfiError> {
         RT.block_on(self.core.list_image_packs(room_id))
+    }
+
+    pub fn list_all_image_packs(&self, refresh: bool) -> Result<Vec<ImagePackSummary>, FfiError> {
+        RT.block_on(self.core.list_all_image_packs(refresh))
     }
 
     pub fn set_image_pack_enabled(

@@ -524,10 +524,12 @@ wasm_delegate_result_json! {
     "threadReplies"    => thread_replies(room_id: String, root_event_id: String, from: Option<String>, limit: u32, forward: bool);
     "threadSummary"    => thread_summary(room_id: String, root_event_id: String, per_page: u32, max_pages: u32);
     "listMembers"      => list_members(room_id: String);
+    "listBannedMembers" => list_banned_members(room_id: String);
     "listInvited"      => list_invited();
     "ignoredUsers"     => ignored_users();
     "roomJoinRuleAllowList" => room_join_rule_allow_list(room_id: String);
     "listImagePacks"   => list_image_packs(room_id: String);
+    "listAllImagePacks" => list_all_image_packs(refresh: bool);
     "sendStickerMxc"   => send_sticker_mxc(room_id: String, mxc_url: String, body: String, info_json: Option<String>, thread_root_event_id: Option<String>);
     "ownProfile"       => own_profile();
 }

@@ -463,6 +463,10 @@
     <string name="sticker_pack_unencrypted_notice">Sticker packs are not encrypted. Their images are sent in the clear and are visible to your homeserver, even in encrypted rooms.</string>
     <string name="sticker_pack_enable_globally">Use this pack in every room</string>
     <string name="sticker_pack_disable_globally">Stop using this pack in every room</string>
+    <string name="sticker_picker_discover">Discover packs in other rooms</string>
+    <string name="sticker_picker_discover_back">Back to sticker packs</string>
+    <string name="sticker_picker_discover_none">No other sticker packs found</string>
+    <string name="sticker_picker_discover_refresh">Search for sticker packs again</string>
     <string name="sticker_pack_new_pack">Image packs</string>
     <string name="sticker_pack_display_name">Pack name</string>
     <string name="sticker_pack_add_images">Add images</string>

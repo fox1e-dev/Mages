@@ -535,6 +535,10 @@
     <string name="picker_photo_sub">Pošaljite sliku iz galerije</string>
     <string name="picker_sticker">Naljepnica</string>
     <string name="picker_sticker_sub">Pošaljite sliku kao naljepnicu</string>
+    <string name="sticker_picker_discover">Otkrijte pakete u drugim sobama</string>
+    <string name="sticker_picker_discover_back">Natrag na pakete naljepnica</string>
+    <string name="sticker_picker_discover_none">Nema pronađenih drugih paketa naljepnica</string>
+    <string name="sticker_picker_discover_refresh">Ponovno pretraži pakete naljepnica</string>
     <string name="picker_video">Video</string>
     <string name="picker_video_sub">Podijelite video</string>
     <string name="picker_camera">Fotoaparat</string>

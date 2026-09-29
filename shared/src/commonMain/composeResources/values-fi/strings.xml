@@ -535,6 +535,10 @@
     <string name="picker_photo_sub">Lähetä kuva galleriasta</string>
     <string name="picker_sticker">Tarra</string>
     <string name="picker_sticker_sub">Lähetä kuva tarrana</string>
+    <string name="sticker_picker_discover">Löydä paketteja muissa huoneissa</string>
+    <string name="sticker_picker_discover_back">Takaisin tarrapaketteihin</string>
+    <string name="sticker_picker_discover_none">Muita tarrapaketteja ei löytynyt</string>
+    <string name="sticker_picker_discover_refresh">Hae tarrapaketteja uudelleen</string>
     <string name="picker_video">Video</string>
     <string name="picker_video_sub">Jaa video</string>
     <string name="picker_camera">Kamera</string>

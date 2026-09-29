@@ -315,6 +315,8 @@ data class RoomUiState(
     val isRoomEncrypted: Boolean = false,
     val isLoadingImagePacks: Boolean = false,
     val imagePacks: List<ImagePackSummary> = emptyList(),
+    val discoveredPacks: List<ImagePackSummary>? = null,
+    val isDiscoveringPacks: Boolean = false,
     val packIdsBeingUpdated: Set<String> = emptySet(),
     val reactionImagePathByMxc: Map<String, String> = emptyMap(),
     val showPollCreator: Boolean = false,
@@ -534,6 +536,7 @@ data class SpaceSettingsUiState(
 
     // People & roles
     val members: List<MemberSummary> = emptyList(),
+    val bannedMembers: List<MemberSummary> = emptyList(),
     val powerLevels: RoomPowerLevels? = null,
     val myUserId: String? = null,
     val myPowerLevel: Long = 0L,

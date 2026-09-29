@@ -2804,6 +2804,21 @@ impl CoreClient {
         Ok(crate::image_packs::list_image_packs(&self.sdk, rid).await)
     }
 
+    /// Discovery entry point: with `refresh` a scan connection pulls pack
+    /// state for every joined room into the store first, then both paths read
+    /// back the store. A failed scan still returns whatever the store holds.
+    pub async fn list_all_image_packs(
+        &self,
+        refresh: bool,
+    ) -> Result<Vec<ImagePackSummary>, FfiError> {
+        if refresh && self.sdk.session_meta().is_some() {
+            if let Err(error) = crate::image_packs::refresh_image_pack_state(&self.sdk).await {
+                warn!("image pack discovery scan failed: {error}");
+            }
+        }
+        Ok(crate::image_packs::list_all_image_packs(&self.sdk).await)
+    }
+
     pub async fn set_image_pack_enabled(
         &self,
         room_id: String,

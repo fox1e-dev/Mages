@@ -708,6 +708,9 @@ pub struct ImagePackSummary {
     /// Stable identity of a pack: `"<room_id>\u{1f}<state_key>"`.
     pub pack_id: String,
     pub source_room: String,
+    /// Display name of `source_room`, when the room store knows it, so a
+    /// cross-room pack list can label its source without a second lookup.
+    pub source_room_name: Option<String>,
     /// `m.room.image_pack` state key; empty string is a valid key per the spec.
     pub state_key: String,
     pub display_name: Option<String>,

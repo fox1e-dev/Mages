@@ -535,6 +535,10 @@
     <string name="picker_photo_sub">Kép küldése a galériából</string>
     <string name="picker_sticker">Matrica</string>
     <string name="picker_sticker_sub">Küldjön képet matricaként</string>
+    <string name="sticker_picker_discover">Pakettek keresése más szobákban</string>
+    <string name="sticker_picker_discover_back">Vissza a matricacsomagokhoz</string>
+    <string name="sticker_picker_discover_none">Nem található más matricacsomag</string>
+    <string name="sticker_picker_discover_refresh">Matricacsomagok keresése újra</string>
     <string name="picker_video">Videó</string>
     <string name="picker_video_sub">Videó megosztása</string>
     <string name="picker_camera">Kamera</string>

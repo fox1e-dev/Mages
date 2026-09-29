@@ -1,12 +1,18 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::time::Duration;
 
+use futures_util::StreamExt;
 use matrix_sdk::{
-    Client, Room,
+    Client, Room, SlidingSync, SlidingSyncList, SlidingSyncListLoadingState, SlidingSyncMode,
+    deserialized_responses::RawAnySyncOrStrippedState,
     ruma::{
         OwnedMxcUri, OwnedRoomId, UInt,
-        api::client::state::{
-            get_state_event_for_key::v3 as state_event_for_key,
-            get_state_events::v3 as state_events,
+        api::client::{
+            state::{
+                get_state_event_for_key::v3 as state_event_for_key,
+                get_state_events::v3 as state_events,
+            },
+            sync::sync_events::v5 as http,
         },
         events::{
             StateEventType,
@@ -18,6 +24,8 @@ use matrix_sdk::{
             space::parent::SpaceParentEventContent,
         },
     },
+    sliding_sync::PollTimeout,
+    timeout::timeout,
 };
 use once_cell::sync::Lazy;
 use serde::de::DeserializeOwned;
@@ -35,6 +43,21 @@ static SPACE_PARENT: Lazy<StateEventType> = Lazy::new(|| StateEventType::from("m
 const MAX_SPACE_DEPTH: usize = 8;
 
 const PACK_ID_SEP: char = '\u{1f}';
+
+/// Connection id of the on-demand pack scan. Sliding sync permits several
+/// connections per session; this one is deliberately distinct from the room
+/// list's and the encryption sync's connections.
+const PACK_SCAN_CONN_ID: &str = "image-packs";
+const PACK_SCAN_LIST: &str = "packs";
+/// Pages of rooms per scan request while the list is still loading.
+const PACK_SCAN_BATCH: u32 = 100;
+const PACK_SCAN_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(60);
+const PACK_SCAN_ATTEMPTS: u8 = 3;
+
+/// Scan connections are serialised so two of them cannot race on the stored
+/// sync position of [`PACK_SCAN_CONN_ID`].
+static PACK_SCAN_LOCK: Lazy<futures_util::lock::Mutex<()>> =
+    Lazy::new(|| futures_util::lock::Mutex::new(()));
 
 /// Spec v1.19 "Shortcode grammar": must match `[a-zA-Z0-9-_]+` and must not
 /// exceed 100 bytes. The character set deliberately excludes `:`, `/` and
@@ -492,6 +515,11 @@ pub(crate) async fn list_image_packs(
             None => cache.of_type(&source_room, &ROOM_IMAGE_PACK).await,
         };
 
+        if found.is_empty() {
+            continue;
+        }
+        let source_room_name = room_display_name(client, &source_room).await;
+
         for (key, content) in found {
             if !seen.insert((source_room.clone(), key.clone())) {
                 continue;
@@ -503,15 +531,29 @@ pub(crate) async fn list_image_packs(
                 continue;
             }
             let is_global = global_keys.contains(&key);
-            out.push(summary_from(source_room.to_string(), key, content, is_global));
+            out.push(summary_from(
+                source_room.to_string(),
+                source_room_name.clone(),
+                key,
+                content,
+                is_global,
+            ));
         }
     }
 
     out
 }
 
+/// The room's display name as the room store knows it, or `None` when the
+/// room is unknown or the name cannot be computed.
+async fn room_display_name(client: &Client, room_id: &OwnedRoomId) -> Option<String> {
+    let room: Room = client.get_room(room_id)?;
+    room.display_name().await.ok().map(|name| name.to_string())
+}
+
 fn summary_from(
     source_room: String,
+    source_room_name: Option<String>,
     state_key: String,
     content: RoomImagePackEventContent,
     is_global: bool,
@@ -527,6 +569,7 @@ fn summary_from(
     ImagePackSummary {
         pack_id: format!("{source_room}{PACK_ID_SEP}{state_key}"),
         source_room,
+        source_room_name,
         state_key,
         display_name: pack.display_name,
         avatar_url: pack.avatar_url.map(|m| m.to_string()),
@@ -643,6 +686,178 @@ async fn canonical_space_ancestors(
         }
     }
 
+    out
+}
+
+/// Pull `m.room.image_pack` state for every joined room into the local store.
+pub(crate) async fn refresh_image_pack_state(client: &Client) -> Result<(), FfiError> {
+    let _guard = PACK_SCAN_LOCK.lock().await;
+    let mut last = FfiError::Msg("image pack scan did not finish".into());
+    for _ in 0..PACK_SCAN_ATTEMPTS {
+        match scan_image_pack_state(client).await {
+            ScanOutcome::Loaded => return Ok(()),
+            ScanOutcome::Failed(error) => return Err(error),
+            ScanOutcome::Restartable(error) => {
+                last = error;
+                matrix_sdk::sleep::sleep(Duration::from_millis(250)).await;
+            }
+        }
+    }
+    Err(last)
+}
+
+enum ScanOutcome {
+    Loaded,
+    /// The connection ended before the list covered every room, e.g. the
+    /// server expired the position. A fresh attempt restarts cleanly.
+    Restartable(FfiError),
+    /// Not worth retrying within this call.
+    Failed(FfiError),
+}
+
+async fn scan_image_pack_state(client: &Client) -> ScanOutcome {
+    let sync = match build_pack_scan(client).await {
+        Ok(sync) => sync,
+        Err(error) => return ScanOutcome::Failed(error),
+    };
+    let outcome = run_pack_scan(&sync).await;
+    // Keep the stored position so the next scan resumes as a delta; the
+    // server side recovers on its own when it has expired.
+    let _ = sync.stop_sync();
+    outcome
+}
+
+async fn build_pack_scan(client: &Client) -> Result<SlidingSync, FfiError> {
+    let list = SlidingSyncList::builder(PACK_SCAN_LIST)
+        .sync_mode(SlidingSyncMode::new_paging(PACK_SCAN_BATCH))
+        .required_state(vec![(ROOM_IMAGE_PACK.clone(), "*".to_owned())])
+        .no_timeline_limit()
+        // Joined rooms only: a response without `invite_state` is treated as
+        // a joined room, which an invited room's must not be.
+        .filters(Some(matrix_sdk::ruma::assign!(
+            http::request::ListFilters::default(),
+            {
+                is_invite: Some(false),
+            }
+        )))
+        .requires_timeout(|generator| {
+            if generator.is_fully_loaded() {
+                PollTimeout::Default
+            } else {
+                PollTimeout::Some(0)
+            }
+        });
+    SlidingSync::builder(PACK_SCAN_CONN_ID.to_owned(), client.clone())
+        .map_err(|error| FfiError::Msg(format!("image pack scan: {error}")))?
+        .share_pos()
+        .add_list(list)
+        .build()
+        .await
+        .map_err(|error| FfiError::Msg(format!("image pack scan: {error}")))
+}
+
+async fn run_pack_scan(sync: &SlidingSync) -> ScanOutcome {
+    let mut stream = Box::pin(sync.sync());
+    let drive = async {
+        loop {
+            let loaded = sync
+                .on_list(PACK_SCAN_LIST, |list| {
+                    futures_util::future::ready(matches!(
+                        list.state(),
+                        SlidingSyncListLoadingState::FullyLoaded
+                    ))
+                })
+                .await
+                .unwrap_or(false);
+            if loaded {
+                return Ok(true);
+            }
+            match stream.next().await {
+                Some(Ok(_)) => {}
+                Some(Err(error)) => {
+                    return Err(FfiError::Msg(format!("image pack scan: {error}")));
+                }
+                None => return Ok(false),
+            }
+        }
+    };
+    match timeout(drive, PACK_SCAN_ATTEMPT_TIMEOUT).await {
+        Ok(Ok(true)) => ScanOutcome::Loaded,
+        Ok(Ok(false)) => ScanOutcome::Restartable(FfiError::Msg(
+            "image pack scan connection ended early".into(),
+        )),
+        Ok(Err(error)) => ScanOutcome::Restartable(error),
+        Err(_) => ScanOutcome::Failed(FfiError::Msg("image pack scan timed out".into())),
+    }
+}
+
+/// Resolve every image pack in the joined rooms from the local store, the
+/// read side of [`refresh_image_pack_state`]. Results are grouped by room and
+/// sorted so a browse list does not reshuffle between loads.
+pub(crate) async fn list_all_image_packs(client: &Client) -> Vec<ImagePackSummary> {
+    let mut global: HashMap<OwnedRoomId, BTreeSet<String>> = HashMap::new();
+    match client.account().account_data::<ImagePackRoomsEventContent>().await {
+        Ok(Some(raw)) => {
+            if let Ok(content) = raw.deserialize() {
+                for (room, packs) in content.rooms {
+                    global.insert(room, packs.into_keys().collect());
+                }
+            }
+        }
+        Ok(None) => {}
+        Err(error) => warn!("image pack: account data unreadable: {error}"),
+    }
+
+    let mut out: Vec<ImagePackSummary> = Vec::new();
+    for room in client.joined_rooms() {
+        let events = match room.get_state_events(ROOM_IMAGE_PACK.clone()).await {
+            Ok(events) if !events.is_empty() => events,
+            Ok(_) => continue,
+            Err(error) => {
+                warn!("image pack: store read for {} failed: {error}", room.room_id());
+                continue;
+            }
+        };
+        let source_room = room.room_id().to_owned();
+        let source_room_name = room_display_name(client, &source_room).await;
+        let global_keys = global.get(&source_room);
+
+        for event in events {
+            let RawAnySyncOrStrippedState::Sync(raw) = event else { continue };
+            let Ok(value) = serde_json::from_str::<serde_json::Value>(raw.json().get()) else {
+                continue;
+            };
+            let Some(state_key) = value.get("state_key").and_then(|key| key.as_str()) else {
+                continue;
+            };
+            let content: RoomImagePackEventContent = match value
+                .get("content")
+                .cloned()
+                .and_then(|content| serde_json::from_value(content).ok())
+            {
+                Some(content) => content,
+                None => continue,
+            };
+            if content.images.is_empty() {
+                continue;
+            }
+            out.push(summary_from(
+                source_room.to_string(),
+                source_room_name.clone(),
+                state_key.to_owned(),
+                content,
+                global_keys.is_some_and(|keys| keys.contains(state_key)),
+            ));
+        }
+    }
+
+    out.sort_by(|a, b| {
+        let left = a.source_room_name.as_deref().unwrap_or(&a.source_room).to_lowercase();
+        let right = b.source_room_name.as_deref().unwrap_or(&b.source_room).to_lowercase();
+        left.cmp(&right)
+            .then_with(|| a.source_room.cmp(&b.source_room))
+            .then_with(|| a.state_key.cmp(&b.state_key))
+    });
     out
 }
 

@@ -692,6 +692,7 @@ data class ImagePackImageEntry(
 data class ImagePackSummary(
     val packId: String,
     val sourceRoom: String,
+    val sourceRoomName: String? = null,
     val stateKey: String = "",
     val displayName: String? = null,
     val avatarUrl: String? = null,
@@ -1179,6 +1180,8 @@ interface MatrixPort {
     suspend fun roomParentSpaces(roomId: String): List<SpaceParentInfo>
 
     suspend fun listImagePacks(roomId: String): List<ImagePackSummary>
+
+    suspend fun listAllImagePacks(refresh: Boolean): List<ImagePackSummary>
 
     /**
      * Adds or removes one pack from `m.image_pack.rooms`, so its images become

@@ -1669,6 +1669,11 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
             requireClient().listImagePacks(roomId).await<JsAny?>().toJsonElement()
         )
 
+    override suspend fun listAllImagePacks(refresh: Boolean): List<ImagePackSummary> =
+        wasmJson.decodeFromJsonElement(
+            requireClient().listAllImagePacks(refresh).await<JsAny?>().toJsonElement()
+        )
+
     override suspend fun setImagePackEnabled(
         roomId: String,
         stateKey: String,

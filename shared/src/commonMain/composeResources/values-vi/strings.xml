@@ -535,6 +535,10 @@
     <string name="picker_photo_sub">Gửi hình ảnh từ thư viện</string>
     <string name="picker_sticker">Hình dán</string>
     <string name="picker_sticker_sub">Gửi hình ảnh dưới dạng nhãn dán</string>
+    <string name="sticker_picker_discover">Khám phá gói trong các phòng khác</string>
+    <string name="sticker_picker_discover_back">Quay lại gói nhãn dán</string>
+    <string name="sticker_picker_discover_none">Không tìm thấy gói nhãn dán nào khác</string>
+    <string name="sticker_picker_discover_refresh">Tìm gói nhãn dán lại</string>
     <string name="picker_video">Băng hình</string>
     <string name="picker_video_sub">Chia sẻ video</string>
     <string name="picker_camera">Máy ảnh</string>
