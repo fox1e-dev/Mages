@@ -140,7 +140,7 @@ class LinuxPushHandler(
 
             NotifierImpl.notifyMatrixEvent(
                 title = presentation.title,
-                body = if (mediaPath != null) presentation.bodyWithMedia else presentation.body,
+                body = if (mediaPath != null) presentation.bodyWithMedia.ifBlank { presentation.body } else presentation.body,
                 roomId = n.roomId,
                 eventId = n.eventId,
                 hasMention = n.hasMention,

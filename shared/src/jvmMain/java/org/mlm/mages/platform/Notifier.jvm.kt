@@ -231,7 +231,8 @@ actual fun BindNotifications(
 
                 NotifierImpl.notifyMatrixEvent(
                     title = presentation.title,
-                    body = if (mediaPath != null) presentation.bodyWithMedia else presentation.body,
+                    // An image may still fail to load, so the text has to stand on its own.
+                    body = if (mediaPath != null) presentation.bodyWithMedia.ifBlank { presentation.body } else presentation.body,
                     roomId = n.roomId,
                     eventId = n.eventId,
                     hasMention = n.hasMention,

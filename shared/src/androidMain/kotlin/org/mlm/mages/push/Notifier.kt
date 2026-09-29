@@ -513,6 +513,7 @@ object Notifier {
         isDm: Boolean = false,
         playSound: Boolean = true,
         mediaPath: String? = null,
+        caption: String = "",
     ) {
         val channelId = if (playSound) {
             AppNotificationChannels.CHANNEL_MESSAGES
@@ -552,9 +553,21 @@ object Notifier {
             .setConversationTitle(if (isDm) null else roomName)
             .setGroupConversation(!isDm)
 
-        val message = NotificationCompat.MessagingStyle.Message(messageBody, timestamp, sender)
-        previewUri?.let { message.setData("image/*", it) }
-        style.addMessage(message)
+        // An image message must carry non-empty text or SystemUI drops the image, and
+        // that text is not rendered once the image shows, so a caption rides along as
+        // its own message. Element X Android does the same.
+        if (previewUri != null) {
+            val imageMessage = NotificationCompat.MessagingStyle.Message(messageBody, timestamp, sender)
+                .setData("image/*", previewUri)
+            style.addMessage(imageMessage)
+            if (caption.isNotBlank()) {
+                style.addMessage(NotificationCompat.MessagingStyle.Message(caption, timestamp, sender))
+            }
+        } else {
+            style.addMessage(
+                NotificationCompat.MessagingStyle.Message(caption.ifBlank { messageBody }, timestamp, sender)
+            )
+        }
 
         val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
             .setLabel("Reply")

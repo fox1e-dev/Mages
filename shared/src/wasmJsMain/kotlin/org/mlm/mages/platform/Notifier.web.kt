@@ -231,7 +231,7 @@ actual fun BindNotifications(
 
                 if (createBrowserNotification(
                         presentation.title,
-                        if (resolvedImage != null) presentation.bodyWithMedia else presentation.body,
+                        if (resolvedImage != null) presentation.bodyWithMedia.ifBlank { presentation.body } else presentation.body,
                         resolvedIcon,
                         notification.roomId,
                         resolvedImage
