@@ -30,6 +30,7 @@ fun MemberActionsSheet(
     onBan: (reason: String?) -> Unit,
     onUnban: (reason: String?) -> Unit,
     onIgnore: () -> Unit,
+    onVerify: (() -> Unit)? = null,
     dmAction: ActionAvailabilityUi = ActionAvailabilityUi.Enabled,
     kickAction: ActionAvailabilityUi = ActionAvailabilityUi.Enabled,
     banAction: ActionAvailabilityUi = ActionAvailabilityUi.Enabled,
@@ -91,6 +92,15 @@ fun MemberActionsSheet(
                     },
                     enabled = dmAction.isEnabled,
                     onClick = { onStartDm(); onDismiss() }
+                )
+            }
+
+            if (onVerify != null) {
+                ActionItem(
+                    icon = Icons.Default.VerifiedUser,
+                    title = "Verify user",
+                    subtitle = "Start an emoji verification with them",
+                    onClick = { onVerify(); onDismiss() }
                 )
             }
 

@@ -44,6 +44,7 @@ import org.mlm.mages.ui.components.snackbar.SnackbarManager
 import org.mlm.mages.ui.components.snackbar.rememberErrorPoster
 import org.mlm.mages.ui.viewmodel.RoomInfoUiState
 import org.mlm.mages.ui.viewmodel.RoomInfoViewModel
+import org.mlm.mages.verification.VerificationCoordinator
 import org.mlm.mages.matrix.displayName
 import io.github.mlmgames.settings.core.annotations.SettingPlatform
 import io.github.mlmgames.settings.core.platform.currentPlatform
@@ -62,6 +63,7 @@ fun RoomInfoRoute(
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarManager: SnackbarManager = koinInject()
+    val verification: VerificationCoordinator = koinInject()
     val postError = rememberErrorPoster(snackbarManager)
 
     val shortcutSupport = remember { RoomPlatformShortcuts.support() }
@@ -118,6 +120,7 @@ fun RoomInfoRoute(
         onUnbanUser = viewModel::unbanUser,
         onIgnoreUser = viewModel::ignoreUser,
         onStartDm = viewModel::startDmWith,
+        onVerifyUser = { verification.startUserVerify(it) },
         onShowInviteDialog = viewModel::showInviteDialog,
         onHideInviteDialog = viewModel::hideInviteDialog,
         onInviteUser = viewModel::inviteUser,
@@ -169,6 +172,7 @@ fun RoomInfoScreen(
     onUnbanUser: (String, String?) -> Unit,
     onIgnoreUser: (String) -> Unit,
     onStartDm: (String) -> Unit,
+    onVerifyUser: (String) -> Unit,
     onShowInviteDialog: () -> Unit,
     onHideInviteDialog: () -> Unit,
     onInviteUser: (String) -> Unit,
@@ -188,6 +192,7 @@ fun RoomInfoScreen(
     val snackbarManager: SnackbarManager = koinInject()
     val postError = rememberErrorPoster(snackbarManager)
     val clipboard = LocalClipboardManager.current
+    val dmPartner = state.dmPartner
 
     LaunchedEffect(state.error) { state.error?.let { postError(it) } }
 
@@ -251,6 +256,20 @@ fun RoomInfoScreen(
                         onToggleFavourite = onToggleFavourite,
                         onToggleLowPriority = onToggleLowPriority
                     )
+                }
+
+                if (dmPartner != null && state.profile?.isEncrypted == true) {
+                    item {
+                        SettingsGroup {
+                            SettingsActionRow(
+                                icon = Icons.Default.VerifiedUser,
+                                title = "Verify user",
+                                subtitle = dmPartner.displayName ?: dmPartner.userId,
+                                actionText = "Start",
+                                onClick = { onVerifyUser(dmPartner.userId) }
+                            )
+                        }
+                    }
                 }
 
                 if (state.canEditName || state.canEditTopic) {
@@ -634,6 +653,11 @@ fun RoomInfoScreen(
                 onBan = { reason -> onBanUser(member.userId, reason) },
                 onUnban = { reason -> onUnbanUser(member.userId, reason) },
                 onIgnore = { onIgnoreUser(member.userId) },
+                onVerify = if (dmPartner?.userId == member.userId && state.profile?.isEncrypted == true) {
+                    { onVerifyUser(member.userId) }
+                } else {
+                    null
+                },
                 dmAction = state.selectedMemberDmAction,
                 kickAction = state.selectedMemberKickAction,
                 banAction = state.selectedMemberBanAction,

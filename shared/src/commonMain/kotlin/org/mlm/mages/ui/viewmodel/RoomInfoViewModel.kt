@@ -28,6 +28,12 @@ import org.mlm.mages.ui.ActionPresentationUi
 import org.mlm.mages.matrix.RoomUpgradeInfo
 import org.mlm.mages.matrix.SpaceInfo
 
+// Verification needs the other side of the conversation, which only a DM has.
+private fun dmPartnerOf(
+    profile: RoomProfile?,
+    members: List<MemberSummary>
+): MemberSummary? = if (profile?.isDm != true) null else members.firstOrNull { !it.isMe }
+
 data class RoomInfoUiState(
     val profile: RoomProfile? = null,
     val members: List<MemberSummary> = emptyList(),
@@ -68,6 +74,7 @@ data class RoomInfoUiState(
     val showKnockRequests: Boolean = false,
 
     val myUserId: String? = null,
+    val dmPartner: MemberSummary? = null,
     val showMembers: Boolean = false,
     val selectedMemberForAction: MemberSummary? = null,
     val selectedMemberDmAction: ActionAvailabilityUi = ActionAvailabilityUi(),
@@ -261,6 +268,7 @@ class RoomInfoViewModel(
                     canKick = powerLevel >= (powerLevels?.kick ?: 50),
                     knockRequests = knockRequests,
                     myUserId = myUserId,
+                    dmPartner = dmPartnerOf(profile, sorted),
                     notificationMode = notificationMode,
                     isLoadingNotificationMode = false
                 )
