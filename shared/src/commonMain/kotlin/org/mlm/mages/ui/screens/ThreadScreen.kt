@@ -67,6 +67,7 @@ fun ThreadRoute(
     val settingsRepository: SettingsRepository<AppSettings> = koinInject()
     val settings by settingsRepository.flow.collectAsState(initial = AppSettings())
 
+    LaunchedEffect(Unit) { viewModel.refreshImagePacks() }
 
     ThreadScreen(
         state = state,

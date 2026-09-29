@@ -469,10 +469,9 @@ class RoomViewModel(
             copy(
                 showStickerPicker = true,
                 showAttachmentPicker = false,
-                isLoadingImagePacks = !imagePacksLoaded
+                isLoadingImagePacks = true
             )
         }
-        if (currentState.imagePacksLoaded) return
         launch {
             val roomId = currentState.roomId
             val encrypted = service.port.roomProfile(roomId)?.isEncrypted == true
@@ -481,12 +480,15 @@ class RoomViewModel(
         }
     }
 
+    fun refreshImagePacks() {
+        launch { loadImagePacks() }
+    }
+
     private suspend fun loadImagePacks() {
         val packs = service.port.listImagePacks(currentState.roomId)
         updateState {
             copy(
                 imagePacks = packs,
-                imagePacksLoaded = true,
                 isLoadingImagePacks = false
             )
         }

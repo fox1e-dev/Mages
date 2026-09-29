@@ -127,6 +127,8 @@ fun RoomScreen(
     }
     val settings = persistedSettings ?: AppSettings()
 
+    LaunchedEffect(Unit) { viewModel.refreshImagePacks() }
+
     var pendingJumpEventId by rememberSaveable(initialScrollToEventId) {
         mutableStateOf(initialScrollToEventId)
     }

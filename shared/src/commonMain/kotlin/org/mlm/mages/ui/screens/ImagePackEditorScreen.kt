@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
@@ -210,11 +211,14 @@ fun ImagePackEditorScreen(
 
             if (state.isLoading) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                     contentAlignment = Alignment.Center
                 ) { LoadingIndicator() }
             } else {
                 PackEditorGrid(
+                    modifier = Modifier.weight(1f),
                     state = state,
                     requestPreview = requestPreview,
                     onRenamePack = onRenamePack,
@@ -223,6 +227,7 @@ fun ImagePackEditorScreen(
                     onSetShortcode = onSetShortcode,
                     onRemoveImage = onRemoveImage,
                     onRemovePendingImage = onRemovePendingImage,
+                    onAddImages = onAddImages,
                     onRemovePack = onRemovePack
                 )
             }
@@ -265,6 +270,7 @@ fun ImagePackEditorScreen(
 
 @Composable
 private fun PackEditorGrid(
+    modifier: Modifier = Modifier,
     state: ImagePackEditorUiState,
     requestPreview: suspend (thumbnailMxcUri: String?, mxcUrl: String) -> String?,
     onRenamePack: (index: Int, name: String) -> Unit,
@@ -273,6 +279,7 @@ private fun PackEditorGrid(
     onSetShortcode: (packIndex: Int, localId: String, shortcode: String) -> Unit,
     onRemoveImage: (packIndex: Int, shortcode: String) -> Unit,
     onRemovePendingImage: (packIndex: Int, localId: String) -> Unit,
+    onAddImages: (packIndex: Int) -> Unit,
     onRemovePack: (index: Int) -> Unit
 ) {
     val gridState = rememberLazyGridState()
@@ -280,7 +287,7 @@ private fun PackEditorGrid(
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = CELL_TILE),
         state = gridState,
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(
             start = Spacing.lg, end = Spacing.lg, top = Spacing.sm, bottom = Spacing.lg
         ),
@@ -319,6 +326,7 @@ private fun PackEditorGrid(
                 },
                 onRemoveImage = { onRemoveImage(packIndex, it) },
                 onRemovePending = { onRemovePendingImage(packIndex, it) },
+                onAddImages = { onAddImages(packIndex) },
                 onRemovePack = { onRemovePack(packIndex) }
             )
         }
@@ -341,6 +349,7 @@ private fun LazyGridScope.packSection(
     onSetShortcode: (String, String) -> Unit,
     onRemoveImage: (String) -> Unit,
     onRemovePending: (String) -> Unit,
+    onAddImages: () -> Unit,
     onRemovePack: () -> Unit
 ) {
     item(key = "pack_header_$packIndex", span = { GridItemSpan(maxLineSpan) }) {
@@ -351,6 +360,7 @@ private fun LazyGridScope.packSection(
             onRename = onRename,
             onSetUsage = onSetUsage,
             onSetPackGlobal = onSetPackGlobal,
+            onAddImages = onAddImages,
             onRemovePack = onRemovePack
         )
     }
@@ -386,11 +396,13 @@ private fun PackHeader(
     onRename: (String) -> Unit,
     onSetUsage: (List<String>) -> Unit,
     onSetPackGlobal: (Boolean) -> Unit,
+    onAddImages: () -> Unit,
     onRemovePack: () -> Unit
 ) {
     // A pack that has never been written has no state key to name in either
     // `m.room.image_pack` or `m.image_pack.rooms`, so it can be neither removed
-    // nor subscribed until its first save.
+    // nor subscribed until its first save. Adding is still allowed, since a
+    // pack's first save is what creates the key.
     val isEditable = !isReadOnly && !isSaving && !pack.isNew
 
     Column(
@@ -414,6 +426,16 @@ private fun PackHeader(
                         .size(20.dp)
                 )
             } else {
+                IconButton(
+                    onClick = onAddImages,
+                    enabled = !isReadOnly && !isSaving,
+                    modifier = Modifier.height(HEADER_FIELD)
+                ) {
+                    Icon(
+                        Icons.Default.AddPhotoAlternate,
+                        stringResource(Res.string.sticker_pack_add_images)
+                    )
+                }
                 IconButton(
                     onClick = onRemovePack,
                     enabled = isEditable,

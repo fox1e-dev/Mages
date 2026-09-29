@@ -107,6 +107,8 @@ class ThreadViewModel(
         }
     }
 
+    fun refreshImagePacks() = loadImagePacks()
+
     private fun loadImagePacks() {
         launch {
             val packs = runSafe { service.port.listImagePacks(roomId) }.orEmpty()

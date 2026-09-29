@@ -398,7 +398,10 @@ fun notificationSummary(content: ClassifiedNotification): String = when (content
     }
     is ClassifiedNotification.Location ->
         if (content.isLive) "Shared a live location" else "Shared a location"
-    is ClassifiedNotification.Reaction -> "Reacted ${content.key}"
+    // MSC4027 lets the key be an mxc URI, which shows up ugly in notifs.
+    is ClassifiedNotification.Reaction ->
+        if (content.key.startsWith("mxc://")) "Reacted with an image"
+        else "Reacted ${content.key}"
     is ClassifiedNotification.Call -> if (content.invite) "Incoming call" else "Call update"
     ClassifiedNotification.Invite -> "Room invite"
     ClassifiedNotification.Unknown -> "New event"

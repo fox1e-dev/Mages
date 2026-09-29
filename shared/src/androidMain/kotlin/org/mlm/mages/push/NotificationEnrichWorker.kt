@@ -240,7 +240,13 @@ class NotificationEnrichWorker(
                     showPreview = settings.notificationShowPreview,
                     redactedBody = applicationContext.getString(R.string.notif_new_message)
                 )
-                val media = presentation.media?.let { resolvePreviewMedia(it, settings) }
+                val media = presentation.media
+                    ?.takeIf { NotificationMediaPolicy.allowed(settings) }
+                    ?.let {
+                        runCatching {
+                            port.mxcThumbnailToCache(it.mxcUri, PREVIEW_PX, PREVIEW_PX, crop = true)
+                        }.getOrNull()?.takeIf { path -> path.isNotBlank() }
+                    }
 
                 Notifier.showConversationNotification(
                     context = applicationContext,
@@ -265,23 +271,10 @@ class NotificationEnrichWorker(
         }
     }
 
-    private suspend fun resolvePreviewMedia(
-        media: NotificationMedia,
-        settings: AppSettings
-    ): String? {
-        if (!NotificationMediaPolicy.allowed(settings)) return null
-        return runCatching {
-            port.mxcThumbnailToCache(media.mxcUri, PREVIEW_PX, PREVIEW_PX, crop = true)
-        }.getOrNull()?.takeIf { it.isNotBlank() }
-    }
-
-    private companion object {
-        const val PREVIEW_PX = 320
-    }
-
     companion object {
         const val KEY_ROOM_ID = "roomId"
         const val KEY_EVENT_ID = "eventId"
+        private const val PREVIEW_PX = 320
     }
 }
 

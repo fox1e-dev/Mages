@@ -35,6 +35,7 @@ import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
 
 private val EMPTY_STATE_HEIGHT = 200.dp
+private val GRID_MAX_HEIGHT = 400.dp
 
 /**
  * Picker for image packs (spec v1.19). Only packs that declare sticker usage, or
@@ -67,7 +68,7 @@ fun StickerPickerSheet(
                 isLoading -> Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 160.dp),
+                        .height(EMPTY_STATE_HEIGHT),
                     contentAlignment = Alignment.Center
                 ) { CircularProgressIndicator() }
 
@@ -85,7 +86,7 @@ fun StickerPickerSheet(
 
                 else -> LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 64.dp),
-                    modifier = Modifier.heightIn(max = 400.dp),
+                    modifier = Modifier.heightIn(max = GRID_MAX_HEIGHT),
                     contentPadding = PaddingValues(
                         start = Spacing.lg,
                         end = Spacing.lg,

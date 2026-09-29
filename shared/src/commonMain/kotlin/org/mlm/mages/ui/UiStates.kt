@@ -307,7 +307,6 @@ data class RoomUiState(
     val showAttachmentPicker: Boolean = false,
     val showStickerPicker: Boolean = false,
     val isRoomEncrypted: Boolean = false,
-    val imagePacksLoaded: Boolean = false,
     val isLoadingImagePacks: Boolean = false,
     val imagePacks: List<ImagePackSummary> = emptyList(),
     val packIdsBeingUpdated: Set<String> = emptySet(),

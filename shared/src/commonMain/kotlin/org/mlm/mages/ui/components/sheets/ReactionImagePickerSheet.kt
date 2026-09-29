@@ -27,6 +27,7 @@ import org.mlm.mages.ui.components.core.PackImageTile
 import org.mlm.mages.ui.theme.Spacing
 
 private val EMPTY_STATE_HEIGHT = 200.dp
+private val GRID_MAX_HEIGHT = 400.dp
 
 /**
  * Picks an image to react with, per MSC4027, where the reaction key is the mxc
@@ -66,7 +67,7 @@ fun ReactionImagePickerSheet(
 
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 64.dp),
-                modifier = Modifier.heightIn(max = 400.dp),
+                modifier = Modifier.heightIn(max = GRID_MAX_HEIGHT),
                 contentPadding = PaddingValues(
                     start = Spacing.lg,
                     end = Spacing.lg,

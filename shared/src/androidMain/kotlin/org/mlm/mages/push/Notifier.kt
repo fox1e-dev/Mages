@@ -540,15 +540,13 @@ object Notifier {
             runCatching { File(path).takeIf { it.exists() } }.getOrNull()?.let { Uri.fromFile(it) }
         }
 
-        val style = (existingStyle ?: NotificationCompat.MessagingStyle(sender)
+        val style = existingStyle ?: NotificationCompat.MessagingStyle(sender)
             .setConversationTitle(if (isDm) null else roomName)
-            .setGroupConversation(!isDm))
-            .addMessage(
-                messageBody,
-                timestamp,
-                sender,
-                previewUri?.let { NotificationCompat.MessagingStyle.Message(it, "image/*") },
-            )
+            .setGroupConversation(!isDm)
+
+        val message = NotificationCompat.MessagingStyle.Message(messageBody, timestamp, sender)
+        previewUri?.let { message.setData("image/*", it) }
+        style.addMessage(message)
 
         val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
             .setLabel("Reply")

@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -45,7 +46,7 @@ fun ReactionChipsRow(
     val visibleChips = maxVisible?.let { chips.take(it) } ?: chips
 
     FlowRow(
-        modifier = modifier.padding(top = 0.dp),
+        modifier = modifier.padding(start = 2.dp),
         horizontalArrangement = Arrangement.spacedBy((-2).dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
@@ -80,7 +81,7 @@ private fun ReactionKeyLabel(
     shortcode: String?
 ) {
     if (!key.startsWith("mxc://")) {
-        Text(text = key, fontSize = 16.sp, lineHeight = 16.sp)
+        Text(text = key, fontSize = 16.sp, lineHeight = CHIP_LABEL_LINE_HEIGHT)
         return
     }
 
@@ -92,7 +93,7 @@ private fun ReactionKeyLabel(
                 .build(),
             contentDescription = shortcode,
             contentScale = ContentScale.Fit,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(CHIP_LABEL_HEIGHT)
         )
         return
     }
@@ -100,10 +101,15 @@ private fun ReactionKeyLabel(
     Text(
         text = shortcode ?: key.substringAfterLast('/').ifEmpty { "🖼" },
         fontSize = 16.sp,
-        lineHeight = 16.sp,
-        maxLines = 1
+        lineHeight = CHIP_LABEL_LINE_HEIGHT,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.widthIn(max = 120.dp)
     )
 }
+
+private val CHIP_LABEL_HEIGHT = 20.dp
+private val CHIP_LABEL_LINE_HEIGHT = 16.sp
 
 @Composable
 private fun ReactionChip(
