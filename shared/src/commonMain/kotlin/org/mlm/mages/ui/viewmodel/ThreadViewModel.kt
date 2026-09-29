@@ -28,7 +28,9 @@ import org.mlm.mages.ui.components.composer.emoteSuggestionsFrom
 import org.mlm.mages.ui.components.core.emoteMxcUrisFrom
 import org.mlm.mages.ui.components.message.mxcReactionKeys
 import org.mlm.mages.ui.components.message.reactionShortcodesFrom
+import org.mlm.mages.ui.util.downloadNameHint
 import org.mlm.mages.matrix.ReactionSummary
+import org.mlm.mages.AttachmentKind
 import kotlin.getValue
 
 class ThreadViewModel(
@@ -535,6 +537,80 @@ class ThreadViewModel(
         events.forEach {
             prefetchReplyThumbnail(it)
             prefetchEmotes(it)
+            ensureThumbnail(it)
+        }
+    }
+
+    private val thumbnailFetchInFlight = mutableSetOf<String>()
+
+    fun ensureThumbnail(event: MessageEvent) {
+        if (!mediaPreviewsAllowed()) return
+        val id = event.eventId
+        if (id.isBlank()) return
+        if (currentState.thumbByEvent.containsKey(id)) return
+        if (!thumbnailFetchInFlight.add(id)) return
+
+        val attachment = event.attachment
+        val sticker = event.sticker
+        val hasValidMedia = when {
+            attachment != null ->
+                attachment.kind == AttachmentKind.Image ||
+                    attachment.kind == AttachmentKind.Video ||
+                    (attachment.thumbnailMxcUri ?: attachment.mxcUri) != null
+            sticker != null -> (sticker.thumbnailMxcUri ?: sticker.mxcUri) != null
+            else -> false
+        }
+        if (!hasValidMedia) return
+
+        launch {
+            try {
+                val path = attachment?.let { service.thumbnailToCache(it, 320, 320, true).getOrNull() }
+                    ?: sticker?.let { service.port.downloadStickerToCache(it).getOrNull() }
+                if (!path.isNullOrBlank()) {
+                    updateState { copy(thumbByEvent = thumbByEvent + (id to path)) }
+                }
+            } finally {
+                thumbnailFetchInFlight.remove(id)
+            }
+        }
+    }
+
+    fun openAttachment(event: MessageEvent, onOpen: (String, String?) -> Unit) {
+        launch {
+            val attachment = event.attachment
+            val sticker = event.sticker
+            val mime: String?
+            val result: Result<String>
+
+            when {
+                attachment != null -> {
+                    mime = attachment.mime
+                    result = service.port.downloadAttachmentToCache(
+                        attachment,
+                        downloadNameHint(event, attachment.fileName, attachment.mime, "file")
+                    )
+                }
+                sticker != null -> {
+                    mime = sticker.mime
+                    result = service.downloadStickerToCache(
+                        sticker,
+                        downloadNameHint(event, null, sticker.mime, "sticker")
+                    )
+                }
+                else -> return@launch
+            }
+
+            result
+                .onSuccess { path ->
+                    if (path.isBlank()) {
+                        _events.send(Event.ShowError("Downloaded file is missing or empty"))
+                    } else {
+                        onOpen(path, mime)
+                    }
+                }
+                .onFailure { t ->
+                    _events.send(Event.ShowError(t.message ?: "Download failed"))
+                }
         }
     }
 

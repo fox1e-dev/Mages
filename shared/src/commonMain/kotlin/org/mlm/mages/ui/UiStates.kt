@@ -602,6 +602,7 @@ data class ThreadUiState(
     val editInput: String = "",
     val avatarByUserId: Map<String, String> = emptyMap(),
     val replyThumbByEvent: Map<String, String> = emptyMap(),
+    val thumbByEvent: Map<String, String> = emptyMap(),
     val roomMembers: List<MemberSummary> = emptyList(),
     val focusedEventId: String? = null,
     val focusedEventMissing: Boolean = false,

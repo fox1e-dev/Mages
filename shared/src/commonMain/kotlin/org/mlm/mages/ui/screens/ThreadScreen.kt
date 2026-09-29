@@ -47,6 +47,7 @@ import org.mlm.mages.ui.components.timeline.toTimelineContent
 import org.mlm.mages.ui.components.sheets.MessageActionSheet
 import org.mlm.mages.ui.components.snackbar.SnackbarManager
 import org.mlm.mages.ui.components.snackbar.rememberErrorPoster
+import org.mlm.mages.platform.rememberFileOpener
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.viewmodel.ThreadViewModel
 import mages.shared.generated.resources.*
@@ -65,6 +66,7 @@ fun ThreadRoute(
     val postError = rememberErrorPoster(snackbarManager)
     val settingsRepository: SettingsRepository<AppSettings> = koinInject()
     val settings by settingsRepository.flow.collectAsState(initial = AppSettings())
+    val openExternal = rememberFileOpener()
 
     LaunchedEffect(Unit) { viewModel.refreshImagePacks() }
 
@@ -91,6 +93,7 @@ fun ThreadRoute(
         onStartEdit = viewModel::startEdit,
         onCancelEdit = viewModel::cancelEdit,
         onDelete = { ev -> viewModel.delete(ev) },
+        onOpenAttachment = { ev -> viewModel.openAttachment(ev) { path, mime -> openExternal(path, mime) } },
         enterSendsMessage = settings.enterSendsMessage,
         showReactionAvatars = settings.showReactionAvatars,
         emoteSuggestions = viewModel.emoteSuggestions,
@@ -116,6 +119,7 @@ fun ThreadScreen(
     onStartEdit: (MessageEvent) -> Unit,
     onCancelEdit: () -> Unit,
     onDelete: suspend (MessageEvent) -> Boolean,
+    onOpenAttachment: (MessageEvent) -> Unit = {},
     enterSendsMessage: Boolean = false,
     showReactionAvatars: Boolean = true,
     emoteSuggestions: List<EmoteSuggestion> = emptyList(),
@@ -313,11 +317,13 @@ fun ThreadScreen(
                                         reactionSummaries = bubbleItem.event.reactions,
                                         avatarByUserId = state.avatarByUserId,
                                         replyThumbByEvent = state.replyThumbByEvent,
+                                        thumbByEvent = state.thumbByEvent,
                                         emotePaths = state.emotePathByMxc,
                                         reactionImagePaths = state.reactionImagePathByMxc,
                                         reactionShortcodes = reactionShortcodes,
                                         onReact = { emoji -> onReact(bubbleItem.event, emoji) },
                                         onLongPress = { sheetEvent = bubbleItem.event },
+                                        onOpenAttachment = { onOpenAttachment(bubbleItem.event) },
                                         grouped = shouldGroup,
                                         groupedWithNext = groupedWithNext,
                                         highlighted = state.focusedEventId == bubbleItem.event.eventId,
@@ -670,11 +676,13 @@ private fun ThreadReplyMessage(
     reactionSummaries: List<ReactionSummary>,
     avatarByUserId: Map<String, String>,
     replyThumbByEvent: Map<String, String>,
+    thumbByEvent: Map<String, String>,
     emotePaths: Map<String, String>,
     reactionImagePaths: Map<String, String>,
     reactionShortcodes: Map<String, String>,
     onReact: (String) -> Unit,
     onLongPress: () -> Unit,
+    onOpenAttachment: (() -> Unit)?,
     grouped: Boolean = false,
     groupedWithNext: Boolean = false,
     highlighted: Boolean = false,
@@ -716,7 +724,7 @@ private fun ThreadReplyMessage(
                     reactions = reactionSummaries,
                     threadCount = null,
                     variant = MessageBubbleVariant.ThreadReply,
-                    resolvedPreviewPath = null,
+                    resolvedPreviewPath = thumbByEvent[event.eventId],
                     resolvedReplyPreviewPath = event.replyToEventId?.let { replyThumbByEvent[it] },
                     senderVisible = !grouped,
                     reactionImagePaths = reactionImagePaths,
@@ -730,6 +738,7 @@ private fun ThreadReplyMessage(
                 model = bubbleModel,
                 onLongPress = onLongPress,
                 onReact = onReact,
+                onOpenAttachment = onOpenAttachment,
                 emotePaths = emotePaths
             )
         }

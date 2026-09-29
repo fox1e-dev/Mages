@@ -2,8 +2,14 @@ package org.mlm.mages.ui.util
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import org.mlm.mages.MessageEvent
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+
+fun downloadNameHint(event: MessageEvent, declared: String?, mime: String?, fallbackBase: String): String =
+    declared?.takeIf { it.isNotBlank() }
+        ?: event.body.trim().takeIf { it.isNotBlank() && !it.startsWith("mxc://") && !it.contains('\n') && it.length < 256 }
+        ?: "${event.eventId.ifBlank { fallbackBase }}.${mimeToExtension(mime)}"
 
 fun <T : NavKey> NavBackStack<T>.popBack() {
     if (size > 1) {
@@ -44,7 +50,6 @@ fun mimeToExtension(mime: String?): String = when (mime) {
         ?.takeIf { it.length in 1..10 && it.all { c -> c.isLetterOrDigit() } }
         ?: "bin"
 }
-
 
 fun guessMimeType(fileName: String): String {
     return when {
