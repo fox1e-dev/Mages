@@ -295,7 +295,7 @@ private fun PackEditorGrid(
         verticalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
         if (state.packs.isEmpty()) {
-            item(key = "empty") {
+            item(key = "empty", span = { GridItemSpan(maxLineSpan) }) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
