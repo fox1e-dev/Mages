@@ -590,6 +590,7 @@ private fun ThreadRootMessage(
                     style = ReactionChipStyle.ThreadRoot,
                     maxVisible = 6,
                     avatarPathsByUserId = state.avatarByUserId,
+                    shortcodes = reactionShortcodes,
                     showAvatars = showReactionAvatars,
                     onClick = onReact,
                     modifier = Modifier.offset(y = (-12).dp).padding(horizontal = Spacing.xs)

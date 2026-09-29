@@ -419,9 +419,7 @@ pub(crate) async fn list_image_packs(
     room_id: OwnedRoomId,
 ) -> Vec<ImagePackSummary> {
     let mut cache = StateCache::new(client);
-    // A `None` key list means "every pack in this room"; a `Some` list is the
-    // exact set of state keys the user enabled.
-    let mut targets: Vec<(OwnedRoomId, Option<Vec<String>>, bool)> = Vec::new();
+    let mut targets: Vec<(OwnedRoomId, Option<Vec<String>>, BTreeSet<String>)> = Vec::new();
 
     // Account data is user-writable, so a malformed blob must not take the
     // whole picker down; the other tiers still resolve.
@@ -438,9 +436,6 @@ pub(crate) async fn list_image_packs(
     // costs one state fetch rather than one per pack.
     let mut subscribed_by_room: HashMap<OwnedRoomId, Vec<String>> = HashMap::new();
     for (target_room, packs) in subscribed.into_iter().flatten() {
-        if target_room == room_id {
-            continue;
-        }
         // The user may have left a referenced room, in which case none of its
         // images are reachable.
         if client.get_room(&target_room).is_none() {
@@ -456,19 +451,27 @@ pub(crate) async fn list_image_packs(
     let mut subscribed_rooms: Vec<OwnedRoomId> = subscribed_by_room.keys().cloned().collect();
     subscribed_rooms.sort();
     for room in subscribed_rooms {
-        let keys = subscribed_by_room.remove(&room).unwrap_or_default();
-        targets.push((room, Some(keys), true));
+        // The room being viewed is resolved by the own-state tier below, which
+        // lists every pack there rather than only the subscribed ones.
+        if room == room_id {
+            continue;
+        }
+        let keys: Vec<String> = subscribed_by_room.remove(&room).unwrap_or_default();
+        targets.push((room, Some(keys.clone()), keys.into_iter().collect()));
     }
 
-    targets.push((room_id.clone(), None, false));
+    // A pack defined in the room being viewed is available there whether or not
+    let own_global: Vec<String> = subscribed_by_room.remove(&room_id).unwrap_or_default();
+    targets.push((room_id.clone(), None, own_global.into_iter().collect()));
+    // Space packs are not individually subscribable, so none of them is global.
     for space in canonical_space_ancestors(&mut cache, &room_id).await {
-        targets.push((space, None, false));
+        targets.push((space, None, BTreeSet::new()));
     }
 
     let mut seen: HashSet<(OwnedRoomId, String)> = HashSet::new();
     let mut out: Vec<ImagePackSummary> = Vec::new();
 
-    for (source_room, wanted_keys, is_global) in targets {
+    for (source_room, wanted_keys, global_keys) in targets {
         let found: Vec<(String, RoomImagePackEventContent)> = match &wanted_keys {
             // A single non-empty key is cheaper to address directly than to
             // pull the room's whole state for.
@@ -492,6 +495,7 @@ pub(crate) async fn list_image_packs(
             if content.images.is_empty() {
                 continue;
             }
+            let is_global = global_keys.contains(&key);
             out.push(summary_from(source_room.to_string(), key, content, is_global));
         }
     }

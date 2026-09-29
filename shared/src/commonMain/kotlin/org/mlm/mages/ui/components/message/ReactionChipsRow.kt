@@ -1,6 +1,7 @@
 package org.mlm.mages.ui.components.message
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -12,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -67,12 +67,6 @@ fun ReactionChipsRow(
 /**
  * Renders a reaction key, which is either an emoji or, per MSC4027, an mxc URI
  * standing in for an image.
- *
- * The shortcode is optional in the MSC and matrix-sdk-ui's reaction aggregation
- * discards annotation content, so it cannot be read back off the wire. When the
- * key is not a known pack image either, the mxc URI's own last path segment is
- * shown rather than the whole URI, which is what the MSC calls out as the main
- * downside of the design.
  */
 @Composable
 private fun ReactionKeyLabel(
@@ -98,13 +92,13 @@ private fun ReactionKeyLabel(
         return
     }
 
-    Text(
-        text = shortcode ?: key.substringAfterLast('/').ifEmpty { "🖼" },
-        fontSize = 16.sp,
-        lineHeight = CHIP_LABEL_LINE_HEIGHT,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.widthIn(max = 120.dp)
+    Box(
+        modifier = Modifier
+            .size(CHIP_LABEL_HEIGHT)
+            .background(
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f),
+                shape = RoundedCornerShape(4.dp)
+            )
     )
 }
 
