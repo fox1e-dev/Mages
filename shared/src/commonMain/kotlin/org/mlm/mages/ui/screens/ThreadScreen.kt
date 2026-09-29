@@ -771,7 +771,8 @@ private fun EmptyThreadView() {
             Text(
                 "Thread not found",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(Spacing.sm))
             Text(
