@@ -8,6 +8,7 @@ import org.mlm.mages.MessageEvent
 import org.mlm.mages.ReplyPreview
 import org.mlm.mages.ReplyPreviewKind
 import org.mlm.mages.RoomSummary
+import org.mlm.mages.captionOr
 import org.mlm.mages.matrix.DeviceSummary
 import org.mlm.mages.matrix.EventType
 import org.mlm.mages.matrix.HomeserverLoginDetails
@@ -186,15 +187,20 @@ fun MessageEvent.toReplyPreview(): ReplyPreview {
             AttachmentKind.Audio -> if (attachment.isVoice == true) ReplyPreviewKind.Voice else ReplyPreviewKind.Audio
             AttachmentKind.File -> ReplyPreviewKind.File
         }
+        val label = when (kind) {
+            ReplyPreviewKind.Image -> "Image"
+            ReplyPreviewKind.Video -> "Video"
+            ReplyPreviewKind.Audio -> "Audio"
+            else -> "File"
+        }
         val text = when (kind) {
             ReplyPreviewKind.Voice -> "Voice message"
+            // A filename is only useful as the identifier for a file attachment;
+            // for media it is the caption-less body, not something worth showing.
+            ReplyPreviewKind.Image, ReplyPreviewKind.Video, ReplyPreviewKind.Audio ->
+                attachment.captionOr(body) ?: label
             else -> body.trim().ifBlank {
-                attachment.fileName?.takeIf { it.isNotBlank() } ?: when (kind) {
-                    ReplyPreviewKind.Image -> "Image"
-                    ReplyPreviewKind.Video -> "Video"
-                    ReplyPreviewKind.Audio -> "Audio"
-                    else -> "File"
-                }
+                attachment.fileName?.takeIf { it.isNotBlank() } ?: label
             }
         }
         return ReplyPreview(kind = kind, text = text, attachment = attachment)

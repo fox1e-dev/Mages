@@ -3959,6 +3959,14 @@ fn extract_sticker_info(sticker_event: &matrix_sdk_ui::timeline::Sticker) -> Sti
     }
 }
 
+// MSC2530 leaves `body` holding the filename when no caption was typed, so a
+// filename is not a caption. Mirrors AttachmentInfo.captionOr in Kotlin.
+fn media_caption(info: Option<&AttachmentInfo>, body: &str) -> Option<String> {
+    let text = body.trim();
+    let name = info?.file_name.as_deref()?.trim();
+    (!text.is_empty() && text != name).then(|| text.to_owned())
+}
+
 fn map_reply_preview(
     ev: &matrix_sdk_ui::timeline::EmbeddedEvent,
     me: &str,
@@ -3990,6 +3998,22 @@ fn map_reply_preview(
                     Some("Voice message".to_owned())
                 } else if matches!(kind, ReplyPreviewKind::Location) {
                     Some("Shared location".to_owned())
+                } else if matches!(
+                    kind,
+                    ReplyPreviewKind::Image | ReplyPreviewKind::Video | ReplyPreviewKind::Audio
+                ) {
+                    // A filename only identifies a file attachment; for media it is
+                    // just the caption-less body.
+                    media_caption(attachment.as_ref(), body).or_else(|| {
+                        Some(
+                            match kind {
+                                ReplyPreviewKind::Video => "Video",
+                                ReplyPreviewKind::Audio => "Audio",
+                                _ => "Image",
+                            }
+                            .to_owned(),
+                        )
+                    })
                 } else if !body.is_empty() {
                     Some(body.to_owned())
                 } else {
