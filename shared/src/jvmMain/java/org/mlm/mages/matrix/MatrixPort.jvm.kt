@@ -2239,6 +2239,7 @@ private fun mages.NotificationContent.toModel() = NotificationContent(
     encrypted = encrypted?.toModel(),
     thumbnailEncrypted = thumbnailEncrypted?.toModel(),
     mime = mime,
+    sizeBytes = sizeBytes?.toLong(),
     width = width?.toInt(),
     height = height?.toInt(),
     durationMs = durationMs?.toLong(),

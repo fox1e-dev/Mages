@@ -317,6 +317,7 @@ data class NotificationContent(
     val encrypted: EncFile? = null,
     val thumbnailEncrypted: EncFile? = null,
     val mime: String? = null,
+    val sizeBytes: Long? = null,
     val width: Int? = null,
     val height: Int? = null,
     val durationMs: Long? = null,
@@ -353,6 +354,7 @@ fun NotificationContent.classify(): ClassifiedNotification = when (kind) {
             thumbnailEncrypted = thumbnailEncrypted,
             fileName = fileName,
             mime = mime,
+            sizeBytes = sizeBytes,
             width = width,
             height = height,
             durationMs = durationMs,
@@ -367,6 +369,7 @@ fun NotificationContent.classify(): ClassifiedNotification = when (kind) {
             encrypted = encrypted,
             thumbnailEncrypted = thumbnailEncrypted,
             mime = mime,
+            sizeBytes = sizeBytes,
             width = width,
             height = height,
         )

@@ -82,11 +82,8 @@ class NotificationReconcileWorker(
                 ?: continue
             if (targetRoomId != null && roomId != targetRoomId) continue
 
-            val stats = runCatching { port.roomUnreadStats(roomId) }.getOrNull()
-            if (stats == null) {
-                AndroidNotificationHelper.cancelRoomNotification(ctx, roomId, force = true)
-                continue
-            }
+            // A failed read is not evidence the room is read. Only a real zero retires it.
+            val stats = runCatching { port.roomUnreadStats(roomId) }.getOrNull() ?: continue
 
             if (stats.notifications == 0L && stats.mentions == 0L) {
                 AndroidNotificationHelper.cancelRoomNotification(ctx, roomId, force = true)

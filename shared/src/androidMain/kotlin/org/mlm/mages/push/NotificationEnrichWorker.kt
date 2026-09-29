@@ -59,7 +59,9 @@ class NotificationEnrichWorker(
         val roomId = inputData.getString(KEY_ROOM_ID) ?: return Result.failure()
         val eventId = inputData.getString(KEY_EVENT_ID) ?: return Result.failure()
 
-        // Placeholder + message notification share the same ID (to update after enrich).
+        // One notification per room, holding every unread message in its MessagingStyle.
+        // Cancelling it therefore drops the whole conversation's history, so a decision
+        // to withhold *this* event must never cancel: it just skips the event.
         val notifId = (roomId).hashCode()
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -72,7 +74,8 @@ class NotificationEnrichWorker(
             null // not possible
         }
 
-        // If user disabled notifications, remove placeholder immediately.
+        // Notifications off entirely, or no session to attribute them to: nothing
+        // this room is showing is still wanted, so the room is cleared.
         if (!settings.notificationsEnabled) {
             nm.cancel(notifId)
             return Result.success()
@@ -82,7 +85,6 @@ class NotificationEnrichWorker(
 
         val port = service.portOrNull
         if (port == null || !service.isLoggedIn()) {
-            // Logged out / no session: remove placeholder to avoid stuck junk.
             nm.cancel(notifId)
             return Result.success()
         }
@@ -97,38 +99,31 @@ class NotificationEnrichWorker(
         } ?: Fetch(timedOut = true, rendered = null)
 
         if (fetch.timedOut) {
-            // Retry a couple of times, then stop (keep the placeholder or cancel).
-            // I recommend cancelling after a few attempts to avoid WorkManager spam + stale notifs.
-            return if (runAttemptCount < 3) Result.retry() else {
-                nm.cancel(notifId)
-                Result.success()
-            }
+            return if (runAttemptCount < 3) Result.retry() else Result.success()
         }
 
         val rendered = fetch.rendered
         if (rendered == null) {
-            AndroidNotificationHelper.cancelRoomNotification(applicationContext, roomId, force = true)
             return Result.success()
         }
 
+        // Mute and mentions-only suppress this event; they say nothing about the
+        // messages already in the room's notification, so the room is left alone.
         val notifMode = runCatching { port.roomNotificationMode(roomId) }.getOrNull()
         if (notifMode == RoomNotificationMode.Mute) {
-            nm.cancel(notifId)
             return Result.success()
         }
         if (notifMode == RoomNotificationMode.MentionsAndKeywordsOnly && !rendered.hasMention) {
-            nm.cancel(notifId)
             return Result.success()
         }
 
         when (rendered.kind) {
             NotificationKind.StateEvent -> {
-                // Don't show state events; but cancel placeholder.
-                nm.cancel(notifId)
                 return Result.success()
             }
 
             NotificationKind.Invite -> {
+                // The invite is its own notification, so the room's is replaced rather than kept.
                 nm.cancel(notifId)
 
                 if (settings.autoJoinInvites) {
@@ -153,16 +148,13 @@ class NotificationEnrichWorker(
             NotificationKind.CallNotify -> {
                 // Respect user call setting.
                 if (!settings.callNotificationsEnabled) {
-                    nm.cancel(notifId)
                     return Result.success()
                 }
-                // Expired? cancel placeholder (and don't show).
                 if (rendered.isExpired()) {
-                    nm.cancel(notifId)
                     return Result.success()
                 }
 
-                // Replace placeholder with a call notification.
+                // The call takes over the room's notification for the duration of the ring.
                 nm.cancel(notifId)
 
                 val callerAvatarPath = runCatching {
