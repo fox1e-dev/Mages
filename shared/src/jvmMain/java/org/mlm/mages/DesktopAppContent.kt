@@ -22,7 +22,8 @@ import javax.swing.SwingUtilities
 @Composable
 fun DesktopBackground(
     deepLinkEmitter: MutableSharedFlow<DeepLinkAction>,
-    scope: CoroutineScope
+    scope: CoroutineScope,
+    onShowWindow: () -> Unit
 ) {
     val service: MatrixService = koinInject()
     val settingsRepo: SettingsRepository<AppSettings> = koinInject()
@@ -43,7 +44,7 @@ fun DesktopBackground(
 
     LaunchedEffect(service) {
         DesktopNotifActions.openRoom = { roomId ->
-            SwingUtilities.invokeLater { /* showWindow = true handled elsewhere */ }
+            SwingUtilities.invokeLater { onShowWindow() }
             deepLinkEmitter.tryEmit(DeepLinkAction(roomId = roomId))
         }
 

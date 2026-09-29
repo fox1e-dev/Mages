@@ -41,7 +41,7 @@ fun main(args: Array<String>) {
     }
 
     var startInTray by remember { mutableStateOf(initialStartInTray) }
-    var showWindow by remember { mutableStateOf(!startInTray || initialDeepLink != null) }
+var showWindow by remember { mutableStateOf(!startInTray || initialDeepLink != null) }
 
     val deepLinkEmitter = remember { MutableSharedFlow<DeepLinkAction>(extraBufferCapacity = 8) }
     val deepLinks = remember { deepLinkEmitter.asSharedFlow() }
@@ -51,6 +51,7 @@ fun main(args: Array<String>) {
     val windowState = rememberWindowState()
 
     var tray by remember { mutableStateOf<SystemTray?>(null) }
+    var showItem by remember { mutableStateOf<MenuItem?>(null) }
 
     LaunchedEffect(Unit) {
         val computedTray = withContext(Dispatchers.IO) {
@@ -75,13 +76,14 @@ fun main(args: Array<String>) {
 
         val iconBytes = runBlocking { Res.readBytes("files/tray.png") }
         t.setImage(iconBytes.inputStream())
-        t.setStatus("Mages")
 
-        t.menu.add(MenuItem("Show").apply {
+        val showMenuItem = MenuItem("Show").apply {
             setCallback {
                 SwingUtilities.invokeLater { showWindow = true }
             }
-        })
+        }
+        showItem = showMenuItem
+        t.menu.add(showMenuItem)
 
         t.menu.add(dorkbox.systemTray.Separator())
 
@@ -116,6 +118,16 @@ fun main(args: Array<String>) {
         })
 
         onDispose { t.shutdown() }
+    }
+
+    LaunchedEffect(tray) {
+        if (tray == null) return@LaunchedEffect
+        NotifierImpl.unreadRooms.collect { unread ->
+            val status = if (unread > 0) "Mages ($unread unread)" else "Mages"
+            tray?.setStatus(status)
+            tray?.setTooltip(status)
+            showItem?.text = if (unread > 0) "Show ($unread unread)" else "Show"
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -189,7 +201,8 @@ fun main(args: Array<String>) {
 
         DesktopBackground(
             deepLinkEmitter = deepLinkEmitter,
-            scope = scope
+            scope = scope,
+            onShowWindow = { showWindow = true }
         )
     }
 }

@@ -9,6 +9,9 @@ import org.freedesktop.dbus.messages.DBusSignal
 import org.freedesktop.dbus.types.UInt32
 import org.freedesktop.dbus.types.Variant
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 object NotifierImpl {
     private val lock = Any()
@@ -26,6 +29,14 @@ object NotifierImpl {
     private val notifIdByRoom = ConcurrentHashMap<String, UInt32>()
     private val callNotifIdByRoom = ConcurrentHashMap<String, UInt32>()
 
+    private val _unreadRooms = MutableStateFlow(0)
+    val unreadRooms: StateFlow<Int> = _unreadRooms.asStateFlow()
+
+    private fun publishUnread() {
+        val count = notifIdByRoom.size
+        if (_unreadRooms.value != count) _unreadRooms.value = count
+    }
+
     private fun invalidateConnection(failed: DBusConnection) {
         synchronized(lock) {
             if (conn === failed) {
@@ -38,6 +49,7 @@ object NotifierImpl {
                 notifCtx.clear()
                 notifIdByRoom.clear()
                 callNotifIdByRoom.clear()
+                publishUnread()
                 Logger.w("[notification] D-Bus connection invalidated")
             }
         }
@@ -111,6 +123,7 @@ object NotifierImpl {
                 notifCtx.remove(sig.id)
                 notifIdByRoom.entries.removeIf { it.value == sig.id }
                 callNotifIdByRoom.entries.removeIf { it.value == sig.id }
+                publishUnread()
             }
         }
     }
@@ -195,6 +208,7 @@ object NotifierImpl {
             logTag = "message"
         ) ?: return
         notifIdByRoom[roomId] = id
+        publishUnread()
     }
 
     fun warmUp() {
@@ -203,6 +217,7 @@ object NotifierImpl {
 
     fun closeRoomNotification(roomId: String) {
         val id = notifIdByRoom.remove(roomId) ?: return
+        publishUnread()
         notifCtx.remove(id)
         val c = ensure() ?: return
         try {
