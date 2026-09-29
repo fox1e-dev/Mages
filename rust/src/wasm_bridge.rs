@@ -2951,7 +2951,7 @@ impl WasmClient {
             widget_id: format!("mages-ecall-{}", session_id),
             ..VirtualElementCallWidgetProperties::default()
         };
-        let is_dm = room.is_direct().await.unwrap_or(false);
+        let is_dm = room.is_dm();
         let widget_intent = match (intent.as_str(), is_dm) {
             ("StartCall", true) => WidgetIntent::StartCallDm,
             ("JoinExisting", true) => WidgetIntent::JoinExistingDm,
