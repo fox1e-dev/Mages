@@ -2,20 +2,11 @@ package org.mlm.mages.ui.components.message
 
 import org.mlm.mages.AttachmentKind
 import org.mlm.mages.MessageEvent
+import org.mlm.mages.captionOr
 import org.mlm.mages.ui.components.timeline.TimelineContent
 import org.mlm.mages.ui.util.formatBytes
 
-private fun MessageEvent.toMediaCaption(): String? {
-    val text = body.trim()
-    val fileName = attachment?.fileName?.trim()
-
-    if (text.isEmpty()) return null
-    if (fileName == null || text == fileName) {
-        return null
-    }
-
-    return text
-}
+private fun MessageEvent.toMediaCaption(): String? = attachment?.captionOr(body)
 
 private fun buildAttachmentSubtitle(mime: String?, sizeBytes: Long?): String? {
     val parts = buildList {

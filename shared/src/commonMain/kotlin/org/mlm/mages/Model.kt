@@ -133,6 +133,17 @@ data class AttachmentInfo(
     val isVoice: Boolean? = null,
 )
 
+/**
+ * MSC2530 leaves the event `body` holding the filename when no caption was typed,
+ * so the filename is not a caption. Used by both the room bubble and notifications
+ * so the two never disagree about whether there is a caption.
+ */
+fun AttachmentInfo.captionOr(body: String): String? {
+    val text = body.trim()
+    val name = fileName?.trim()
+    return text.takeIf { it.isNotEmpty() && name != null && it != name }
+}
+
 @Serializable
 data class StickerInfo(
     val mxcUri: String,

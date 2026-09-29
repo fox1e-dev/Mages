@@ -3,6 +3,7 @@ package org.mlm.mages.push
 import org.mlm.mages.AttachmentInfo
 import org.mlm.mages.AttachmentKind
 import org.mlm.mages.StickerInfo
+import org.mlm.mages.captionOr
 import org.mlm.mages.matrix.ClassifiedNotification
 import org.mlm.mages.matrix.RenderedNotification
 import org.mlm.mages.matrix.classify
@@ -61,7 +62,9 @@ data class NotificationPresentation(
             // A preview image stands in for the "Sent an image" label, so the
             // label is only worth showing when there is no image. Whatever text
             // the sender actually wrote is the caption and survives either way.
-            val caption = (content as? ClassifiedNotification.Media)?.body?.trim().orEmpty()
+            val caption = (content as? ClassifiedNotification.Media)
+                ?.let { it.attachment.captionOr(it.body) }
+                .orEmpty()
             val bodyWithMedia = when {
                 !showPreview -> redactedBody
                 caption.isEmpty() -> ""

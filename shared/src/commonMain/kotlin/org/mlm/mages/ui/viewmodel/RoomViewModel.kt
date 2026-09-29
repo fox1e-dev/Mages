@@ -1521,9 +1521,7 @@ class RoomViewModel(
                     )
                 )
             } else if (attachment != null) {
-                val caption = event.body.trim().takeIf {
-                    it.isNotBlank() && attachment.fileName != null && it != attachment.fileName?.trim()
-                }
+                val caption = attachment.captionOr(event.body)
                 val nameHint = attachment.fileName?.takeIf { it.isNotBlank() }
                     ?: event.body.trim().takeIf {
                         it.isNotBlank() && !it.contains('\n') && it.length < 256
