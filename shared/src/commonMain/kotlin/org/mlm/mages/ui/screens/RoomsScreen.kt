@@ -340,7 +340,7 @@ private fun RoomsTopBar(
                     Icon(Icons.Default.Settings, stringResource(Res.string.settings))
                 }
                 IconButton(onClick = onOpenStartChat) {
-                    Icon(Icons.Default.Explore, stringResource(Res.string.discover))
+                    Icon(Icons.Default.Add, stringResource(Res.string.find_users_and_public_rooms))
                 }
                 IconButton(onClick = onOpenSearch) {
                     Icon(Icons.Default.Search, stringResource(Res.string.search_messages))
