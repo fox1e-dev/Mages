@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.lifecycle.viewmodel.compose.rememberViewModelStoreProvider
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
@@ -189,6 +190,9 @@ private fun AppContent(
     val elementCallUrl =
         settings.elementCallUrl.trim().ifBlank { platformEmbeddedElementCallUrlOrNull() }
     val parentCallUrl = platformEmbeddedElementCallParentUrlOrNull()
+
+    // Must live outside ProvideAppLocale: its key(languageTag) disposes the subtree.
+    val navEntryViewModelStore = rememberViewModelStoreProvider()
 
     ProvideAppLocale(settings.appLanguageTagOrNull()) {
         MainTheme(
@@ -426,7 +430,7 @@ private fun AppContent(
                     backStack = backStack,
                     entryDecorators = listOf(
                         rememberSaveableStateHolderNavEntryDecorator(),
-                        rememberViewModelStoreNavEntryDecorator()
+                        rememberViewModelStoreNavEntryDecorator(navEntryViewModelStore)
                     ),
                     transitionSpec = forwardTransition,
                     popTransitionSpec = popTransition,
