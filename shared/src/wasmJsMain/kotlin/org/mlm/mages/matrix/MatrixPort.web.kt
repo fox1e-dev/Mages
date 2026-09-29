@@ -1253,6 +1253,9 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
     override suspend fun listMembers(roomId: String): List<MemberSummary> =
         requireClient().listMembers(roomId).awaitValue<List<MemberSummary>>() ?: emptyList()
 
+    override suspend fun listBannedMembers(roomId: String): List<MemberSummary> =
+        requireClient().listBannedMembers(roomId).awaitValue<List<MemberSummary>>() ?: emptyList()
+
     override suspend fun reactions(roomId: String, eventId: String): List<ReactionSummary> =
         decodeValueOrNull<List<ReactionSummary>>(
             requireClient().reactionsForEvent(roomId, eventId).awaitAny(), "reactions"

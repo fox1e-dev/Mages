@@ -1147,6 +1147,7 @@ interface MatrixPort {
     ): Result<Unit>
 
     suspend fun listMembers(roomId: String): List<MemberSummary>
+    suspend fun listBannedMembers(roomId: String): List<MemberSummary>
     suspend fun listKnockRequests(roomId: String): List<KnockRequestSummary>
 
     suspend fun reactions(roomId: String, eventId: String): List<ReactionSummary>

@@ -627,6 +627,7 @@ fun RoomInfoScreen(
         if (state.showMembers) {
             MemberListSheet(
                 members = state.members,
+                bannedMembers = state.bannedMembers,
                 isLoading = false,
                 myUserId = state.myUserId,
                 onDismiss = onHideMembers,

@@ -1352,6 +1352,14 @@ class RustMatrixPort : MatrixPort, VerificationService {
                 }
         }
 
+    override suspend fun listBannedMembers(roomId: String): List<MemberSummary> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.listBannedMembers(roomId) } }
+                .getOrElse { emptyList() }.map {
+                    MemberSummary(it.userId, it.displayName, it.avatarUrl, it.isMe, it.membership)
+                }
+        }
+
     override suspend fun listImagePacks(roomId: String): List<ImagePackSummary> =
         withContext(matrixDispatcher) {
             runWithFfiResult { withClient { it.listImagePacks(roomId) } }

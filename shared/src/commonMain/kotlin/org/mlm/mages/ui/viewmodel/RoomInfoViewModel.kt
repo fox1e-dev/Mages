@@ -37,6 +37,7 @@ private fun dmPartnerOf(
 data class RoomInfoUiState(
     val profile: RoomProfile? = null,
     val members: List<MemberSummary> = emptyList(),
+    val bannedMembers: List<MemberSummary> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val editedName: String = "",
@@ -215,6 +216,10 @@ class RoomInfoViewModel(
                     .thenBy { it.displayName ?: it.userId }
             )
 
+            val banned = runSafe { service.port.listBannedMembers(roomId) }
+                .orEmpty()
+                .sortedBy { it.displayName ?: it.userId }
+
             val vis = runSafe { service.port.roomDirectoryVisibility(roomId) }
             val joinRule = runSafe { service.port.roomJoinRule(roomId) }
             val joinRuleAllowedSpaceIds = runSafe { service.port.roomJoinRuleAllowList(roomId) }.orEmpty()
@@ -245,6 +250,7 @@ class RoomInfoViewModel(
                 copy(
                     profile = profile,
                     members = sorted,
+                    bannedMembers = banned,
                     editedName = profile?.name ?: "",
                     editedTopic = profile?.topic ?: "",
                     isLoading = false,

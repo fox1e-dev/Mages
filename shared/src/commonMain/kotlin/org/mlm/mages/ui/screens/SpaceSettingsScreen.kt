@@ -448,6 +448,7 @@ fun SpaceSettingsScreen(
     if (state.showPeople) {
         MemberListSheet(
             members = state.members,
+            bannedMembers = state.bannedMembers,
             isLoading = state.isLoading,
             myUserId = state.myUserId,
             onDismiss = viewModel::hidePeople,

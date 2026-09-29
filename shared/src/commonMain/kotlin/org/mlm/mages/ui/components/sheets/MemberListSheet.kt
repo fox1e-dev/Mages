@@ -20,6 +20,7 @@ import org.mlm.mages.ui.theme.Spacing
 @Composable
 fun MemberListSheet(
     members: List<MemberSummary>,
+    bannedMembers: List<MemberSummary>,
     isLoading: Boolean,
     myUserId: String?,
     onDismiss: () -> Unit,
@@ -73,6 +74,26 @@ fun MemberListSheet(
                             isMe = member.userId == myUserId,
                             onClick = { onMemberClick(member) }
                         )
+                    }
+                    if (bannedMembers.isNotEmpty()) {
+                        item(key = "banned_header") {
+                            Text(
+                                "Banned (${bannedMembers.size})",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(
+                                    horizontal = Spacing.lg,
+                                    vertical = Spacing.sm
+                                )
+                            )
+                        }
+                        items(bannedMembers, key = { "banned_${it.userId}" }) { member ->
+                            MemberListItem(
+                                member = member,
+                                isMe = member.userId == myUserId,
+                                onClick = { onMemberClick(member) }
+                            )
+                        }
                     }
                 }
             }

@@ -1785,6 +1785,27 @@ impl CoreClient {
             .collect())
     }
 
+    /// Banned users are excluded from `list_members`, so without this the unban
+    /// action in `moderation_actions` can never be reached from the member list.
+    pub async fn list_banned_members(
+        &self,
+        room_id: String,
+    ) -> Result<Vec<MemberSummary>, FfiError> {
+        let room = self.require_room(&room_id)?;
+        let me = self.sdk.user_id();
+        let members = room.members(RoomMemberships::BAN).await.ffi()?;
+        Ok(members
+            .into_iter()
+            .map(|m| MemberSummary {
+                user_id: m.user_id().to_string(),
+                display_name: m.display_name().map(|n| n.to_string()),
+                avatar_url: m.avatar_url().map(|u| u.to_string()),
+                is_me: me.map(|u| u == m.user_id()).unwrap_or(false),
+                membership: m.membership().to_string(),
+            })
+            .collect())
+    }
+
     pub async fn list_invited(&self) -> Result<Vec<RoomProfile>, FfiError> {
         let mut out = Vec::new();
         for room in self.sdk.invited_rooms() {

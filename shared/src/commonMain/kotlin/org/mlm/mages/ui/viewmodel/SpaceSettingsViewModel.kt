@@ -443,7 +443,8 @@ class SpaceSettingsViewModel(
     private fun loadMembers() {
         launch {
             val members = runSafe { service.port.listMembers(currentState.spaceId) }.orEmpty()
-            updateState { copy(members = members) }
+            val banned = runSafe { service.port.listBannedMembers(currentState.spaceId) }.orEmpty()
+            updateState { copy(members = members, bannedMembers = banned) }
         }
     }
 
