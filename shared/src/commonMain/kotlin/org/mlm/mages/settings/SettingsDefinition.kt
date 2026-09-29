@@ -479,6 +479,17 @@ data class AppSettings(
     val notificationShowPreview: Boolean = true,
 
     @Setting(
+        title = "Show media preview",
+        titleKey = MagesSettingsKeys.SHOW_MEDIA_PREVIEW,
+        description = "Download images to show in notifications",
+        descriptionKey = MagesSettingsKeys.SHOW_MEDIA_PREVIEW_DESCRIPTION,
+        category = Notifications::class,
+        type = Toggle::class,
+        dependsOn = "notificationShowPreview"
+    )
+    val notificationShowMedia: Boolean = true,
+
+    @Setting(
         title = "Vibrate",
         titleKey = MagesSettingsKeys.VIBRATE,
         description = "Vibrate on notification",

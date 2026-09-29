@@ -20,6 +20,8 @@ import org.mlm.mages.calls.isRingingCall
 import org.mlm.mages.calls.ringing
 import org.mlm.mages.matrix.NotificationKind
 import org.mlm.mages.matrix.RoomNotificationMode
+import org.mlm.mages.push.NotificationMediaPolicy
+import org.mlm.mages.push.NotificationPresentation
 import org.mlm.mages.settings.AppSettings
 import org.mlm.mages.ui.util.nowMs
 import org.w3c.dom.events.Event
@@ -204,17 +206,11 @@ actual fun BindNotifications(
                     continue
                 }
 
-                val title = if (notification.isDm || notification.sender == notification.roomName) {
-                    notification.sender
-                } else {
-                    notification.roomName.ifBlank { notification.sender }
-                }
-
-                val body = when (notification.kind) {
-                    NotificationKind.Reaction -> notification.body
-                    else -> if (notification.isDm) notification.body
-                            else "${notification.sender}: ${notification.body}"
-                }
+                val presentation = NotificationPresentation.of(
+                    notification = notification,
+                    showPreview = settings.notificationShowPreview,
+                    redactedBody = "New message"
+                )
 
                 val avatarUrl = if (notification.isDm) {
                     notification.senderAvatarUrl
@@ -228,7 +224,23 @@ actual fun BindNotifications(
                     }.getOrNull()
                 }
 
-                if (createBrowserNotification(title, body, resolvedIcon, notification.roomId)) {
+                val resolvedImage = presentation.media
+                    ?.takeIf { NotificationMediaPolicy.allowed(settings) }
+                    ?.let { media ->
+                        runCatching {
+                            port.mxcThumbnailToCache(media.mxcUri, 320, 320, crop = true)
+                        }.getOrNull()
+                    }
+                    ?.takeIf { it.isNotBlank() }
+
+                if (createBrowserNotification(
+                        presentation.title,
+                        presentation.body,
+                        resolvedIcon,
+                        notification.roomId,
+                        resolvedImage
+                    )
+                ) {
                     lastNotifiedTsByRoom[notification.roomId] =
                         maxOf(lastNotifiedTsByRoom[notification.roomId] ?: 0L, notification.tsMs)
                 }

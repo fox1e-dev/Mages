@@ -1001,7 +1001,7 @@ class RustMatrixPort : MatrixPort, VerificationService {
                             eventId = n.eventId,
                             roomName = n.roomName,
                             sender = n.sender,
-                            body = n.body,
+                            content = n.content.toModel(),
                             isNoisy = n.isNoisy,
                             hasMention = n.hasMention,
                             senderUserId = n.senderUserId,
@@ -1035,7 +1035,7 @@ class RustMatrixPort : MatrixPort, VerificationService {
                     eventId = n.eventId,
                     roomName = n.roomName,
                     sender = n.sender,
-                    body = n.body,
+                    content = n.content.toModel(),
                     isNoisy = n.isNoisy,
                     hasMention = n.hasMention,
                     senderUserId = n.senderUserId,
@@ -2298,6 +2298,43 @@ private fun StickerInfo.toFfi() = mages.StickerInfo(
     encrypted = encrypted?.toFfi(),
     thumbnailEncrypted = thumbnailEncrypted?.toFfi(),
     isAnimated = isAnimated,
+)
+
+private fun mages.NotificationContent.toModel() = NotificationContent(
+    kind = when (kind) {
+        mages.NotificationContentKind.TEXT -> NotificationContentKind.Text
+        mages.NotificationContentKind.MEDIA -> NotificationContentKind.Media
+        mages.NotificationContentKind.STICKER -> NotificationContentKind.Sticker
+        mages.NotificationContentKind.POLL -> NotificationContentKind.Poll
+        mages.NotificationContentKind.LOCATION -> NotificationContentKind.Location
+        mages.NotificationContentKind.REACTION -> NotificationContentKind.Reaction
+        mages.NotificationContentKind.CALL -> NotificationContentKind.Call
+        mages.NotificationContentKind.INVITE -> NotificationContentKind.Invite
+        mages.NotificationContentKind.UNKNOWN -> NotificationContentKind.Unknown
+    },
+    body = body,
+    formattedBody = formattedBody,
+    attachmentKind = attachmentKind?.let {
+        when (it) {
+            mages.AttachmentKind.IMAGE -> AttachmentKind.Image
+            mages.AttachmentKind.VIDEO -> AttachmentKind.Video
+            mages.AttachmentKind.AUDIO -> AttachmentKind.Audio
+            mages.AttachmentKind.FILE -> AttachmentKind.File
+        }
+    },
+    fileName = fileName,
+    mxcUri = mxcUri,
+    mime = mime,
+    width = width?.toInt(),
+    height = height?.toInt(),
+    durationMs = durationMs?.toLong(),
+    isVoice = isVoice,
+    question = question,
+    isEnd = isEnd,
+    geoUri = geoUri,
+    isLive = isLive,
+    reactionKey = reactionKey,
+    isInvite = isInvite,
 )
 
 private fun mages.StickerInfo.toModel() = StickerInfo(

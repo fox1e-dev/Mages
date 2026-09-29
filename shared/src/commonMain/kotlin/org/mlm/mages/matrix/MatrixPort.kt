@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.mlm.mages.AttachmentInfo
+import org.mlm.mages.AttachmentKind
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.RoomSummary
 import org.mlm.mages.StickerInfo
@@ -300,12 +301,116 @@ enum class NotificationKind {
 }
 
 @Serializable
+enum class NotificationContentKind { Text, Media, Sticker, Poll, Location, Reaction, Call, Invite, Unknown }
+
+/** Flat wire shape produced by the Rust classifier. */
+@Serializable
+data class NotificationContent(
+    val kind: NotificationContentKind,
+    val body: String = "",
+    val formattedBody: String? = null,
+    val attachmentKind: AttachmentKind? = null,
+    val fileName: String? = null,
+    val mxcUri: String? = null,
+    val mime: String? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+    val durationMs: Long? = null,
+    val isVoice: Boolean? = null,
+    val question: String? = null,
+    val isEnd: Boolean? = null,
+    val geoUri: String? = null,
+    val isLive: Boolean? = null,
+    val reactionKey: String? = null,
+    val isInvite: Boolean? = null,
+)
+
+sealed interface ClassifiedNotification {
+    data class Text(val body: String, val formattedBody: String?) : ClassifiedNotification
+    data class Media(val attachment: AttachmentInfo, val body: String) : ClassifiedNotification
+    data class Sticker(val sticker: StickerInfo) : ClassifiedNotification
+    data class Poll(val question: String, val isEnd: Boolean) : ClassifiedNotification
+    data class Location(val geoUri: String, val isLive: Boolean) : ClassifiedNotification
+    data class Reaction(val key: String) : ClassifiedNotification
+    data class Call(val invite: Boolean) : ClassifiedNotification
+    data object Invite : ClassifiedNotification
+    data object Unknown : ClassifiedNotification
+}
+
+fun NotificationContent.classify(): ClassifiedNotification = when (kind) {
+    NotificationContentKind.Text ->
+        ClassifiedNotification.Text(body, formattedBody)
+    NotificationContentKind.Media -> ClassifiedNotification.Media(
+        attachment = AttachmentInfo(
+            kind = attachmentKind ?: AttachmentKind.File,
+            mxcUri = mxcUri.orEmpty(),
+            fileName = fileName,
+            mime = mime,
+            width = width,
+            height = height,
+            durationMs = durationMs,
+            isVoice = isVoice,
+        ),
+        body = body
+    )
+    NotificationContentKind.Sticker -> ClassifiedNotification.Sticker(
+        StickerInfo(mxcUri = mxcUri.orEmpty(), mime = mime, width = width, height = height)
+    )
+    NotificationContentKind.Poll ->
+        ClassifiedNotification.Poll(question.orEmpty(), isEnd == true)
+    NotificationContentKind.Location ->
+        ClassifiedNotification.Location(geoUri.orEmpty(), isLive == true)
+    NotificationContentKind.Reaction -> ClassifiedNotification.Reaction(reactionKey.orEmpty())
+    NotificationContentKind.Call -> ClassifiedNotification.Call(isInvite == true)
+    NotificationContentKind.Invite -> ClassifiedNotification.Invite
+    NotificationContentKind.Unknown -> ClassifiedNotification.Unknown
+}
+
+private fun formatDuration(ms: Long?): String? {
+    val total = (ms ?: 0L) / 1000
+    if (total <= 0L) return null
+    val minutes = total / 60
+    val seconds = total % 60
+    return if (minutes > 0) "$minutes:${seconds.toString().padStart(2, '0')}"
+    else "0:${seconds.toString().padStart(2, '0')}"
+}
+
+fun notificationSummary(content: ClassifiedNotification): String = when (content) {
+    is ClassifiedNotification.Text -> content.body
+    is ClassifiedNotification.Media -> when (content.attachment.kind) {
+        AttachmentKind.Image -> "Sent an image"
+        AttachmentKind.Video -> "Sent a video"
+        AttachmentKind.Audio -> {
+            val duration = formatDuration(content.attachment.durationMs)
+            if (content.attachment.isVoice == true && duration != null) "Voice message ($duration)"
+            else if (content.attachment.isVoice == true) "Voice message"
+            else "Sent an audio message"
+        }
+        AttachmentKind.File -> content.attachment.fileName
+            ?.takeIf { it.isNotBlank() }
+            ?.let { "Sent $it" }
+            ?: "Sent a file"
+    }
+    is ClassifiedNotification.Sticker -> "Sent a sticker"
+    is ClassifiedNotification.Poll -> when {
+        content.question.isBlank() -> if (content.isEnd) "Ended a poll" else "Started a poll"
+        else -> "${if (content.isEnd) "Ended a poll" else "Started a poll"}: ${content.question}"
+    }
+    is ClassifiedNotification.Location ->
+        if (content.isLive) "Shared a live location" else "Shared a location"
+    is ClassifiedNotification.Reaction -> "Reacted ${content.key}"
+    is ClassifiedNotification.Call -> if (content.invite) "Incoming call" else "Call update"
+    ClassifiedNotification.Invite -> "Room invite"
+    ClassifiedNotification.Unknown -> "New event"
+}
+
+@Serializable
 data class RenderedNotification(
     val roomId: String,
     val eventId: String,
     val roomName: String,
     val sender: String,
-    val body: String,
+    val content: NotificationContent,
     val isNoisy: Boolean,
     val hasMention: Boolean,
     val senderUserId: String,

@@ -14,6 +14,8 @@ import org.mlm.mages.NotifierImpl
 import org.mlm.mages.matrix.NotificationKind
 import org.mlm.mages.matrix.RoomNotificationMode
 import org.mlm.mages.platform.Notifier
+import org.mlm.mages.push.NotificationMediaPolicy
+import org.mlm.mages.push.NotificationPresentation
 import org.mlm.mages.settings.AppSettings
 import org.mlm.mages.settings.appLanguageTagOrDefault
 import java.util.Locale
@@ -125,26 +127,30 @@ class LinuxPushHandler(
                 service.avatars.resolve(profile?.avatarUrl, px = 96, crop = true)
             }.getOrNull()
 
-            val title = if (n.isDm || n.sender == n.roomName) {
-                n.sender
-            } else {
-                "${n.sender} \u2022 ${n.roomName}"
-            }
-
             val settings = settingsRepository.flow.first()
-            val body = when (n.kind) {
-                NotificationKind.Reaction -> n.body
-                else -> if (settings.notificationShowPreview) "${n.sender}: ${n.body}" else "New message"
-            }
+            val presentation = NotificationPresentation.of(
+                notification = n,
+                showPreview = settings.notificationShowPreview,
+                redactedBody = "New message"
+            )
+            val mediaPath = presentation.media
+                ?.takeIf { NotificationMediaPolicy.allowed(settings) }
+                ?.let { media ->
+                    runCatching {
+                        port.mxcThumbnailToCache(media.mxcUri, 320, 320, crop = true)
+                    }.getOrNull()
+                }
+                ?.takeIf { it.isNotBlank() }
 
             NotifierImpl.notifyMatrixEvent(
-                title = title,
-                body = body,
+                title = presentation.title,
+                body = presentation.body,
                 roomId = n.roomId,
                 eventId = n.eventId,
                 hasMention = n.hasMention,
                 playSound = settings.notificationSound && n.isNoisy,
-                iconPath = avatarPath
+                iconPath = avatarPath,
+                imagePath = mediaPath
             )
         }
     }

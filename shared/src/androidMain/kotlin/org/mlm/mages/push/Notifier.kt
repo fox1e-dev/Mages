@@ -511,6 +511,7 @@ object Notifier {
         roomAvatar: AvatarResult,
         isDm: Boolean = false,
         playSound: Boolean = true,
+        mediaPath: String? = null,
     ) {
         val channelId = if (playSound) {
             AppNotificationChannels.CHANNEL_MESSAGES
@@ -535,10 +536,19 @@ object Notifier {
             ?.notification
             ?.let { NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(it) }
 
+        val previewUri = mediaPath?.let { path ->
+            runCatching { File(path).takeIf { it.exists() } }.getOrNull()?.let { Uri.fromFile(it) }
+        }
+
         val style = (existingStyle ?: NotificationCompat.MessagingStyle(sender)
             .setConversationTitle(if (isDm) null else roomName)
             .setGroupConversation(!isDm))
-            .addMessage(messageBody, timestamp, sender)
+            .addMessage(
+                messageBody,
+                timestamp,
+                sender,
+                previewUri?.let { NotificationCompat.MessagingStyle.Message(it, "image/*") },
+            )
 
         val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
             .setLabel("Reply")

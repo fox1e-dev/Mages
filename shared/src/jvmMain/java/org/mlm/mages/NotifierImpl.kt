@@ -159,7 +159,8 @@ object NotifierImpl {
         hasMention: Boolean = false,
         playSound: Boolean = true,
         desktopEntry: String? = "mages",
-        iconPath: String? = null
+        iconPath: String? = null,
+        imagePath: String? = null
     ) {
         val persistent = hasMention && capabilities.contains("persistence")
         val actions: Array<String> =
@@ -184,6 +185,7 @@ object NotifierImpl {
             eventId = eventId,
             desktopEntry = desktopEntry,
             iconPath = iconPath,
+            imagePath = imagePath,
             urgency = (if (hasMention) 2 else 1).toByte(),
             soundName = if (playSound) "message-new-instant" else null,
             resident = persistent,
@@ -267,6 +269,7 @@ object NotifierImpl {
         eventId: String,
         desktopEntry: String?,
         iconPath: String?,
+        imagePath: String? = null,
         urgency: Byte,
         soundName: String?,
         resident: Boolean,
@@ -282,7 +285,8 @@ object NotifierImpl {
 
                 val hints = HashMap<String, Variant<*>>()
                 desktopEntry?.let { hints["desktop-entry"] = Variant(it) }
-                iconPath?.let { hints["image-path"] = Variant(it) }
+                imagePath?.let { hints["image-path"] = Variant(it) }
+                    ?: iconPath?.let { hints["image-path"] = Variant(it) }
                 hints["urgency"] = Variant(urgency)
                 if (resident) hints["resident"] = Variant(true)
                 if (soundName != null && capabilities.contains("sound")) {

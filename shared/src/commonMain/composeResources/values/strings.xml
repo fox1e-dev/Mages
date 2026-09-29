@@ -561,6 +561,8 @@
     <string name="setting_test_browser_notification_description">Click to test if notifications work</string>
     <string name="setting_show_message_preview">Show message preview</string>
     <string name="setting_show_message_preview_description">Show message content in notifications</string>
+    <string name="setting_show_media_preview">Show media preview</string>
+    <string name="setting_show_media_preview_description">Download images to show in notifications</string>
     <string name="setting_vibrate">Vibrate</string>
     <string name="setting_vibrate_description">Vibrate on notification</string>
     <string name="setting_notification_sound">Notification sound</string>

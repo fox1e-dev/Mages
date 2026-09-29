@@ -3969,7 +3969,7 @@ fn map_reply_preview(
             MsgLikeKind::Message(msg) => {
                 use matrix_sdk::ruma::events::room::message::MessageType;
 
-                let attachment = extract_attachment(msg);
+                let attachment = extract_attachment(msg.msgtype());
                 let is_voice = attachment
                     .as_ref()
                     .and_then(|info| info.is_voice)
@@ -4185,7 +4185,7 @@ fn map_timeline_event(
 
             match &ml.kind {
                 MsgLikeKind::Message(msg) => {
-                    attachment = extract_attachment(msg);
+                    attachment = extract_attachment(msg.msgtype());
                     is_edited = msg.is_edited();
                     let raw = msg.body();
                     body = if reply_to_event_id.is_some() {
@@ -4239,58 +4239,7 @@ fn map_timeline_event(
                 MsgLikeKind::Sticker(sticker_event) => {
                     body = sticker_event.content().body.clone();
                     event_type = EventType::Sticker;
-
-                    let content = sticker_event.content();
-                    let info = content.info.clone();
-                    let source = content.source.clone();
-
-                    fn enc_to_sticker_enc(
-                        source: &matrix_sdk::ruma::events::room::EncryptedFile,
-                    ) -> EncFile {
-                        enc_to_record(source)
-                    }
-
-                    // `StickerMediaSource` is `#[non_exhaustive]` but currently only has
-                    // `Plain` and `Encrypted`, so the `_` arm is unreachable and exists
-                    // purely to satisfy the non-exhaustive bound. It is not a bridged or
-                    // external-sticker path: bridges put an external `https://` URL in
-                    // `url`, which deserializes into `Plain` because `OwnedMxcUri` does
-                    // not validate its input, so a non-MXC url reaches the media fetcher
-                    // here and fails to resolve. Bridged stickers need an `external_url`
-                    // field on `StickerInfo` and a direct HTTP fetch to actually work.
-                    let (mxc_uri, encrypted) = match &source {
-                        matrix_sdk::ruma::events::sticker::StickerMediaSource::Plain(url) => {
-                            (url.to_string(), None)
-                        }
-                        matrix_sdk::ruma::events::sticker::StickerMediaSource::Encrypted(file) => {
-                            (file.url.to_string(), Some(enc_to_sticker_enc(file)))
-                        }
-                        _ => (String::new(), None),
-                    };
-
-                    let (thumbnail_mxc_uri, thumbnail_encrypted) = match &info.thumbnail_source {
-                        Some(ts) => match ts {
-                            matrix_sdk::ruma::events::room::MediaSource::Plain(url) => {
-                                (Some(url.to_string()), None)
-                            }
-                            matrix_sdk::ruma::events::room::MediaSource::Encrypted(file) => {
-                                (Some(file.url.to_string()), Some(enc_to_sticker_enc(file)))
-                            }
-                        },
-                        None => (None, None),
-                    };
-
-                    sticker = Some(StickerInfo {
-                        mxc_uri,
-                        mime: info.mimetype.clone(),
-                        size_bytes: info.size.map(|v| v.try_into().unwrap_or(0)),
-                        width: info.width.map(|v| v.try_into().unwrap_or(0)),
-                        height: info.height.map(|v| v.try_into().unwrap_or(0)),
-                        thumbnail_mxc_uri,
-                        encrypted,
-                        thumbnail_encrypted,
-                        is_animated: info.is_animated,
-                    });
+                    sticker = Some(extract_sticker(sticker_event.content()));
                 }
                 MsgLikeKind::LiveLocation(ll_state) => {
                     event_type = EventType::LiveLocation;
@@ -4468,7 +4417,43 @@ fn map_utd(ev: &EventTimelineItem) -> Option<UtdInfo> {
     })
 }
 
-fn extract_attachment(msg: &matrix_sdk_ui::timeline::Message) -> Option<AttachmentInfo> {
+fn extract_sticker(
+    content: &matrix_sdk::ruma::events::sticker::StickerEventContent,
+) -> StickerInfo {
+    use matrix_sdk::ruma::events::{room::MediaSource, sticker::StickerMediaSource};
+
+    fn enc(source: &matrix_sdk::ruma::events::room::EncryptedFile) -> EncFile {
+        enc_to_record(source)
+    }
+
+    let (mxc_uri, encrypted) = match &content.source {
+        StickerMediaSource::Plain(url) => (url.to_string(), None),
+        StickerMediaSource::Encrypted(file) => (file.url.to_string(), Some(enc(file))),
+        _ => (String::new(), None),
+    };
+
+    let (thumbnail_mxc_uri, thumbnail_encrypted) = match &content.info.thumbnail_source {
+        Some(MediaSource::Plain(url)) => (Some(url.to_string()), None),
+        Some(MediaSource::Encrypted(file)) => (Some(file.url.to_string()), Some(enc(file))),
+        None => (None, None),
+    };
+
+    StickerInfo {
+        mxc_uri,
+        mime: content.info.mimetype.clone(),
+        size_bytes: content.info.size.map(|v| v.try_into().unwrap_or(0)),
+        width: content.info.width.map(|v| v.try_into().unwrap_or(0)),
+        height: content.info.height.map(|v| v.try_into().unwrap_or(0)),
+        thumbnail_mxc_uri,
+        encrypted,
+        thumbnail_encrypted,
+        is_animated: content.info.is_animated,
+    }
+}
+
+fn extract_attachment(
+    msgtype: &matrix_sdk::ruma::events::room::message::MessageType,
+) -> Option<AttachmentInfo> {
     use matrix_sdk::ruma::events::room::{MediaSource, message::MessageType as MT};
 
     // Helper: split a MediaSource into MXC URI and optional EncFile
@@ -4496,7 +4481,7 @@ fn extract_attachment(msg: &matrix_sdk_ui::timeline::Message) -> Option<Attachme
         }
     }
 
-    match msg.msgtype() {
+    match msgtype {
         MT::Image(c) => {
             // main image source
             let (mxc_uri, encrypted) = split_source(&c.source);
@@ -5653,74 +5638,117 @@ fn raw_notification_content(item: &NotificationItem) -> Option<serde_json::Value
     value.get("content").cloned()
 }
 
-fn raw_notification_body(item: &NotificationItem) -> Option<String> {
-    let content = raw_notification_content(item)?;
+fn classify_notification_content(
+    ev: &AnySyncTimelineEvent,
+    item: &NotificationItem,
+) -> NotificationContent {
+    let content = raw_notification_content(item);
 
-    for key in [
-        "m.poll",
-        "m.poll.start",
-        "org.matrix.msc3381.poll.start",
-        "m.location",
-        "org.matrix.msc3488.location",
-        "m.beacon",
-        "org.matrix.msc3672.beacon",
-    ] {
-        if let Some(text) = content.get(key).and_then(notification_text) {
-            return Some(text);
-        }
+    fn text_at(
+        content: &Option<serde_json::Value>,
+        keys: &[&str],
+    ) -> Option<String> {
+        let c = content.as_ref()?;
+        keys.iter().find_map(|k| c.get(*k).and_then(notification_text))
     }
 
-    notification_text(&content)
-}
-
-fn raw_notification_msgtype_label(item: &NotificationItem) -> Option<String> {
-    let content = raw_notification_content(item)?;
-    let msgtype = content.get("msgtype")?.as_str()?;
-    Some(
-        match msgtype {
-            "m.image" => "Sent an image",
-            "m.video" => "Sent a video",
-            "m.audio" => "Sent an audio message",
-            "m.voice" => "Voice message",
-            "m.file" => "Sent a file",
-            "m.gallery" => "Sent a gallery",
-            "m.location" => "Shared a location",
-            _ => return None,
-        }
-        .to_string(),
-    )
-}
-
-fn notification_event_label(event: &NotificationEvent) -> Option<String> {
-    let NotificationEvent::Timeline(event) = event else {
-        return None;
+    let AnySyncTimelineEvent::MessageLike(m) = ev else {
+        return NotificationContent::unknown();
     };
-    let event_type = event.event_type().to_string();
-    Some(
-        match event_type.as_str() {
-            "m.sticker" => "Sent a sticker",
-            "m.poll.start" | "org.matrix.msc3381.poll.start" => "Started a poll",
-            "m.poll.response" | "org.matrix.msc3381.poll.response" => "Responded to a poll",
-            "m.poll.end" | "org.matrix.msc3381.poll.end" => "Ended a poll",
-            "m.location" | "m.beacon" | "org.matrix.msc3672.beacon" => "Shared a location",
-            "m.room.encrypted" | "org.matrix.msc1767.encrypted" => "Encrypted message",
-            "m.room.redaction" => "Message deleted",
-            "m.room.message" | "org.matrix.msc1767.message" | "org.matrix.msc1767.emote" => {
-                "Sent a message"
+
+    match m {
+        AnySyncMessageLikeEvent::RoomMessage(ev) => {
+            let Some(orig) = ev.as_original() else {
+                return NotificationContent::unknown();
+            };
+
+            if let Some(attachment) = extract_attachment(&orig.content.msgtype) {
+                let is_voice = attachment.is_voice.unwrap_or(false)
+                    || matches!(
+                        &orig.content.msgtype,
+                        matrix_sdk::ruma::events::room::message::MessageType::Audio(c)
+                            if c.voice.is_some()
+                    );
+                let mut attachment = attachment;
+                attachment.is_voice = Some(is_voice);
+                return NotificationContent::media(&attachment, orig.content.body().to_owned());
             }
-            "m.image" | "org.matrix.msc1767.image" => "Sent an image",
-            "m.video" | "org.matrix.msc1767.video" => "Sent a video",
-            "m.audio" | "org.matrix.msc1767.audio" => "Sent an audio message",
-            "m.voice" | "org.matrix.msc3245.voice.v2" => "Voice message",
-            "m.file" | "org.matrix.msc1767.file" => "Sent a file",
-            "m.gallery" => "Sent a gallery",
-            _ if event_type.starts_with("m.call.") || event_type.starts_with("m.rtc.") => "Call update",
-            _ if event_type.starts_with("m.key.verification.") => "Verification update",
-            _ if matches!(event.as_ref(), AnySyncTimelineEvent::State(_)) => "Room state updated",
-            _ => return None,
+
+            let formatted_body = match &orig.content.msgtype {
+                matrix_sdk::ruma::events::room::message::MessageType::Text(c) => {
+                    c.formatted.as_ref().map(|f| f.body.clone())
+                }
+                matrix_sdk::ruma::events::room::message::MessageType::Notice(c) => {
+                    c.formatted.as_ref().map(|f| f.body.clone())
+                }
+                matrix_sdk::ruma::events::room::message::MessageType::Emote(c) => {
+                    c.formatted.as_ref().map(|f| f.body.clone())
+                }
+                _ => None,
+            };
+
+            NotificationContent::text(orig.content.body().to_owned(), formatted_body)
         }
-        .to_string(),
-    )
+        AnySyncMessageLikeEvent::Reaction(ev) => {
+            let Some(orig) = ev.as_original() else {
+                return NotificationContent::unknown();
+            };
+            NotificationContent::reaction(orig.content.relates_to.key.as_str().to_owned())
+        }
+        AnySyncMessageLikeEvent::CallInvite(_) => NotificationContent::call(true),
+        AnySyncMessageLikeEvent::CallNotify(_) | AnySyncMessageLikeEvent::RtcNotification(_) => {
+            NotificationContent::call(false)
+        }
+        AnySyncMessageLikeEvent::PollStart(_) | AnySyncMessageLikeEvent::UnstablePollStart(_) => {
+            NotificationContent::poll(
+                text_at(
+                    &content,
+                    &["m.poll", "m.poll.start", "org.matrix.msc3381.poll.start", "question"],
+                )
+                .unwrap_or_default(),
+                false,
+            )
+        }
+        AnySyncMessageLikeEvent::PollEnd(_) | AnySyncMessageLikeEvent::UnstablePollEnd(_) => {
+            NotificationContent::poll(
+                text_at(
+                    &content,
+                    &["m.poll", "m.poll.end", "org.matrix.msc3381.poll.end", "question"],
+                )
+                .unwrap_or_default(),
+                true,
+            )
+        }
+        AnySyncMessageLikeEvent::Sticker(ev) => {
+            let Some(orig) = ev.as_original() else {
+                return NotificationContent::unknown();
+            };
+            NotificationContent::sticker(&extract_sticker(&orig.content))
+        }
+        _ => {
+            let geo_uri = text_at(
+                &content,
+                &[
+                    "m.location",
+                    "org.matrix.msc3488.location",
+                    "m.beacon",
+                    "org.matrix.msc3672.beacon",
+                ],
+            );
+            if geo_uri.is_some() {
+                return NotificationContent::location(
+                    geo_uri.unwrap_or_default(),
+                    content
+                        .as_ref()
+                        .and_then(|c| {
+                            c.get("m.beacon").or_else(|| c.get("org.matrix.msc3672.beacon"))
+                        })
+                        .is_some(),
+                );
+            }
+            NotificationContent::unknown()
+        }
+    }
 }
 
 pub fn map_notification_item_to_rendered(
@@ -5738,9 +5766,9 @@ pub fn map_notification_item_to_rendered(
         .clone()
         .unwrap_or_else(|| item.event.sender().localpart().to_string());
 
-    let mut body = "New event".to_owned();
     let mut kind = NotificationKind::Message;
     let mut expires_at_ms: Option<u64> = None;
+    let mut content = NotificationContent::unknown();
 
     if let NotificationEvent::Timeline(tl) = &item.event {
         let ev = tl.as_ref();
@@ -5753,61 +5781,7 @@ pub fn map_notification_item_to_rendered(
         kind = k;
         expires_at_ms = exp;
 
-        match ev {
-            AnySyncTimelineEvent::MessageLike(msg) => match msg {
-                AnySyncMessageLikeEvent::Reaction(reaction) => {
-                    if let Some(orig) = reaction.as_original() {
-                        sender = item
-                            .sender_display_name
-                            .clone()
-                            .unwrap_or_else(|| orig.sender.localpart().to_string());
-                        let key = orig.content.relates_to.key.as_str();
-                        body = format!("Reacted {key}");
-                    } else {
-                        body = "Reacted to a message".to_owned();
-                    }
-                }
-                AnySyncMessageLikeEvent::RoomMessage(m) => {
-                    if let Some(orig) = m.as_original() {
-                        sender = item
-                            .sender_display_name
-                            .clone()
-                            .unwrap_or_else(|| orig.sender.localpart().to_string());
-                        body = orig.content.body().to_owned();
-                    }
-                }
-                AnySyncMessageLikeEvent::CallNotify(notify) => {
-                    if let Some(orig) = notify.as_original() {
-                        sender = item
-                            .sender_display_name
-                            .clone()
-                            .unwrap_or_else(|| orig.sender.localpart().to_string());
-                    }
-                    body = "Incoming call".to_owned();
-                }
-                AnySyncMessageLikeEvent::CallInvite(invite) => {
-                    if let Some(orig) = invite.as_original() {
-                        sender = item
-                            .sender_display_name
-                            .clone()
-                            .unwrap_or_else(|| orig.sender.localpart().to_string());
-                    }
-                    body = "Incoming call".to_owned();
-                }
-                AnySyncMessageLikeEvent::RtcNotification(_) => {
-                    body = "Incoming call".to_owned();
-                }
-                _ => {}
-            },
-            _ => {}
-        }
-    }
-
-    if body.trim().is_empty() || body == "New event" {
-        body = raw_notification_body(item)
-            .or_else(|| raw_notification_msgtype_label(item))
-            .or_else(|| notification_event_label(&item.event))
-            .unwrap_or(body);
+        content = classify_notification_content(ev, item);
     }
 
     if let NotificationEvent::Invite(invite) = &item.event {
@@ -5816,7 +5790,7 @@ pub fn map_notification_item_to_rendered(
             .sender_display_name
             .clone()
             .unwrap_or_else(|| invite.sender.to_string());
-        body = "Room invite".to_owned();
+        content = NotificationContent::invite();
     }
 
     Some(RenderedNotification {
@@ -5825,7 +5799,7 @@ pub fn map_notification_item_to_rendered(
         room_name,
         sender,
         sender_user_id,
-        body,
+        content,
         is_noisy: item.is_noisy.unwrap_or(false),
         has_mention: item.has_mention.unwrap_or(false),
         is_dm,

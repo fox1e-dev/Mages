@@ -997,7 +997,7 @@ class RustMatrixPort : MatrixPort, VerificationService {
                             eventId = n.eventId,
                             roomName = n.roomName,
                             sender = n.sender,
-                            body = n.body,
+                            content = n.content.toModel(),
                             isNoisy = n.isNoisy,
                             hasMention = n.hasMention,
                             senderUserId = n.senderUserId,
@@ -1031,7 +1031,7 @@ class RustMatrixPort : MatrixPort, VerificationService {
                     eventId = n.eventId,
                     roomName = n.roomName,
                     sender = n.sender,
-                    body = n.body,
+                    content = n.content.toModel(),
                     isNoisy = n.isNoisy,
                     hasMention = n.hasMention,
                     senderUserId = n.senderUserId,
@@ -2209,6 +2209,43 @@ private fun mages.EventType.toKotlin(): EventType = when (this) {
 
 private fun mages.EncFile.toModel() = EncFile(url = url, json = json)
 
+private fun mages.NotificationContent.toModel() = NotificationContent(
+    kind = when (kind) {
+        mages.NotificationContentKind.TEXT -> NotificationContentKind.Text
+        mages.NotificationContentKind.MEDIA -> NotificationContentKind.Media
+        mages.NotificationContentKind.STICKER -> NotificationContentKind.Sticker
+        mages.NotificationContentKind.POLL -> NotificationContentKind.Poll
+        mages.NotificationContentKind.LOCATION -> NotificationContentKind.Location
+        mages.NotificationContentKind.REACTION -> NotificationContentKind.Reaction
+        mages.NotificationContentKind.CALL -> NotificationContentKind.Call
+        mages.NotificationContentKind.INVITE -> NotificationContentKind.Invite
+        mages.NotificationContentKind.UNKNOWN -> NotificationContentKind.Unknown
+    },
+    body = body,
+    formattedBody = formattedBody,
+    attachmentKind = attachmentKind?.let {
+        when (it) {
+            mages.AttachmentKind.IMAGE -> AttachmentKind.Image
+            mages.AttachmentKind.VIDEO -> AttachmentKind.Video
+            mages.AttachmentKind.AUDIO -> AttachmentKind.Audio
+            mages.AttachmentKind.FILE -> AttachmentKind.File
+        }
+    },
+    fileName = fileName,
+    mxcUri = mxcUri,
+    mime = mime,
+    width = width?.toInt(),
+    height = height?.toInt(),
+    durationMs = durationMs?.toLong(),
+    isVoice = isVoice,
+    question = question,
+    isEnd = isEnd,
+    geoUri = geoUri,
+    isLive = isLive,
+    reactionKey = reactionKey,
+    isInvite = isInvite,
+)
+
 private fun mages.AttachmentInfo.toModel() = AttachmentInfo(
     kind = when (kind) {
         mages.AttachmentKind.IMAGE -> AttachmentKind.Image
@@ -2231,6 +2268,30 @@ private fun mages.AttachmentInfo.toModel() = AttachmentInfo(
 )
 
 private fun EncFile.toFfi() = mages.EncFile(url = url, json = json)
+
+private fun StickerInfo.toFfi() = mages.StickerInfo(
+    mxcUri = mxcUri,
+    mime = mime,
+    sizeBytes = sizeBytes?.toULong(),
+    width = width?.toUInt(),
+    height = height?.toUInt(),
+    thumbnailMxcUri = thumbnailMxcUri,
+    encrypted = encrypted?.toFfi(),
+    thumbnailEncrypted = thumbnailEncrypted?.toFfi(),
+    isAnimated = isAnimated,
+)
+
+private fun mages.StickerInfo.toModel() = StickerInfo(
+    mxcUri = mxcUri,
+    mime = mime,
+    sizeBytes = sizeBytes?.toLong(),
+    width = width?.toInt(),
+    height = height?.toInt(),
+    thumbnailMxcUri = thumbnailMxcUri,
+    encrypted = encrypted?.toModel(),
+    thumbnailEncrypted = thumbnailEncrypted?.toModel(),
+    isAnimated = isAnimated,
+)
 
 private fun FfiRoomNotificationMode.toKotlin(): RoomNotificationMode = when (this) {
     FfiRoomNotificationMode.ALL_MESSAGES -> RoomNotificationMode.AllMessages
@@ -2257,30 +2318,6 @@ private fun AttachmentInfo.toFfi() = mages.AttachmentInfo(
     thumbnailEncrypted = thumbnailEncrypted?.toFfi(),
     waveform = waveform,
     isVoice = isVoice,
-)
-
-private fun StickerInfo.toFfi() = mages.StickerInfo(
-    mxcUri = mxcUri,
-    mime = mime,
-    sizeBytes = sizeBytes?.toULong(),
-    width = width?.toUInt(),
-    height = height?.toUInt(),
-    thumbnailMxcUri = thumbnailMxcUri,
-    encrypted = encrypted?.toFfi(),
-    thumbnailEncrypted = thumbnailEncrypted?.toFfi(),
-    isAnimated = isAnimated,
-)
-
-private fun mages.StickerInfo.toModel() = StickerInfo(
-    mxcUri = mxcUri,
-    mime = mime,
-    sizeBytes = sizeBytes?.toLong(),
-    width = width?.toInt(),
-    height = height?.toInt(),
-    thumbnailMxcUri = thumbnailMxcUri,
-    encrypted = encrypted?.toModel(),
-    thumbnailEncrypted = thumbnailEncrypted?.toModel(),
-    isAnimated = isAnimated,
 )
 
 private fun RoomNotificationMode.toFfi(): FfiRoomNotificationMode = when (this) {

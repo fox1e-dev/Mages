@@ -69,7 +69,7 @@ fun requestNotificationPermissionFromUserGesture(
 }
 
 @JsFun(
-    """(title, body, icon, tag) => {
+    """(title, body, icon, tag, image) => {
         if (typeof window === 'undefined' || typeof Notification === 'undefined') return false;
         if (Notification.permission !== 'granted') return false;
 
@@ -77,6 +77,7 @@ fun requestNotificationPermissionFromUserGesture(
             const opts = {
                 body: body === null ? undefined : body,
                 icon: icon === null ? undefined : icon,
+                image: image === null || image === undefined ? undefined : image,
                 silent: true,
             };
             if (tag !== null && tag !== undefined) opts.tag = tag;
@@ -114,15 +115,17 @@ private external fun createBrowserNotificationJs(
     title: String,
     body: String?,
     icon: String?,
-    tag: String?
+    tag: String?,
+    image: String?
 ): Boolean
 
 internal fun createBrowserNotification(
     title: String,
     body: String?,
     icon: String?,
-    tag: String? = null
-): Boolean = createBrowserNotificationJs(title, body, icon, tag)
+    tag: String? = null,
+    image: String? = null
+): Boolean = createBrowserNotificationJs(title, body, icon, tag, image)
 
 @JsFun(
     """(tag) => {

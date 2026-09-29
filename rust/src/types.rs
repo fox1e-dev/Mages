@@ -239,6 +239,138 @@ pub struct DownloadResult {
     pub bytes: u64,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Enum)]
+pub enum NotificationContentKind {
+    Text,
+    Media,
+    Sticker,
+    Poll,
+    Location,
+    Reaction,
+    Call,
+    Invite,
+    Unknown,
+}
+
+/// Wire format for a classified event, deliberately flat.
+///
+/// A tagged enum would need its variant names to match the Kotlin side's
+/// `@SerialName` values, and a mismatch there decodes to null on web with no
+/// error. A flat record only has to agree on field names, which
+/// `ignoreUnknownKeys` tolerates.
+#[derive(Clone, Serialize, Deserialize, Record)]
+pub struct NotificationContent {
+    pub kind: NotificationContentKind,
+    pub body: String,
+    pub formatted_body: Option<String>,
+    pub attachment_kind: Option<AttachmentKind>,
+    pub file_name: Option<String>,
+    pub mxc_uri: Option<String>,
+    pub mime: Option<String>,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    pub duration_ms: Option<u64>,
+    pub is_voice: Option<bool>,
+    pub question: Option<String>,
+    pub is_end: Option<bool>,
+    pub geo_uri: Option<String>,
+    pub is_live: Option<bool>,
+    pub reaction_key: Option<String>,
+    pub is_invite: Option<bool>,
+}
+
+impl NotificationContent {
+    pub fn text(body: String, formatted_body: Option<String>) -> Self {
+        Self {
+            kind: NotificationContentKind::Text,
+            body,
+            formatted_body,
+            attachment_kind: None,
+            file_name: None,
+            mxc_uri: None,
+            mime: None,
+            width: None,
+            height: None,
+            duration_ms: None,
+            is_voice: None,
+            question: None,
+            is_end: None,
+            geo_uri: None,
+            is_live: None,
+            reaction_key: None,
+            is_invite: None,
+        }
+    }
+
+    pub fn media(attachment: &AttachmentInfo, body: String) -> Self {
+        Self {
+            kind: NotificationContentKind::Media,
+            body,
+            formatted_body: None,
+            attachment_kind: Some(attachment.kind.clone()),
+            file_name: attachment.file_name.clone(),
+            mxc_uri: Some(attachment.thumbnail_mxc_uri.clone().unwrap_or_else(|| attachment.mxc_uri.clone())),
+            mime: attachment.mime.clone(),
+            width: attachment.width,
+            height: attachment.height,
+            duration_ms: attachment.duration_ms,
+            is_voice: attachment.is_voice,
+            question: None,
+            is_end: None,
+            geo_uri: None,
+            is_live: None,
+            reaction_key: None,
+            is_invite: None,
+        }
+    }
+
+    pub fn sticker(sticker: &StickerInfo) -> Self {
+        Self {
+            kind: NotificationContentKind::Sticker,
+            body: String::new(),
+            formatted_body: None,
+            attachment_kind: Some(AttachmentKind::Image),
+            file_name: None,
+            mxc_uri: Some(sticker.thumbnail_mxc_uri.clone().unwrap_or_else(|| sticker.mxc_uri.clone())),
+            mime: sticker.mime.clone(),
+            width: sticker.width,
+            height: sticker.height,
+            duration_ms: None,
+            is_voice: None,
+            question: None,
+            is_end: None,
+            geo_uri: None,
+            is_live: None,
+            reaction_key: None,
+            is_invite: None,
+        }
+    }
+
+    pub fn poll(question: String, is_end: bool) -> Self {
+        Self { kind: NotificationContentKind::Poll, question: Some(question), is_end: Some(is_end), ..Self::text(String::new(), None) }
+    }
+
+    pub fn location(geo_uri: String, is_live: bool) -> Self {
+        Self { kind: NotificationContentKind::Location, geo_uri: Some(geo_uri), is_live: Some(is_live), ..Self::text(String::new(), None) }
+    }
+
+    pub fn reaction(key: String) -> Self {
+        Self { kind: NotificationContentKind::Reaction, reaction_key: Some(key), ..Self::text(String::new(), None) }
+    }
+
+    pub fn call(invite: bool) -> Self {
+        Self { kind: NotificationContentKind::Call, is_invite: Some(invite), ..Self::text(String::new(), None) }
+    }
+
+    pub fn invite() -> Self {
+        Self { kind: NotificationContentKind::Invite, ..Self::text(String::new(), None) }
+    }
+
+    pub fn unknown() -> Self {
+        Self { kind: NotificationContentKind::Unknown, ..Self::text(String::new(), None) }
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize, Record)]
 pub struct RenderedNotification {
     pub room_id: String,
@@ -246,7 +378,7 @@ pub struct RenderedNotification {
     pub room_name: String,
     pub sender: String,
     pub sender_user_id: String,
-    pub body: String,
+    pub content: NotificationContent,
     pub is_noisy: bool,
     pub has_mention: bool,
     pub ts_ms: u64,

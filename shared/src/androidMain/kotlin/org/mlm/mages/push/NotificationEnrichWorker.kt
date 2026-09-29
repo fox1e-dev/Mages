@@ -188,83 +188,10 @@ class NotificationEnrichWorker(
                 return Result.success()
             }
 
-            NotificationKind.Reaction -> {
-                val inQuietHours = settings.quietHoursEnabled && isInQuietHours(settings)
-
-                val title = // if (rendered.isDm || rendered.sender == rendered.roomName) {
-                    rendered.sender
-//                } else {
-//                    "${rendered.sender} • ${rendered.roomName}"
-//                }
-
-                val wantsAlert = settings.notificationSound || settings.notificationVibrate
-                val playSound = if (!inQuietHours && wantsAlert && rendered.isNoisy) {
-                    if (settings.notifySoundOncePerRoom) {
-                        val notifiedRooms = parseNotifiedRooms(settings.notifiedRoomsJson)
-                        if (!notifiedRooms.contains(roomId)) {
-                            val updated = notifiedRooms + roomId
-                            settingsRepo.update { it.copy(notifiedRoomsJson = Json.encodeToString(updated)) }
-                            true
-                        } else {
-                            false
-                        }
-                    } else {
-                        true
-                    }
-                } else {
-                    false
-                }
-
-                val senderAvatarUrl = runCatching {
-                    port.getUserProfile(rendered.senderUserId)?.avatarUrl
-                }.getOrNull()
-
-                val roomAvatarUrl = runCatching {
-                    port.roomProfile(roomId)?.avatarUrl
-                }.getOrNull()
-
-                val senderAvatar = NotificationAvatarHelper.resolve(
-                    context = applicationContext,
-                    service = service,
-                    avatarUrl = senderAvatarUrl,
-                    displayName = rendered.sender,
-                    userId = rendered.senderUserId,
-                    fallbackRes = R.drawable.ic_notif_status_bar,
-                )
-                val roomAvatar = NotificationAvatarHelper.resolve(
-                    context = applicationContext,
-                    service = service,
-                    avatarUrl = roomAvatarUrl,
-                    displayName = rendered.roomName,
-                    userId = roomId,
-                    fallbackRes = R.drawable.ic_notif_status_bar,
-                )
-
-                Notifier.showConversationNotification(
-                    context = applicationContext,
-                    roomId = roomId,
-                    roomName = rendered.roomName,
-                    senderName = title,
-                    senderUserId = rendered.senderUserId,
-                    messageBody = rendered.body,
-                    eventId = eventId,
-                    timestamp = rendered.tsMs,
-                    notificationId = notifId,
-                    bubbleActivityClass = bubbleActivityClass,
-                    fullOpenIntent = buildFullOpenIntent(applicationContext, roomId, eventId),
-                    senderAvatar = senderAvatar,
-                    roomAvatar = roomAvatar,
-                    isDm = rendered.isDm,
-                    playSound = playSound,
-                )
-                return Result.success()
-            }
-
+            NotificationKind.Reaction,
             NotificationKind.Message -> {
                 val inQuietHours = settings.quietHoursEnabled && isInQuietHours(settings)
 
-                val title = rendered.sender
-
                 val wantsAlert = settings.notificationSound || settings.notificationVibrate
                 val playSound = if (!inQuietHours && wantsAlert && rendered.isNoisy) {
                     if (settings.notifySoundOncePerRoom) {
@@ -282,8 +209,6 @@ class NotificationEnrichWorker(
                 } else {
                     false
                 }
-
-                // No need to cancel here; showConversationNotification uses the same notifId and will replace.
 
                 val senderAvatarUrl = runCatching {
                     port.getUserProfile(rendered.senderUserId)?.avatarUrl
@@ -310,17 +235,20 @@ class NotificationEnrichWorker(
                     fallbackRes = R.drawable.ic_notif_status_bar,
                 )
 
+                val presentation = NotificationPresentation.of(
+                    notification = rendered,
+                    showPreview = settings.notificationShowPreview,
+                    redactedBody = applicationContext.getString(R.string.notif_new_message)
+                )
+                val media = presentation.media?.let { resolvePreviewMedia(it, settings) }
+
                 Notifier.showConversationNotification(
                     context = applicationContext,
                     roomId = roomId,
                     roomName = rendered.roomName,
-                    senderName = title,
+                    senderName = presentation.title,
                     senderUserId = rendered.senderUserId,
-                    messageBody = if (settings.notificationShowPreview) {
-                        rendered.body
-                    } else {
-                        applicationContext.getString(R.string.notif_new_message)
-                    },
+                    messageBody = presentation.body,
                     eventId = eventId,
                     timestamp = rendered.tsMs,
                     notificationId = notifId,
@@ -330,10 +258,25 @@ class NotificationEnrichWorker(
                     roomAvatar = roomAvatar,
                     isDm = rendered.isDm,
                     playSound = playSound,
+                    mediaPath = media,
                 )
                 return Result.success()
             }
         }
+    }
+
+    private suspend fun resolvePreviewMedia(
+        media: NotificationMedia,
+        settings: AppSettings
+    ): String? {
+        if (!NotificationMediaPolicy.allowed(settings)) return null
+        return runCatching {
+            port.mxcThumbnailToCache(media.mxcUri, PREVIEW_PX, PREVIEW_PX, crop = true)
+        }.getOrNull()?.takeIf { it.isNotBlank() }
+    }
+
+    private companion object {
+        const val PREVIEW_PX = 320
     }
 
     companion object {

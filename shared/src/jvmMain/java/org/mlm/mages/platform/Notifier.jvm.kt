@@ -23,6 +23,8 @@ import org.mlm.mages.calls.ringing
 import org.mlm.mages.matrix.NotificationKind
 import org.mlm.mages.matrix.RoomNotificationMode
 import org.mlm.mages.push.LinuxPushHandler
+import org.mlm.mages.push.NotificationMediaPolicy
+import org.mlm.mages.push.NotificationPresentation
 import org.mlm.mages.settings.AppSettings
 import kotlin.system.exitProcess
 
@@ -210,16 +212,11 @@ actual fun BindNotifications(
                     service.avatars.resolve(profile?.avatarUrl, px = 96, crop = true)
                 }.getOrNull()
 
-                val title = if (n.isDm || n.sender == n.roomName) {
-                    n.sender
-                } else {
-                    n.roomName
-                }
-
-                val body = when (n.kind) {
-                    NotificationKind.Reaction -> n.body
-                    else -> if (settings.notificationShowPreview) "${n.sender}: ${n.body}" else "New message"
-                }
+                val presentation = NotificationPresentation.of(
+                    notification = n,
+                    showPreview = settings.notificationShowPreview,
+                    redactedBody = "New message"
+                )
 
                 val playSound = Notifier.shouldPlaySound(
                     roomId = n.roomId,
@@ -227,14 +224,24 @@ actual fun BindNotifications(
                     oncePerRoomEnabled = settings.notifySoundOncePerRoom
                 )
 
+                val mediaPath = presentation.media
+                    ?.takeIf { NotificationMediaPolicy.allowed(settings) }
+                    ?.let { media ->
+                        runCatching {
+                            port.mxcThumbnailToCache(media.mxcUri, 320, 320, crop = true)
+                        }.getOrNull()
+                    }
+                    ?.takeIf { it.isNotBlank() }
+
                 NotifierImpl.notifyMatrixEvent(
-                    title = title,
-                    body = body,
+                    title = presentation.title,
+                    body = presentation.body,
                     roomId = n.roomId,
                     eventId = n.eventId,
                     hasMention = n.hasMention,
                     playSound = playSound,
-                    iconPath = avatarPath
+                    iconPath = avatarPath,
+                    imagePath = mediaPath
                 )
                 lastNotifiedTsByRoom[n.roomId] = maxOf(lastNotifiedTsByRoom[n.roomId] ?: 0L, n.tsMs)
             }
