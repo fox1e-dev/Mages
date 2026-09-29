@@ -40,6 +40,7 @@ object MagesSettingsKeys {
     const val INCLUDE_SILENT_UNREAD_IN_FILTER = "mages.settings.include_silent_unread_in_filter"
     const val SHOW_SPACE_BADGE_IN_ROOM_LIST = "mages.settings.show_space_badge_in_room_list"
     const val SHOW_SPACE_BADGE_IN_ROOM_LIST_DESCRIPTION = "mages.settings.show_space_badge_in_room_list.description"
+    const val HIDE_SPACE_ROOMS_IN_ROOM_LIST = "mages.settings.hide_space_rooms_in_room_list"
     const val CHAT_BUBBLES = "mages.settings.chat_bubbles"
     const val NOTIFICATION_RULES = "mages.settings.notification_rules"
     const val ENABLE_NOTIFICATIONS = "mages.settings.enable_notifications"

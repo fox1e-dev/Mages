@@ -346,6 +346,7 @@ class RoomsViewModel(
             byRoom.values.flatten().distinctBy { it.spaceId }.forEach { space ->
                 maybePrefetchParentSpaceAvatar(space.spaceId, space.avatarUrl)
             }
+            if (settings.value.hideSpaceRoomsInRoomList) recomputeGroupedRooms()
         }
     }
 
@@ -496,7 +497,15 @@ class RoomsViewModel(
         val query = s.roomSearchQuery.trim()
         val includeSilent = settings.value.includeSilentUnreadInFilter
 
-        var list = s.allItems
+        val visibleRooms = if (settings.value.hideSpaceRoomsInRoomList) {
+            s.allItems.filter {
+                it.isInvited || s.parentSpaces[it.roomId].isNullOrEmpty()
+            }
+        } else {
+            s.allItems
+        }
+
+        var list = visibleRooms
 
         if (query.isNotBlank()) {
             list = list.filter {
@@ -525,7 +534,7 @@ class RoomsViewModel(
             return items.sortedByDescending { it.unreadCount > 0 }
         }
 
-        val allFiltered = s.allItems.filter { !it.isInvited }
+        val allFiltered = visibleRooms.filter { !it.isInvited }
         val unreadChatCount = if (includeSilent) {
             allFiltered.count { it.hasUnreadMessages || it.unreadCount > 0 }
         } else {
@@ -545,7 +554,7 @@ class RoomsViewModel(
         val favourites  = sortUnread(list.filter { it.isFavourite })
         val lowPriority = sortUnread(list.filter { it.isLowPriority })
         val normal      = sortUnread(list.filter { !it.isFavourite && !it.isLowPriority && !it.isInvited })
-        val invites     = s.allItems.filter { it.isInvited }
+        val invites     = visibleRooms.filter { it.isInvited }
 
         updateState {
             copy(

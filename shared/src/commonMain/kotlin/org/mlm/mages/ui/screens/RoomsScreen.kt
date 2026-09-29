@@ -142,6 +142,25 @@ fun RoomsScreen(
                 )
             }
 
+            !hasAnyRooms && state.allItems.isNotEmpty() &&
+                    state.roomSearchQuery.isBlank() &&
+                    !state.unreadOnly &&
+                    state.typeFilter == RoomTypeFilter.All -> {
+                EmptyState(
+                    icon = Icons.Default.Workspaces,
+                    title = stringResource(Res.string.rooms_hidden_in_spaces),
+                    subtitle = stringResource(Res.string.rooms_hidden_in_spaces_subtitle),
+                    modifier = Modifier.padding(innerPadding),
+                    action = {
+                        Button(onClick = onOpenSpaces) {
+                            Icon(Icons.Default.Workspaces, null)
+                            Spacer(Modifier.width(Spacing.sm))
+                            Text(stringResource(Res.string.spaces))
+                        }
+                    }
+                )
+            }
+
             !hasAnyRooms -> {
                 EmptyState(
                     icon = Icons.Default.MeetingRoom,

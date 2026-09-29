@@ -410,6 +410,14 @@ data class AppSettings(
     val showSpaceBadgeInRoomList: Boolean = false,
 
     @Setting(
+        title = "Hide space rooms in room list",
+        titleKey = MagesSettingsKeys.HIDE_SPACE_ROOMS_IN_ROOM_LIST,
+        category = Timeline::class,
+        type = Toggle::class,
+    )
+    val hideSpaceRoomsInRoomList: Boolean = false,
+
+    @Setting(
         title = "Chat bubbles",
         titleKey = MagesSettingsKeys.CHAT_BUBBLES,
         description = "Open system settings to enable (or disable) conversation bubbles",

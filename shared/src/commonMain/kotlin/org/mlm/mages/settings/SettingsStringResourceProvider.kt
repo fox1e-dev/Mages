@@ -77,6 +77,7 @@ private val titleResources: Map<String, StringResource> = mapOf(
     MagesSettingsKeys.HIDE_OTHER_STATE_EVENTS to Res.string.setting_hide_other_state_events,
     MagesSettingsKeys.AUTO_PAGINATE_OLDER_MESSAGES to Res.string.setting_auto_paginate_older_messages,
     MagesSettingsKeys.INCLUDE_SILENT_UNREAD_IN_FILTER to Res.string.setting_include_silent_unread_in_filter,
+    MagesSettingsKeys.HIDE_SPACE_ROOMS_IN_ROOM_LIST to Res.string.setting_hide_space_rooms_in_room_list,
     MagesSettingsKeys.CHAT_BUBBLES to Res.string.setting_chat_bubbles,
     MagesSettingsKeys.NOTIFICATION_RULES to Res.string.setting_notification_rules,
     MagesSettingsKeys.ENABLE_NOTIFICATIONS to Res.string.setting_enable_notifications,
