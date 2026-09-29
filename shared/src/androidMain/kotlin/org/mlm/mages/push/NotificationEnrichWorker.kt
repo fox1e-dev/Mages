@@ -242,8 +242,7 @@ class NotificationEnrichWorker(
                 )
                 val media = presentation.media
                     ?.takeIf { NotificationMediaPolicy.allowed(settings) }
-                    ?.let { port.thumbnailToCache(it.attachment, PREVIEW_PX, PREVIEW_PX, false).getOrNull() }
-                    ?.takeIf { it.isNotBlank() }
+                    ?.let { NotificationMediaPolicy.preview(port, it.attachment) }
 
                 Notifier.showConversationNotification(
                     context = applicationContext,
@@ -272,7 +271,6 @@ class NotificationEnrichWorker(
     companion object {
         const val KEY_ROOM_ID = "roomId"
         const val KEY_EVENT_ID = "eventId"
-        private const val PREVIEW_PX = 320
     }
 }
 

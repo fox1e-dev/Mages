@@ -595,10 +595,12 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         info: AttachmentInfo,
         width: Int,
         height: Int,
-        crop: Boolean
+        crop: Boolean,
+        animated: Boolean,
+        maxBytes: Long
     ): Result<String> = runCatching {
         val raw = requireClient()
-            .thumbnailToCache(wasmJson.encodeToString(info), width.toDouble(), height.toDouble(), crop)
+            .thumbnailToCache(wasmJson.encodeToString(info), width.toDouble(), height.toDouble(), crop, animated)
             .await<JsAny?>()
             ?.toString()
             ?.takeIf { it.startsWith("data:") }

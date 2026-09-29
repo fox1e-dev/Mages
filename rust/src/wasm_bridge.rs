@@ -2786,6 +2786,7 @@ impl WasmClient {
         width: u32,
         height: u32,
         _use_crop: bool,
+        animated: bool,
     ) -> JsValue {
         let Some(state) = self.state() else {
             return webffi_err("not initialized");
@@ -2812,7 +2813,7 @@ impl WasmClient {
         } else {
             MediaSource::Plain(mxc_uri.into())
         };
-        let settings = MediaThumbnailSettings { animated: true, ..MediaThumbnailSettings::new(width.into(), height.into()) };
+        let settings = MediaThumbnailSettings { animated, ..MediaThumbnailSettings::new(width.into(), height.into()) };
         let req = MediaRequestParameters {
             source,
             format: MediaFormat::Thumbnail(settings),

@@ -226,8 +226,7 @@ actual fun BindNotifications(
 
                 val resolvedImage = presentation.media
                     ?.takeIf { NotificationMediaPolicy.allowed(settings) }
-                    ?.let { media -> port.thumbnailToCache(media.attachment, 320, 320, false).getOrNull() }
-                    ?.takeIf { it.isNotBlank() }
+                    ?.let { NotificationMediaPolicy.preview(port, it.attachment) }
 
                 if (createBrowserNotification(
                         presentation.title,

@@ -135,8 +135,7 @@ class LinuxPushHandler(
             )
             val mediaPath = presentation.media
                 ?.takeIf { NotificationMediaPolicy.allowed(settings) }
-                ?.let { media -> port.thumbnailToCache(media.attachment, 320, 320, false).getOrNull() }
-                ?.takeIf { it.isNotBlank() }
+                ?.let { NotificationMediaPolicy.preview(port, it.attachment) }
 
             NotifierImpl.notifyMatrixEvent(
                 title = presentation.title,

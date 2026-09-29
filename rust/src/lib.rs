@@ -3288,6 +3288,8 @@ impl Client {
         width: u32,
         height: u32,
         use_crop: bool,
+        animated: bool,
+        max_bytes: u64,
     ) -> Result<String, FfiError> {
         use matrix_sdk::media::{MediaFormat, MediaRequestParameters, MediaThumbnailSettings};
         use ruma::events::room::MediaSource;
@@ -3307,7 +3309,14 @@ impl Client {
                 mxc.clone(),
             )
         } else if let Some(enc) = att.encrypted.as_ref() {
-            // fetch full encrypted file as fallback
+            // No thumbnail exists, so this pulls the whole original. Every other
+            // branch is either a server-side thumbnail bounded by width/height or
+            // a thumbnail file, so this is the only one worth capping.
+            if let (Some(size), true) = (att.size_bytes, max_bytes > 0) {
+                if size > max_bytes {
+                    return Err(FfiError::Msg("media exceeds preview size limit".into()));
+                }
+            }
             let ef: EncryptedFile = serde_json::from_str(&enc.json)
                 .map_err(|e| FfiError::Msg(format!("file enc parse: {e}")))?;
             (
@@ -3326,7 +3335,7 @@ impl Client {
             } else {
                 MediaThumbnailSettings::new(width.into(), height.into())
             };
-            let settings = MediaThumbnailSettings { animated: true, ..settings };
+            let settings = MediaThumbnailSettings { animated, ..settings };
             let mxc = att.mxc_uri.clone();
             (
                 MediaSource::Plain(mxc.clone().into()),
@@ -3340,7 +3349,7 @@ impl Client {
         let dir = cache_dir(&self.store_dir);
         platform::ensure_dir(&dir);
         let key =
-            blake3::hash(format!("{}-{}x{}-{}", name_key, width, height, use_crop).as_bytes())
+            blake3::hash(format!("{}-{}x{}-{}-{}", name_key, width, height, use_crop, animated).as_bytes())
                 .to_hex();
         let ext = att
             .mime

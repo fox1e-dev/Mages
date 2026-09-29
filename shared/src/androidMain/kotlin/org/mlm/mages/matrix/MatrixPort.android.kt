@@ -271,10 +271,12 @@ class RustMatrixPort : MatrixPort, VerificationService {
     }
 
     override suspend fun thumbnailToCache(
-        info: AttachmentInfo, width: Int, height: Int, crop: Boolean
+        info: AttachmentInfo, width: Int, height: Int, crop: Boolean, animated: Boolean, maxBytes: Long
     ): Result<String> =
         withContext(mediaDispatcher) {
-            runWithFfiResult { withClient { it.thumbnailToCache(info.toFfi(), width.toUInt(), height.toUInt(), crop) } }
+            runWithFfiResult {
+                withClient { it.thumbnailToCache(info.toFfi(), width.toUInt(), height.toUInt(), crop, animated, maxBytes.toULong()) }
+            }
         }
 
     override suspend fun setTyping(roomId: String, typing: Boolean): Result<Unit> =

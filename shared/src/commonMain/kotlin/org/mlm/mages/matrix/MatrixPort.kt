@@ -896,7 +896,16 @@ interface MatrixPort {
     suspend fun setRoomFavourite(roomId: String, favourite: Boolean): Result<Unit>
     suspend fun setRoomLowPriority(roomId: String, lowPriority: Boolean): Result<Unit>
 
-    suspend fun thumbnailToCache(info: AttachmentInfo, width: Int, height: Int, crop: Boolean): Result<String>
+    suspend fun thumbnailToCache(
+        info: AttachmentInfo,
+        width: Int,
+        height: Int,
+        crop: Boolean,
+        /** Ask the homeserver for an animated thumbnail (MSC2705). */
+        animated: Boolean = true,
+        /** Bytes allowed when the whole original has to be fetched instead of a thumbnail. 0 = uncapped. */
+        maxBytes: Long = 0,
+    ): Result<String>
 
     interface VerificationInboxObserver {
         fun onRequest(flowId: String, fromUser: String, fromDevice: String)
