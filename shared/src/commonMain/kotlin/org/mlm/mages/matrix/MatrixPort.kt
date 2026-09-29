@@ -414,8 +414,11 @@ fun notificationSummary(content: ClassifiedNotification): String = when (content
         content.question.isBlank() -> if (content.isEnd) "Ended a poll" else "Started a poll"
         else -> "${if (content.isEnd) "Ended a poll" else "Started a poll"}: ${content.question}"
     }
-    is ClassifiedNotification.Location ->
-        if (content.isLive) "Shared a live location" else "Shared a location"
+    is ClassifiedNotification.Location -> when {
+        content.isLive -> "Started sharing their live location"
+        content.geoUri.isBlank() -> "Shared a location"
+        else -> "Location was shared at ${content.geoUri}"
+    }
     // MSC4027 lets the key be an mxc URI, which shows up ugly in notifs.
     is ClassifiedNotification.Reaction ->
         if (content.key.startsWith("mxc://")) "Reacted with an image"

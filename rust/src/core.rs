@@ -58,7 +58,7 @@ use matrix_sdk_ui::{
     timeline::{RoomExt as _, Timeline, TimelineEventFocusThreadMode, TimelineFocus},
 };
 use serde_json;
-use tracing::warn;
+use tracing::{info, warn};
 
 use crate::{
     ActionAvailability, ActionPresentation, AttachmentInfo, AttachmentKind, DirectoryUser,
@@ -482,6 +482,64 @@ impl CoreClient {
         self.timeline_mgr.timeline_for(&rid).await
     }
 
+    /// Stickers and live location shares match none of the default push rules,
+    /// so without these the homeserver never pushes them to this device.
+    pub async fn ensure_notification_push_rules(&self) {
+        use matrix_sdk::ruma::{
+            api::client::push::set_pushrule,
+            events::{
+                StaticEventContent, beacon_info::BeaconInfoEventContent,
+                sticker::StickerEventContent,
+            },
+            push::{
+                Action, EventMatchConditionData, NewConditionalPushRule, NewPushRule,
+                PushCondition, RuleKind, SoundTweakValue, Tweak,
+            },
+        };
+
+        let rules = match self.sdk.account().push_rules().await {
+            Ok(rules) => rules,
+            Err(e) => {
+                warn!("push rule check failed: {e:?}");
+                return;
+            }
+        };
+
+        let wanted = [
+            ("org.mlm.mages.sticker", StickerEventContent::TYPE),
+            ("org.mlm.mages.live_location", BeaconInfoEventContent::TYPE),
+        ];
+        let missing: Vec<(&str, &str)> = wanted
+            .iter()
+            .filter(|(rule_id, _)| rules.get(RuleKind::Underride, rule_id).is_none())
+            .copied()
+            .collect();
+
+        info!(
+            "notification push rules: {}/{} present",
+            wanted.len() - missing.len(),
+            wanted.len()
+        );
+
+        for (rule_id, event_type) in missing {
+            let rule = NewPushRule::Underride(NewConditionalPushRule::new(
+                rule_id.to_owned(),
+                vec![PushCondition::EventMatch(EventMatchConditionData::new(
+                    "type".into(),
+                    event_type.to_owned(),
+                ))],
+                vec![
+                    Action::Notify,
+                    Action::SetTweak(Tweak::Sound(SoundTweakValue::Default)),
+                ],
+            ));
+            match self.sdk.send(set_pushrule::v3::Request::new(rule)).await {
+                Ok(_) => info!("registered notification push rule {rule_id}"),
+                Err(e) => warn!("failed to register push rule {rule_id}: {e:?}"),
+            }
+        }
+    }
+
     pub async fn ensure_sync_service(&self) {
         if self
             .sync_service
@@ -494,6 +552,7 @@ impl CoreClient {
         if self.sdk.session_meta().is_none() {
             return;
         }
+        self.ensure_notification_push_rules().await;
         let builder = SyncService::builder(self.sdk.clone()).with_offline_mode();
         match builder.build().await {
             Ok(svc) => {

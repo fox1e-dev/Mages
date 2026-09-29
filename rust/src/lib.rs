@@ -12,7 +12,7 @@ use matrix_sdk::authentication::oauth::registration::{
 };
 use matrix_sdk::config::RequestConfig;
 use matrix_sdk::reqwest::Url;
-use matrix_sdk::ruma::events::{AnySyncMessageLikeEvent, AnySyncTimelineEvent};
+use matrix_sdk::ruma::events::{AnySyncMessageLikeEvent, AnySyncStateEvent, AnySyncTimelineEvent};
 use matrix_sdk::ruma::room_version_rules::RoomVersionRules;
 use matrix_sdk::ruma::serde::Raw;
 #[cfg(not(target_family = "wasm"))]
@@ -5527,10 +5527,19 @@ fn fetch_reply_if_needed(ei: &EventTimelineItem, tl: &Arc<Timeline>) {
     }
 }
 
+fn is_live_location_start(state: &AnySyncStateEvent) -> bool {
+    matches!(
+        state,
+        AnySyncStateEvent::BeaconInfo(beacon)
+            if beacon.as_original().is_some_and(|orig| orig.content.live)
+    )
+}
+
 fn should_filter_notification_event(ev: &AnySyncTimelineEvent) -> bool {
     match ev {
-        AnySyncTimelineEvent::State(_) => true,
-        _ => false,
+        AnySyncTimelineEvent::State(state) => !is_live_location_start(state),
+        // A running share pings every few seconds; only its start notifies.
+        AnySyncTimelineEvent::MessageLike(m) => matches!(m, AnySyncMessageLikeEvent::Beacon(_)),
     }
 }
 
@@ -5641,7 +5650,13 @@ fn classify_notification_kind_and_expiry(
             AnySyncMessageLikeEvent::CallInvite(_) => (NotificationKind::CallInvite, None),
             _ => (NotificationKind::Message, None),
         },
-        AnySyncTimelineEvent::State(_) => (NotificationKind::StateEvent, None),
+        AnySyncTimelineEvent::State(ev) => {
+            if is_live_location_start(ev) {
+                (NotificationKind::Message, None)
+            } else {
+                (NotificationKind::StateEvent, None)
+            }
+        }
     }
 }
 
@@ -5693,7 +5708,13 @@ fn classify_notification_content(
     }
 
     let AnySyncTimelineEvent::MessageLike(m) = ev else {
-        return NotificationContent::unknown();
+        let AnySyncTimelineEvent::State(state) = ev else {
+            return NotificationContent::unknown();
+        };
+        if !is_live_location_start(state) {
+            return NotificationContent::unknown();
+        }
+        return NotificationContent::location(String::new(), true);
     };
 
     match m {
@@ -5712,6 +5733,12 @@ fn classify_notification_content(
                 let mut attachment = attachment;
                 attachment.is_voice = Some(is_voice);
                 return NotificationContent::media(&attachment, orig.content.body().to_owned());
+            }
+
+            if let matrix_sdk::ruma::events::room::message::MessageType::Location(loc) =
+                &orig.content.msgtype
+            {
+                return NotificationContent::location(loc.geo_uri.clone(), false);
             }
 
             let formatted_body = match &orig.content.msgtype {
