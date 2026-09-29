@@ -25,7 +25,9 @@ data class NotificationPresentation(
         fun of(
             notification: RenderedNotification,
             showPreview: Boolean,
-            redactedBody: String
+            redactedBody: String,
+            /** True when the platform labels the message with its sender itself. */
+            senderShownByPlatform: Boolean = false
         ): NotificationPresentation {
             val content = notification.content.classify()
             val sender = notification.sender
@@ -44,14 +46,14 @@ data class NotificationPresentation(
                 else -> Accent.Neutral
             }
 
-            // A reaction and a call both already name their subject, so prefixing
-            // the sender reads as duplication on platforms that concatenate.
-            val prefixSender = when (content) {
-                is ClassifiedNotification.Reaction,
-                is ClassifiedNotification.Call,
-                ClassifiedNotification.Invite -> false
-                else -> true
-            }
+            // The sender is only worth naming once: the title already is the sender
+            // in a DM, a reaction and a call name their subject on their own, and a
+            // platform that labels the line carries it without help.
+            val prefixSender = !senderShownByPlatform &&
+                title != sender &&
+                content !is ClassifiedNotification.Reaction &&
+                content !is ClassifiedNotification.Call &&
+                content !is ClassifiedNotification.Invite
 
             val body = when {
                 !showPreview -> redactedBody

@@ -66,6 +66,7 @@ fun MessageActionSheet(
     onForward: (() -> Unit)? = null,
     onRetry: (() -> Unit)? = null,
     reactionImagePacks: List<ImagePackSummary> = emptyList(),
+    isEncryptedRoom: Boolean = false,
     resolveReactionPreview: suspend (thumbnailMxcUri: String?, mxcUrl: String) -> String? = { _, _ -> null },
 ) {
     val clipboardManager = LocalClipboardManager.current
@@ -75,6 +76,7 @@ fun MessageActionSheet(
     if (showImagePicker) {
         ReactionImagePickerSheet(
             packs = reactionImagePacks,
+            isEncryptedRoom = isEncryptedRoom,
             resolvePreview = resolveReactionPreview,
             onImageSelected = { ref ->
                 onReact(ref.mxcUri)

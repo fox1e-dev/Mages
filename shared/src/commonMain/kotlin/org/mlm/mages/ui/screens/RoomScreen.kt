@@ -1095,6 +1095,8 @@ fun RoomScreen(
         PinnedMessagesSheet(
             pinnedMessages = state.pinnedMessages,
             canUnpin = state.pinAction.isEnabled,
+            reactionImagePaths = state.reactionImagePathByMxc,
+            reactionShortcodes = viewModel.reactionShortcodes,
             onEventClick = { eventId ->
                 viewModel.jumpToEvent(eventId)
                 viewModel.hidePinnedMessagesSheet()

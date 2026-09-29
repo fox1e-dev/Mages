@@ -560,7 +560,7 @@ object Notifier {
             val imageMessage = NotificationCompat.MessagingStyle.Message(messageBody, timestamp, sender)
                 .setData("image/*", previewUri)
             style.addMessage(imageMessage)
-            if (caption.isNotBlank()) {
+            if (caption.isNotBlank() && caption != messageBody) {
                 style.addMessage(NotificationCompat.MessagingStyle.Message(caption, timestamp, sender))
             }
         } else {

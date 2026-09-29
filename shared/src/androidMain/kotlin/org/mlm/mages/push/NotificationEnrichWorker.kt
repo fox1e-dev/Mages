@@ -238,7 +238,9 @@ class NotificationEnrichWorker(
                 val presentation = NotificationPresentation.of(
                     notification = rendered,
                     showPreview = settings.notificationShowPreview,
-                    redactedBody = applicationContext.getString(R.string.notif_new_message)
+                    redactedBody = applicationContext.getString(R.string.notif_new_message),
+                    // MessagingStyle labels the line with whoever sent it.
+                    senderShownByPlatform = true
                 )
                 val media = presentation.media
                     ?.takeIf { NotificationMediaPolicy.allowed(settings) }
@@ -248,7 +250,7 @@ class NotificationEnrichWorker(
                     context = applicationContext,
                     roomId = roomId,
                     roomName = rendered.roomName,
-                    senderName = presentation.title,
+                    senderName = rendered.sender,
                     senderUserId = rendered.senderUserId,
                     messageBody = presentation.body,
                     caption = presentation.bodyWithMedia,

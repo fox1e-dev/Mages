@@ -24,16 +24,10 @@ import org.mlm.mages.LocalMessageFontSize
 import org.mlm.mages.matrix.ReactionSummary
 import org.mlm.mages.ui.components.core.Avatar
 
-enum class ReactionChipStyle {
-    Timeline,
-    ThreadRoot,
-}
-
 @Composable
 fun ReactionChipsRow(
     chips: List<ReactionSummary>,
     modifier: Modifier = Modifier,
-    style: ReactionChipStyle = ReactionChipStyle.Timeline,
     maxVisible: Int? = null,
     avatarPathsByUserId: Map<String, String> = emptyMap(),
     imagePaths: Map<String, String> = emptyMap(),
@@ -45,6 +39,7 @@ fun ReactionChipsRow(
     if (chips.isEmpty()) return
 
     val visibleChips = maxVisible?.let { chips.take(it) } ?: chips
+    val hiddenCount = (maxVisible?.let { chips.size - it } ?: 0).coerceAtLeast(0)
 
     FlowRow(
         modifier = modifier.padding(start = 2.dp),
@@ -62,6 +57,22 @@ fun ReactionChipsRow(
                 onLongClick = onLongClick
             )
         }
+
+        if (hiddenCount > 0) {
+            Surface(
+                shape = RoundedCornerShape(percent = 50),
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerLowest)
+            ) {
+                Text(
+                    text = "+$hiddenCount",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+            }
+        }
     }
 }
 
@@ -75,8 +86,19 @@ private fun ReactionKeyLabel(
     imagePath: String?,
     shortcode: String?
 ) {
+    val fontSize = LocalMessageFontSize.current.sp
+    val labelSize = with(LocalDensity.current) { fontSize.toDp() * LABEL_SIZE_FACTOR }
+    val labelLineHeight = with(LocalDensity.current) { labelSize.toSp() }
+
     if (!key.startsWith("mxc://")) {
-        Text(text = key, fontSize = 16.sp, lineHeight = CHIP_LABEL_LINE_HEIGHT)
+        Text(
+            text = key,
+            fontSize = fontSize,
+            lineHeight = labelLineHeight,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = labelSize * MAX_LABEL_SPANS)
+        )
         return
     }
 
@@ -88,14 +110,14 @@ private fun ReactionKeyLabel(
                 .build(),
             contentDescription = shortcode,
             contentScale = ContentScale.Fit,
-            modifier = Modifier.size(CHIP_LABEL_HEIGHT)
+            modifier = Modifier.size(labelSize)
         )
         return
     }
 
     Box(
         modifier = Modifier
-            .size(CHIP_LABEL_HEIGHT)
+            .size(labelSize)
             .background(
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f),
                 shape = RoundedCornerShape(4.dp)
@@ -103,8 +125,14 @@ private fun ReactionKeyLabel(
     )
 }
 
-private val CHIP_LABEL_HEIGHT = 20.dp
-private val CHIP_LABEL_LINE_HEIGHT = 16.sp
+/** Line box and image tile stay equal so emoji and image chips align. */
+private const val LABEL_SIZE_FACTOR = 1.25f
+
+/** Bounds a hand-written reaction key so it cannot stretch a chip across the bubble. */
+private const val MAX_LABEL_SPANS = 6f
+
+/** Matches the senders the backend packs into `ReactionSummary.userIds`. */
+private const val MAX_CHIP_AVATARS = 3
 
 @Composable
 private fun ReactionChip(
@@ -151,8 +179,7 @@ private fun ReactionChip(
             )
 
             if (showAvatars && chip.userIds.isNotEmpty()) {
-                val maxAvatars = 5
-                val userIdsToShow = chip.userIds.take(maxAvatars)
+                val userIdsToShow = chip.userIds.take(MAX_CHIP_AVATARS)
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy((-6).dp),
@@ -162,8 +189,7 @@ private fun ReactionChip(
                         Avatar(
                             name = userId,
                             avatarPath = avatarPathsByUserId[userId],
-                            size = 20.dp,
-//                            modifier = Modifier.border(1.5.dp, outlineColor.copy(alpha = 0.9f), RoundedCornerShape(percent = 50))
+                            size = 20.dp
                         )
                     }
                 }

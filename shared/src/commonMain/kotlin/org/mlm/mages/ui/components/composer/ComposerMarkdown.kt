@@ -20,8 +20,7 @@ val MENTION_MARKDOWN = Regex("""\[([^\]]+)]\(https://matrix\.to/#/(@[^)]+)\)""")
  * so the markdown pass leaves it alone.
  */
 private val MENTION_ANCHOR = Regex(
-    """<a href="https://matrix\.to/#/[^"]+">(.*?)</a>""",
-    RegexOption.DOT_MATCHES_ALL
+    """<a href="https://matrix\.to/#/[^"]+">([\s\S]*?)</a>"""
 )
 
 /** An emote stands in as a markdown image while composing. */

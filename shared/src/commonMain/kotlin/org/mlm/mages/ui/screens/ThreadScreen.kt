@@ -41,7 +41,6 @@ import org.mlm.mages.ui.components.message.MessageBubbleRenderContext
 import org.mlm.mages.ui.components.message.MessageBubbleVariant
 import org.mlm.mages.ui.components.message.ReactionChipsRow
 import org.mlm.mages.ui.components.message.toBubbleModel
-import org.mlm.mages.ui.components.message.ReactionChipStyle
 import org.mlm.mages.ui.components.timeline.TimelineContent
 import org.mlm.mages.ui.components.timeline.TimelineEventItem
 import org.mlm.mages.ui.components.timeline.toTimelineContent
@@ -589,9 +588,9 @@ private fun ThreadRootMessage(
                 Spacer(Modifier.height(Spacing.sm))
                 ReactionChipsRow(
                     chips = reactionSummaries,
-                    style = ReactionChipStyle.ThreadRoot,
                     maxVisible = 6,
                     avatarPathsByUserId = state.avatarByUserId,
+                    imagePaths = state.reactionImagePathByMxc,
                     shortcodes = reactionShortcodes,
                     showAvatars = showReactionAvatars,
                     onClick = onReact,

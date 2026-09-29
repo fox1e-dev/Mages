@@ -27,6 +27,8 @@ import org.mlm.mages.ui.util.formatPinnedTimestamp
 fun PinnedMessagesSheet(
     pinnedMessages: List<PinnedMessageUi>,
     canUnpin: Boolean,
+    reactionImagePaths: Map<String, String> = emptyMap(),
+    reactionShortcodes: Map<String, String> = emptyMap(),
     onEventClick: (String) -> Unit,
     onUnpin: (String) -> Unit,
     onReact: (String, String) -> Unit,
@@ -150,6 +152,8 @@ fun PinnedMessagesSheet(
                                     event.reactions.isNotEmpty() -> ReactionChipsRow(
                                         chips = event.reactions,
                                         maxVisible = 6,
+                                        imagePaths = reactionImagePaths,
+                                        shortcodes = reactionShortcodes,
                                         onClick = { emoji -> onReact(pinned.eventId, emoji) }
                                     )
                                 }
