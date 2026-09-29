@@ -116,6 +116,7 @@ kotlin {
                 implementation(libs.androidx.lifecycle.process)
 
                 runtimeOnly(libs.maplibre.runtime.vulkan.android)
+                runtimeOnly(libs.coil.gif)
             }
         }
 
