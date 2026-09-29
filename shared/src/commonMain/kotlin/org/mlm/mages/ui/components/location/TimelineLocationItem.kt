@@ -2,6 +2,7 @@ package org.mlm.mages.ui.components.location
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -59,6 +60,7 @@ internal fun TimelineLocationItem(
     isOwnActiveShare: Boolean = false,
     isLive: Boolean = item.event.liveLocation?.isLive == true,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     onStopLiveLocation: (() -> Unit)? = null,
     senderDisplayName: String? = null,
     senderAvatarPath: String? = null,
@@ -78,13 +80,19 @@ internal fun TimelineLocationItem(
         ThemeMode.Light -> false
     }
 
+    val clickModifier = if (onLongClick != null) {
+        Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
+    } else {
+        Modifier.clickable(onClick = onClick)
+    }
+
     Surface(
-        onClick = onClick,
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
         modifier = modifier
             .padding(horizontal = Spacing.md, vertical = Spacing.xs)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .then(clickModifier),
     ) {
         Column {
             Row(
@@ -150,7 +158,7 @@ internal fun TimelineLocationItem(
                 Box(
                     modifier = Modifier
                         .matchParentSize()
-                        .clickable(onClick = onClick),
+                        .then(clickModifier),
                 )
 
                 if (isLive) {

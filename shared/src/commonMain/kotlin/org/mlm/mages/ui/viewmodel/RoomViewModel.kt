@@ -1522,7 +1522,7 @@ class RoomViewModel(
 
     fun shareMessage(event: MessageEvent) {
         launch {
-            val text = event.body.takeIf { it.isNotBlank() }
+            val text = (event.liveLocation?.geoUri ?: event.body).takeIf { it.isNotBlank() }
             val attachment = event.attachment
             val sticker = event.sticker
 

@@ -327,6 +327,7 @@ fun ThreadScreen(
                                     TimelineLocationItem(
                                         item = locItem,
                                         onClick = {},
+                                        onLongClick = { sheetEvent = locItem.event },
                                         senderDisplayName = locItem.event.senderDisplayName,
                                         senderAvatarPath = state.avatarByUserId[locItem.event.sender],
                                     )
@@ -336,6 +337,7 @@ fun ThreadScreen(
                                         item = locItem,
                                         isLive = locItem.event.liveLocation?.isLive == true,
                                         onClick = {},
+                                        onLongClick = { sheetEvent = locItem.event },
                                         senderDisplayName = locItem.event.senderDisplayName,
                                         senderAvatarPath = state.avatarByUserId[locItem.event.sender],
                                     )
@@ -370,6 +372,7 @@ fun ThreadScreen(
                                         TimelineLocationItem(
                                             item = locItem,
                                             onClick = {},
+                                            onLongClick = { sheetEvent = locItem.event },
                                             senderDisplayName = locItem.event.senderDisplayName,
                                             senderAvatarPath = state.avatarByUserId[locItem.event.sender],
                                         )
@@ -379,6 +382,7 @@ fun ThreadScreen(
                                             item = locItem,
                                             isLive = locItem.event.liveLocation?.isLive == true,
                                             onClick = {},
+                                            onLongClick = { sheetEvent = locItem.event },
                                             senderDisplayName = locItem.event.senderDisplayName,
                                             senderAvatarPath = state.avatarByUserId[locItem.event.sender],
                                         )

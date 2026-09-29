@@ -29,6 +29,7 @@ import mages.shared.generated.resources.message_info
 import mages.shared.generated.resources.retry
 import org.jetbrains.compose.resources.stringResource
 import org.mlm.mages.MessageEvent
+import org.mlm.mages.matrix.EventType
 import org.mlm.mages.matrix.ImagePackSummary
 import org.mlm.mages.matrix.SendState
 import org.mlm.mages.ui.displayPreview
@@ -160,7 +161,10 @@ fun MessageActionSheet(
                             MaterialTheme.colorScheme.error,
                         ) { onRemoveCaption(); onDismiss() }
                     }
-                } else if (event.sticker == null) {
+                } else if (event.sticker == null &&
+                    event.eventType != EventType.Location &&
+                    event.eventType != EventType.LiveLocation
+                ) {
                     ActionItem(Icons.Default.Edit, "Edit") { onEdit(); onDismiss() }
                 }
             }

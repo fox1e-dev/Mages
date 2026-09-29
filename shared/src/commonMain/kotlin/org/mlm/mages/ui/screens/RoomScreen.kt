@@ -791,8 +791,20 @@ fun RoomScreen(
                                             TimelineLocationItem(
                                                 item = locItem,
                                                 onClick = {
-                                                    coords?.let { (lat, lon) ->
-                                                        viewModel.showStaticLocationViewer(lat, lon)
+                                                    if (state.isSelectionMode) {
+                                                        viewModel.toggleSelected(locItem.event.eventId)
+                                                    } else {
+                                                        coords?.let { (lat, lon) ->
+                                                            viewModel.showStaticLocationViewer(lat, lon)
+                                                        }
+                                                    }
+                                                },
+                                                onLongClick = {
+                                                    if (state.isSelectionMode) {
+                                                        viewModel.toggleSelected(locItem.event.eventId)
+                                                    } else {
+                                                        sheetEvent = locItem.event
+                                                        viewModel.showMessageActions(locItem.event)
                                                     }
                                                 },
                                                 senderDisplayName = locItem.event.senderDisplayName,
@@ -808,7 +820,21 @@ fun RoomScreen(
                                                 item = locItem,
                                                 isLive = belongsToActiveSession && activeShare?.isLive == true,
                                                 isOwnActiveShare = locItem.event.sender == state.myUserId && belongsToActiveSession && activeShare?.isLive == true,
-                                                onClick = { viewModel.showLiveLocationMap() },
+                                                onClick = {
+                                                    if (state.isSelectionMode) {
+                                                        viewModel.toggleSelected(locItem.event.eventId)
+                                                    } else {
+                                                        viewModel.showLiveLocationMap()
+                                                    }
+                                                },
+                                                onLongClick = {
+                                                    if (state.isSelectionMode) {
+                                                        viewModel.toggleSelected(locItem.event.eventId)
+                                                    } else {
+                                                        sheetEvent = locItem.event
+                                                        viewModel.showMessageActions(locItem.event)
+                                                    }
+                                                },
                                                 onStopLiveLocation = if (locItem.event.sender == state.myUserId) viewModel::stopLiveLocation else null,
                                                 senderDisplayName = locItem.event.senderDisplayName,
                                                 senderAvatarPath = state.avatarByUserId[locItem.event.sender] ?: locItem.event.senderAvatarUrl,
