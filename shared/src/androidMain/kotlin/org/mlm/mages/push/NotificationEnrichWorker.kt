@@ -242,11 +242,8 @@ class NotificationEnrichWorker(
                 )
                 val media = presentation.media
                     ?.takeIf { NotificationMediaPolicy.allowed(settings) }
-                    ?.let {
-                        runCatching {
-                            port.mxcThumbnailToCache(it.mxcUri, PREVIEW_PX, PREVIEW_PX, crop = true)
-                        }.getOrNull()?.takeIf { path -> path.isNotBlank() }
-                    }
+                    ?.let { port.thumbnailToCache(it.attachment, PREVIEW_PX, PREVIEW_PX, false).getOrNull() }
+                    ?.takeIf { it.isNotBlank() }
 
                 Notifier.showConversationNotification(
                     context = applicationContext,
@@ -254,7 +251,7 @@ class NotificationEnrichWorker(
                     roomName = rendered.roomName,
                     senderName = presentation.title,
                     senderUserId = rendered.senderUserId,
-                    messageBody = presentation.body,
+                    messageBody = if (media != null) presentation.bodyWithMedia else presentation.body,
                     eventId = eventId,
                     timestamp = rendered.tsMs,
                     notificationId = notifId,

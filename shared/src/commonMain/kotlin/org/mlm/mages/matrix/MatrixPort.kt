@@ -5,6 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.mlm.mages.AttachmentInfo
 import org.mlm.mages.AttachmentKind
+import org.mlm.mages.EncFile
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.RoomSummary
 import org.mlm.mages.StickerInfo
@@ -312,6 +313,9 @@ data class NotificationContent(
     val attachmentKind: AttachmentKind? = null,
     val fileName: String? = null,
     val mxcUri: String? = null,
+    val thumbnailMxcUri: String? = null,
+    val encrypted: EncFile? = null,
+    val thumbnailEncrypted: EncFile? = null,
     val mime: String? = null,
     val width: Int? = null,
     val height: Int? = null,
@@ -344,6 +348,9 @@ fun NotificationContent.classify(): ClassifiedNotification = when (kind) {
         attachment = AttachmentInfo(
             kind = attachmentKind ?: AttachmentKind.File,
             mxcUri = mxcUri.orEmpty(),
+            thumbnailMxcUri = thumbnailMxcUri,
+            encrypted = encrypted,
+            thumbnailEncrypted = thumbnailEncrypted,
             fileName = fileName,
             mime = mime,
             width = width,
@@ -354,7 +361,15 @@ fun NotificationContent.classify(): ClassifiedNotification = when (kind) {
         body = body
     )
     NotificationContentKind.Sticker -> ClassifiedNotification.Sticker(
-        StickerInfo(mxcUri = mxcUri.orEmpty(), mime = mime, width = width, height = height)
+        StickerInfo(
+            mxcUri = mxcUri.orEmpty(),
+            thumbnailMxcUri = thumbnailMxcUri,
+            encrypted = encrypted,
+            thumbnailEncrypted = thumbnailEncrypted,
+            mime = mime,
+            width = width,
+            height = height,
+        )
     )
     NotificationContentKind.Poll ->
         ClassifiedNotification.Poll(question.orEmpty(), isEnd == true)

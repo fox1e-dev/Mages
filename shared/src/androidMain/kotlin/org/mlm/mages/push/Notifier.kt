@@ -18,6 +18,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
+import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import io.github.mlmgames.settings.core.SettingsRepository
 import kotlinx.coroutines.Dispatchers
@@ -536,8 +537,15 @@ object Notifier {
             ?.notification
             ?.let { NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(it) }
 
+        // SystemUI is a separate uid and cannot read a file:// path into app
+        // private storage, so a preview handed over that way silently never
+        // renders. FileProvider is the only way SystemUI can open it.
         val previewUri = mediaPath?.let { path ->
-            runCatching { File(path).takeIf { it.exists() } }.getOrNull()?.let { Uri.fromFile(it) }
+            runCatching {
+                File(path).takeIf { it.exists() }?.let {
+                    FileProvider.getUriForFile(context, "${context.packageName}.provider", it)
+                }
+            }.getOrNull()
         }
 
         val style = existingStyle ?: NotificationCompat.MessagingStyle(sender)

@@ -135,16 +135,12 @@ class LinuxPushHandler(
             )
             val mediaPath = presentation.media
                 ?.takeIf { NotificationMediaPolicy.allowed(settings) }
-                ?.let { media ->
-                    runCatching {
-                        port.mxcThumbnailToCache(media.mxcUri, 320, 320, crop = true)
-                    }.getOrNull()
-                }
+                ?.let { media -> port.thumbnailToCache(media.attachment, 320, 320, false).getOrNull() }
                 ?.takeIf { it.isNotBlank() }
 
             NotifierImpl.notifyMatrixEvent(
                 title = presentation.title,
-                body = presentation.body,
+                body = if (mediaPath != null) presentation.bodyWithMedia else presentation.body,
                 roomId = n.roomId,
                 eventId = n.eventId,
                 hasMention = n.hasMention,

@@ -226,16 +226,12 @@ actual fun BindNotifications(
 
                 val resolvedImage = presentation.media
                     ?.takeIf { NotificationMediaPolicy.allowed(settings) }
-                    ?.let { media ->
-                        runCatching {
-                            port.mxcThumbnailToCache(media.mxcUri, 320, 320, crop = true)
-                        }.getOrNull()
-                    }
+                    ?.let { media -> port.thumbnailToCache(media.attachment, 320, 320, false).getOrNull() }
                     ?.takeIf { it.isNotBlank() }
 
                 if (createBrowserNotification(
                         presentation.title,
-                        presentation.body,
+                        if (resolvedImage != null) presentation.bodyWithMedia else presentation.body,
                         resolvedIcon,
                         notification.roomId,
                         resolvedImage

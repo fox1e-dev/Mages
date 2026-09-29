@@ -11,6 +11,8 @@ import org.mlm.mages.matrix.notificationSummary
 data class NotificationPresentation(
     val title: String,
     val body: String,
+    /** Used instead of [body] when a preview image is actually attached. */
+    val bodyWithMedia: String,
     val media: NotificationMedia?,
     val accent: Accent
 ) {
@@ -56,7 +58,18 @@ data class NotificationPresentation(
                 else -> notificationSummary(content).take(BODY_MAX_CHARS)
             }
 
-            return NotificationPresentation(title, body, mediaOf(content), accent)
+            // A preview image stands in for the "Sent an image" label, so the
+            // label is only worth showing when there is no image. Whatever text
+            // the sender actually wrote is the caption and survives either way.
+            val caption = (content as? ClassifiedNotification.Media)?.body?.trim().orEmpty()
+            val bodyWithMedia = when {
+                !showPreview -> redactedBody
+                caption.isEmpty() -> ""
+                prefixSender -> "$sender: $caption".take(BODY_MAX_CHARS)
+                else -> caption.take(BODY_MAX_CHARS)
+            }
+
+            return NotificationPresentation(title, body, bodyWithMedia, mediaOf(content), accent)
         }
 
         private fun mediaOf(content: ClassifiedNotification): NotificationMedia? {
@@ -73,12 +86,7 @@ data class NotificationPresentation(
             }
             if (!previewable) return null
 
-            return NotificationMedia(
-                mxcUri = attachment.thumbnailMxcUri ?: attachment.mxcUri,
-                mime = attachment.mime,
-                width = attachment.width,
-                height = attachment.height
-            )
+            return NotificationMedia(attachment)
         }
 
         private fun StickerInfo.asAttachment() = AttachmentInfo(
@@ -95,9 +103,8 @@ data class NotificationPresentation(
     }
 }
 
-data class NotificationMedia(
-    val mxcUri: String,
-    val mime: String?,
-    val width: Int?,
-    val height: Int?
-)
+/**
+ * The full attachment, not just an mxc URI: in an encrypted room the URI alone
+ * is undecryptable and the fetch fails, so the encryption keys travel with it.
+ */
+data class NotificationMedia(val attachment: AttachmentInfo)

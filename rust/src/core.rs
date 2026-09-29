@@ -2832,7 +2832,8 @@ impl CoreClient {
         let uri = OwnedMxcUri::try_from(mxc_url.as_str())
             .map_err(|_| FfiError::Msg("invalid mxc uri".into()))?;
 
-        let settings = MediaThumbnailSettings::new(width.into(), height.into());
+        let settings =
+            MediaThumbnailSettings { animated: true, ..MediaThumbnailSettings::new(width.into(), height.into()) };
         let request = MediaRequestParameters {
             source: MediaSource::Plain(uri.clone()),
             format: MediaFormat::Thumbnail(settings),
@@ -4466,5 +4467,3 @@ pub(crate) fn map_send_queue_update(
         _ => None,
     }
 }
-
-

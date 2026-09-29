@@ -4237,9 +4237,13 @@ fn map_timeline_event(
                     event_type = EventType::Poll;
                 }
                 MsgLikeKind::Sticker(sticker_event) => {
-                    body = sticker_event.content().body.clone();
+                    let content = sticker_event.content();
+                    body = match content.body.trim() {
+                        "" => "Sent a sticker".to_owned(),
+                        alt => alt.to_owned(),
+                    };
                     event_type = EventType::Sticker;
-                    sticker = Some(extract_sticker(sticker_event.content()));
+                    sticker = Some(extract_sticker(content));
                 }
                 MsgLikeKind::LiveLocation(ll_state) => {
                     event_type = EventType::LiveLocation;
@@ -4304,7 +4308,10 @@ fn map_timeline_event(
         }
     }
 
-    if body.trim().is_empty() {
+    // `m.sticker` and attachments routinely carry an empty `body` (it is only
+    // alt text), yet the media is the whole message. Dropping the event here
+    // also shortens the mapped list, since callers `filter_map` over it.
+    if body.trim().is_empty() && sticker.is_none() && attachment.is_none() && poll_data.is_none() {
         return None;
     }
 
