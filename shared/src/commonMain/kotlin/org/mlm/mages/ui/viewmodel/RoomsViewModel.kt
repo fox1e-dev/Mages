@@ -352,7 +352,7 @@ class RoomsViewModel(
             byRoom.values.flatten().distinctBy { it.spaceId }.forEach { space ->
                 maybePrefetchParentSpaceAvatar(space.spaceId, space.avatarUrl)
             }
-            if (settings.value.hideSpaceRoomsInRoomList) recomputeGroupedRooms()
+            recomputeGroupedRooms()
         }
     }
 
@@ -563,6 +563,15 @@ class RoomsViewModel(
         } else {
             allFiltered.count { it.isDm && it.unreadCount > 0 }
         }
+        val spacesUnreadCount = s.allItems.count { item ->
+            if (item.isInvited || s.parentSpaces[item.roomId].isNullOrEmpty()) {
+                false
+            } else if (includeSilent) {
+                item.hasUnreadMessages || item.unreadCount > 0
+            } else {
+                item.unreadCount > 0
+            }
+        }
 
         val favourites  = sortUnread(list.filter { it.isFavourite })
         val lowPriority = sortUnread(list.filter { it.isLowPriority })
@@ -578,6 +587,7 @@ class RoomsViewModel(
                 unreadChatCount = unreadChatCount,
                 unreadGroupsCount = unreadGroupsCount,
                 unreadDmsCount = unreadDmsCount,
+                spacesUnreadCount = spacesUnreadCount,
             )
         }
         loadParentSpaces()

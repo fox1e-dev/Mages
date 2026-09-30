@@ -90,6 +90,7 @@ data class RoomsUiState(
     val unreadChatCount: Int = 0,
     val unreadGroupsCount: Int = 0,
     val unreadDmsCount: Int = 0,
+    val spacesUnreadCount: Int = 0,
 )
 
 enum class RoomTypeFilter {

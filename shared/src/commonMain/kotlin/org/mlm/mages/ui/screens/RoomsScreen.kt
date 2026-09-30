@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +30,7 @@ import org.mlm.mages.ui.components.core.StatusBanner
 import org.mlm.mages.ui.components.core.BannerType
 import org.mlm.mages.ui.components.sheets.RoomActionsSheet
 import org.mlm.mages.ui.theme.Spacing
+import org.mlm.mages.ui.theme.Limits
 import org.mlm.mages.ui.viewmodel.RoomsViewModel
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.StringResource
@@ -98,6 +100,7 @@ fun RoomsScreen(
                 unreadChatCount = state.unreadChatCount,
                 unreadGroupsCount = state.unreadGroupsCount,
                 unreadDmsCount = state.unreadDmsCount,
+                spacesUnreadCount = state.spacesUnreadCount,
                 onOpenSpaces = onOpenSpaces,
                 onOpenSecurity = onOpenSecurity,
                 onOpenStartChat = onOpenStartChat,
@@ -342,6 +345,7 @@ private fun RoomsTopBar(
     unreadChatCount: Int,
     unreadGroupsCount: Int,
     unreadDmsCount: Int,
+    spacesUnreadCount: Int,
     onSearchChange: (String) -> Unit,
     onToggleUnreadOnly: () -> Unit,
     onSetTypeFilter: (RoomTypeFilter) -> Unit,
@@ -355,7 +359,21 @@ private fun RoomsTopBar(
             title = { Text(stringResource(Res.string.rooms), fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             actions = {
                 IconButton(onClick = onOpenSpaces) {
-                    Icon(Icons.Default.Workspaces, stringResource(Res.string.spaces))
+                    Box {
+                        Icon(Icons.Default.Workspaces, stringResource(Res.string.spaces))
+                        if (spacesUnreadCount > 0) {
+                            Badge(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 4.dp, y = (-4).dp)
+                            ) {
+                                Text(
+                                    if (spacesUnreadCount > Limits.unreadBadgeCap) "${Limits.unreadBadgeCap}+" else spacesUnreadCount.toString(),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
                 }
                 IconButton(onClick = onOpenSecurity) {
                     Icon(Icons.Default.Settings, stringResource(Res.string.settings))
