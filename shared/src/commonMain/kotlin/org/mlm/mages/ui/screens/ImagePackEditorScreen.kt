@@ -61,6 +61,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.mlm.mages.matrix.ImagePackImageEntry
 import org.mlm.mages.ui.ImagePackEditorUiState
 import org.mlm.mages.ui.PackEditorEntry
@@ -620,7 +621,7 @@ private fun PendingImageCell(
             placeholder = { Text(stringResource(Res.string.sticker_pack_shortcode)) },
             supportingText = {
                 Text(
-                    text = pending.shortcodeError.orEmpty(),
+                    text = pending.shortcodeError?.let { stringResource(it) }.orEmpty(),
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis

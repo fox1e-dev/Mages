@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.mlm.mages.ui.components.AttachmentData
 import org.mlm.mages.ui.components.OutgoingMediaMode
 import org.mlm.mages.ui.theme.Spacing

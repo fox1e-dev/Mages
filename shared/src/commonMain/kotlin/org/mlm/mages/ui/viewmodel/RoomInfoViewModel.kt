@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import mages.shared.generated.resources.*
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.ActionAvailability
 import org.mlm.mages.matrix.ActionPresentation
@@ -207,7 +208,8 @@ class RoomInfoViewModel(
 
     fun refresh() {
         launch(onError = {
-            updateState { copy(isLoading = false, error = it.message ?: getString(Res.string.failed_to_load_room_info)) }
+            val failedToLoadRoomInfoFallback = getString(Res.string.failed_to_load_room_info)
+            updateState { copy(isLoading = false, error = it.message ?: failedToLoadRoomInfoFallback) }
         }) {
             updateState { copy(isLoading = true, error = null) }
 
@@ -254,6 +256,7 @@ class RoomInfoViewModel(
             val dmPartnerVerified = dmPartner != null &&
                 (runSafe { service.port.isUserVerified(dmPartner.userId) } ?: false)
 
+            val loadError = if (profile == null) getString(Res.string.failed_to_load_room_info) else null
             updateState {
                 copy(
                     profile = profile,
@@ -270,7 +273,7 @@ class RoomInfoViewModel(
                     historyVisibility = historyVis,
                     successor = successor,
                     predecessor = predecessor,
-                    error = if (profile == null) getString(Res.string.failed_to_load_room_info) else null,
+                    error = loadError,
                     myPowerLevel = powerLevel,
                     powerLevels = powerLevels,
                     canEditName = actionState?.editName?.isEnabled == true,
@@ -363,13 +366,15 @@ class RoomInfoViewModel(
     }
 
     private fun runSavingAction(
-        successMessage: String,
-        errorMessage: String,
+        successMessage: StringResource,
+        errorMessage: StringResource,
         refreshOnSuccess: Boolean = false,
         onSuccess: (suspend () -> Unit)? = null,
         block: suspend () -> Result<Unit>?,
     ) {
         launch {
+            val successText = getString(successMessage)
+            val errorText = getString(errorMessage)
             updateState { copy(isSaving = true) }
             val result = block()
             updateState { copy(isSaving = false) }
@@ -377,21 +382,23 @@ class RoomInfoViewModel(
             if (result?.isSuccess == true) {
                 if (refreshOnSuccess) refresh()
                 onSuccess?.invoke()
-                _events.send(Event.ShowSuccess(successMessage))
+                _events.send(Event.ShowSuccess(successText))
             } else {
-                _events.send(Event.ShowError(result.toUserMessage(errorMessage)))
+                _events.send(Event.ShowError(result.toUserMessage(errorText)))
             }
         }
     }
 
     private fun runAdminAction(
-        successMessage: String,
-        errorMessage: String,
+        successMessage: StringResource,
+        errorMessage: StringResource,
         refreshOnSuccess: Boolean = true,
         onSuccess: (suspend () -> Unit)? = null,
         block: suspend () -> Result<Unit>?,
     ) {
         launch {
+            val successText = getString(successMessage)
+            val errorText = getString(errorMessage)
             updateState { copy(isAdminBusy = true) }
             val result = block()
             updateState { copy(isAdminBusy = false) }
@@ -399,9 +406,9 @@ class RoomInfoViewModel(
             if (result?.isSuccess == true) {
                 if (refreshOnSuccess) refresh()
                 onSuccess?.invoke()
-                _events.send(Event.ShowSuccess(successMessage))
+                _events.send(Event.ShowSuccess(successText))
             } else {
-                _events.send(Event.ShowError(result.toUserMessage(errorMessage)))
+                _events.send(Event.ShowError(result.toUserMessage(errorText)))
             }
         }
     }
@@ -439,8 +446,8 @@ class RoomInfoViewModel(
         }
 
         runSavingAction(
-            successMessage = getString(Res.string.room_name_updated),
-            errorMessage = getString(Res.string.failed_to_update_name),
+            successMessage = Res.string.room_name_updated,
+            errorMessage = Res.string.failed_to_update_name,
             refreshOnSuccess = true,
         ) { runSafe { service.port.setRoomName(roomId, name) } }
     }
@@ -452,8 +459,8 @@ class RoomInfoViewModel(
         }
 
         runSavingAction(
-            successMessage = getString(Res.string.topic_updated),
-            errorMessage = getString(Res.string.failed_to_update_topic),
+            successMessage = Res.string.topic_updated,
+            errorMessage = Res.string.failed_to_update_topic,
             refreshOnSuccess = true,
         ) {
             val topic = currentState.editedTopic.trim()
@@ -508,8 +515,8 @@ class RoomInfoViewModel(
         }
 
         runAdminAction(
-            successMessage = getString(Res.string.visibility_updated),
-            errorMessage = getString(Res.string.failed_to_update_visibility),
+            successMessage = Res.string.visibility_updated,
+            errorMessage = Res.string.failed_to_update_visibility,
         ) { runSafe { service.port.setRoomDirectoryVisibility(roomId, v) } }
     }
 
@@ -520,8 +527,8 @@ class RoomInfoViewModel(
         }
 
         runAdminAction(
-            successMessage = getString(Res.string.encryption_enabled),
-            errorMessage = getString(Res.string.failed_to_enable_encryption),
+            successMessage = Res.string.encryption_enabled,
+            errorMessage = Res.string.failed_to_enable_encryption,
         ) { runSafe { service.port.enableRoomEncryption(roomId) } }
     }
 
@@ -563,8 +570,8 @@ class RoomInfoViewModel(
         }
 
         runAdminAction(
-            successMessage = getString(Res.string.join_rule_updated),
-            errorMessage = getString(Res.string.failed_to_update_join_rule),
+            successMessage = Res.string.join_rule_updated,
+            errorMessage = Res.string.failed_to_update_join_rule,
             onSuccess = {
                 updateState {
                     copy(
@@ -586,8 +593,8 @@ class RoomInfoViewModel(
         }
 
         runAdminAction(
-            successMessage = getString(Res.string.history_visibility_updated),
-            errorMessage = getString(Res.string.failed_to_update_history_visibility),
+            successMessage = Res.string.history_visibility_updated,
+            errorMessage = Res.string.failed_to_update_history_visibility,
         ) { runSafe { service.port.setRoomHistoryVisibility(roomId, visibility) } }
     }
 
@@ -598,8 +605,8 @@ class RoomInfoViewModel(
         }
 
         runAdminAction(
-            successMessage = getString(Res.string.room_aliases_updated),
-            errorMessage = getString(Res.string.failed_to_update_room_aliases),
+            successMessage = Res.string.room_aliases_updated,
+            errorMessage = Res.string.failed_to_update_room_aliases,
         ) { runSafe { service.port.setRoomCanonicalAlias(roomId, alias, altAliases) } }
     }
 
@@ -610,8 +617,8 @@ class RoomInfoViewModel(
         }
 
         runAdminAction(
-            successMessage = getString(Res.string.power_level_updated),
-            errorMessage = getString(Res.string.failed_to_update_power_level),
+            successMessage = Res.string.power_level_updated,
+            errorMessage = Res.string.failed_to_update_power_level,
         ) { runSafe { service.port.updatePowerLevelForUser(roomId, userId, powerLevel) } }
     }
 
@@ -622,8 +629,8 @@ class RoomInfoViewModel(
         }
 
         runAdminAction(
-            successMessage = getString(Res.string.permissions_updated),
-            errorMessage = getString(Res.string.failed_to_update_permissions),
+            successMessage = Res.string.permissions_updated,
+            errorMessage = Res.string.failed_to_update_permissions,
         ) { runSafe { service.port.applyPowerLevelChanges(roomId, changes) } }
     }
 

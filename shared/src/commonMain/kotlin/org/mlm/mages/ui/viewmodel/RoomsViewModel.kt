@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import io.github.mlmgames.settings.core.SettingsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import mages.shared.generated.resources.*
 import org.koin.core.component.inject
 import org.mlm.mages.MatrixService
 import org.mlm.mages.RoomSummary
@@ -24,6 +25,7 @@ import org.mlm.mages.ui.RoomTypeFilter
 import org.mlm.mages.ui.RoomsUiState
 import org.mlm.mages.ui.SpaceBadgeUi
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.StringResource
 import mages.shared.generated.resources.Res
 
 class RoomsViewModel(
@@ -269,6 +271,7 @@ class RoomsViewModel(
         val lastEvent = entry.latestEvent
         val lastType = determineMessageType(lastEvent)
         val lastBody = formatBodyForPreview(lastEvent, lastType)
+        val lastLabel = bodyLabelForPreview(lastEvent, lastType)
         val spaces = currentState.parentSpaces[entry.roomId].orEmpty()
 
         return RoomListItemUi(
@@ -283,6 +286,7 @@ class RoomsViewModel(
             isLowPriority = entry.isLowPriority,
             isInvited = entry.isInvited,
             lastMessageBody = lastBody,
+            lastMessageLabel = lastLabel,
             lastMessageSender = lastEvent?.sender,
             lastMessageType = lastType,
             lastMessageTs = lastEvent?.timestamp,
@@ -379,21 +383,28 @@ class RoomsViewModel(
 
     private fun formatBodyForPreview(event: LatestRoomEvent?, type: LastMessageType): String? {
         if (event == null) return null
-        if (type == LastMessageType.Call) {
-            return event.body ?: "Call"
-        }
+        if (type == LastMessageType.Call) return event.body
+        val body = event.body
+
+        if (body != null && body.startsWith("mxc://")) return null
+        return body
+    }
+
+    private fun bodyLabelForPreview(event: LatestRoomEvent?, type: LastMessageType): StringResource? {
+        if (event == null) return null
+        if (type == LastMessageType.Call) return if (event.body == null) Res.string.call else null
         val body = event.body
 
         if (body != null && body.startsWith("mxc://")) {
             return when (type) {
-                LastMessageType.Image -> "Photo"
-                LastMessageType.Video -> "Video"
-                LastMessageType.Audio -> "Audio"
-                LastMessageType.File  -> "File"
+                LastMessageType.Image -> Res.string.photo
+                LastMessageType.Video -> Res.string.video
+                LastMessageType.Audio -> Res.string.audio
+                LastMessageType.File  -> Res.string.file
                 else -> null
             }
         }
-        return body
+        return null
     }
 
     //  Private Methods
@@ -473,10 +484,10 @@ class RoomsViewModel(
             try {
                 connToken = service.portOrNull?.observeConnection(object : MatrixPort.ConnectionObserver {
                     override fun onConnectionChange(state: MatrixPort.ConnectionState) {
-                        val banner = when (state) {
-                            MatrixPort.ConnectionState.Disconnected -> "No connection"
-                            MatrixPort.ConnectionState.Reconnecting -> "Reconnecting..."
-                            MatrixPort.ConnectionState.Connecting -> "Connecting..."
+                        val banner: StringResource? = when (state) {
+                            MatrixPort.ConnectionState.Disconnected -> Res.string.no_connection
+                            MatrixPort.ConnectionState.Reconnecting -> Res.string.reconnecting
+                            MatrixPort.ConnectionState.Connecting -> Res.string.connecting
                             else -> null
                         }
                         updateState {

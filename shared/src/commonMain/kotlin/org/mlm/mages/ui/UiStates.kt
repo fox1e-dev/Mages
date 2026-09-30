@@ -3,6 +3,7 @@ package org.mlm.mages.ui
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import kotlinx.serialization.Serializable
+import mages.shared.generated.resources.*
 import org.mlm.mages.AttachmentKind
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.ReplyPreview
@@ -34,6 +35,7 @@ import org.mlm.mages.ui.components.AttachmentData
 import org.mlm.mages.ui.util.nowMs
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.StringResource
 import mages.shared.generated.resources.Res
 
 
@@ -60,7 +62,7 @@ data class RoomsUiState(
     val rooms: List<RoomSummary> = emptyList(),
     val roomSearchQuery: String = "",
     val unread: Map<String, Int> = emptyMap(),
-    val offlineBanner: String? = null,
+    val offlineBanner: StringResource? = null,
     val syncBanner: String? = null,
     val unreadOnly: Boolean = false,
     val typeFilter: RoomTypeFilter = RoomTypeFilter.All,
@@ -137,12 +139,12 @@ fun MessageEvent.displayPreview(): String {
     if (isRedacted) return stringResource(Res.string.message_deleted)
     if (utd != null) return stringResource(Res.string.unable_to_decrypt_this_message)
     mediaCaption()?.let { return it }
-    if (eventType == EventType.CallInvite) return "Call"
+    if (eventType == EventType.CallInvite) return stringResource(Res.string.call)
     if (eventType == EventType.CallNotification) {
         return when {
             body.contains("video", ignoreCase = true) -> stringResource(Res.string.video_call)
             body.contains("audio", ignoreCase = true) || body.contains("voice", ignoreCase = true) -> stringResource(Res.string.voice_call)
-            else -> "Call"
+            else -> stringResource(Res.string.call)
         }
     }
     if (sticker != null) return stringResource(Res.string.picker_sticker)
@@ -154,7 +156,7 @@ fun MessageEvent.displayPreview(): String {
         AttachmentKind.Audio -> if (attachment.isVoice == true) {
             stringResource(Res.string.voice_message)
         } else attachment.fileName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.audio)
-        AttachmentKind.File -> attachment.fileName?.takeIf { it.isNotBlank() } ?: "File"
+        AttachmentKind.File -> attachment.fileName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.file)
     }
 }
 
@@ -196,7 +198,7 @@ fun MessageEvent.toReplyPreview(): ReplyPreview {
             ReplyPreviewKind.Image -> stringResource(Res.string.image)
             ReplyPreviewKind.Video -> stringResource(Res.string.video)
             ReplyPreviewKind.Audio -> stringResource(Res.string.audio)
-            else -> "File"
+            else -> stringResource(Res.string.file)
         }
         val text = when (kind) {
             ReplyPreviewKind.Voice -> stringResource(Res.string.voice_message)
@@ -228,7 +230,7 @@ fun MessageEvent.toReplyPreview(): ReplyPreview {
             eventType == org.mlm.mages.matrix.EventType.CallNotification &&
                 (body.contains("audio", ignoreCase = true) || body.contains("voice", ignoreCase = true)) -> stringResource(Res.string.voice_call)
             eventType == org.mlm.mages.matrix.EventType.CallInvite ||
-                eventType == org.mlm.mages.matrix.EventType.CallNotification -> "Call"
+                eventType == org.mlm.mages.matrix.EventType.CallNotification -> stringResource(Res.string.call)
             eventType == org.mlm.mages.matrix.EventType.Location -> stringResource(Res.string.shared_location)
             eventType == org.mlm.mages.matrix.EventType.LiveLocation -> stringResource(Res.string.shared_live_location)
             else -> body.takeIf { it.isNotBlank() }
@@ -661,6 +663,7 @@ data class RoomListItemUi(
     val isInvited: Boolean = false,
 
     val lastMessageBody: String? = null,
+    val lastMessageLabel: StringResource? = null,
     val lastMessageSender: String? = null,
     val lastMessageType: LastMessageType = LastMessageType.Text,
     val lastMessageTs: Long? = null,
@@ -710,7 +713,7 @@ data class PendingPackImage(
     val mime: String,
     val shortcode: String = "",
     /** Set when the shortcode the user typed is not one the spec accepts. */
-    val shortcodeError: String? = null,
+    val shortcodeError: StringResource? = null,
     val previewPath: String? = null
 )
 

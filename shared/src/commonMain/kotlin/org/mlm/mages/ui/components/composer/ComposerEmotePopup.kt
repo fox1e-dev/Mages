@@ -25,6 +25,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import mages.shared.generated.resources.*
 import mages.shared.generated.resources.Res
 import mages.shared.generated.resources.emote_pack_unencrypted_notice
 import org.jetbrains.compose.resources.stringResource

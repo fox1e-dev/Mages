@@ -2,6 +2,7 @@ package org.mlm.mages.ui.viewmodel
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
+import mages.shared.generated.resources.*
 import org.mlm.mages.MatrixService
 import org.mlm.mages.accounts.AccountStore
 import org.mlm.mages.accounts.MatrixAccount

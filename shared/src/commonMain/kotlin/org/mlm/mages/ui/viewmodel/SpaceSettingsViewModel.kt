@@ -3,6 +3,7 @@ package org.mlm.mages.ui.viewmodel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.receiveAsFlow
+import mages.shared.generated.resources.*
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.matrix.RoomJoinRule
@@ -166,8 +167,8 @@ class SpaceSettingsViewModel(
         }
 
         runSavingBooleanAction(
-            successMessage = getString(Res.string.invitation_sent),
-            errorMessage = getString(Res.string.failed_to_invite_user),
+            successMessage = Res.string.invitation_sent,
+            errorMessage = Res.string.failed_to_invite_user,
             onSuccess = {
                 updateState { copy(showInviteUser = false, inviteUserId = "") }
             }
@@ -319,7 +320,7 @@ class SpaceSettingsViewModel(
             return
         }
         runSavingResultAction(
-            errorMessage = getString(Res.string.could_not_update_who_can_join_try_again),
+            errorMessage = Res.string.could_not_update_who_can_join_try_again,
             onSuccess = {
                 updateState {
                     copy(
@@ -355,7 +356,7 @@ class SpaceSettingsViewModel(
         val isPublic = currentState.newRoomIsPublic
         var createdRoomId: String? = null
         runSavingResultAction(
-            errorMessage = getString(Res.string.could_not_create_the_room_try_again),
+            errorMessage = Res.string.could_not_create_the_room_try_again,
             onSuccess = {
                 updateState { copy(showCreateRoom = false) }
                 _events.send(Event.ShowSuccess(getString(Res.string.room_added_to_space)))
@@ -473,7 +474,8 @@ class SpaceSettingsViewModel(
     private fun loadChildren() {
         launch(
             onError = { t ->
-                updateState { copy(isLoading = false, error = t.message ?: getString(Res.string.failed_to_load_children)) }
+                val failedToLoadChildrenFallback = getString(Res.string.failed_to_load_children)
+                updateState { copy(isLoading = false, error = t.message ?: failedToLoadChildrenFallback) }
             }
         ) {
             loadChildrenNow()
@@ -512,7 +514,8 @@ class SpaceSettingsViewModel(
 
             updateState { copy(children = children, isLoading = false) }
         } else {
-            updateState { copy(isLoading = false, error = result.toUserMessage(getString(Res.string.failed_to_load_children))) }
+            val failedToLoadChildrenFallback2 = getString(Res.string.failed_to_load_children)
+            updateState { copy(isLoading = false, error = result.toUserMessage(failedToLoadChildrenFallback2)) }
         }
     }
 

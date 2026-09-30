@@ -3,6 +3,7 @@ package org.mlm.mages.ui.viewmodel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
+import mages.shared.generated.resources.*
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.DirectoryUser
 import org.mlm.mages.matrix.PublicRoom
@@ -315,19 +316,19 @@ class DiscoverViewModel(
         return (trimmed.startsWith("#") || trimmed.startsWith("!")) && trimmed.contains(":")
     }
 
-    private fun RoomPreview.toDirectJoinPreview(target: String): DirectJoinPreview {
+    private suspend fun RoomPreview.toDirectJoinPreview(target: String): DirectJoinPreview {
         val title = name ?: canonicalAlias ?: roomId
         val subtitle = when (membership) {
-            RoomPreviewMembership.Joined -> "Already joined"
-            RoomPreviewMembership.Invited -> "You are invited to this room"
-            RoomPreviewMembership.Knocked -> "Already requested access"
-            RoomPreviewMembership.Banned -> "You are banned from this room"
+            RoomPreviewMembership.Joined -> getString(Res.string.already_joined)
+            RoomPreviewMembership.Invited -> getString(Res.string.you_are_invited_to_this_room)
+            RoomPreviewMembership.Knocked -> getString(Res.string.already_requested_access)
+            RoomPreviewMembership.Banned -> getString(Res.string.you_are_banned_from_this_room)
             else -> when (joinRule) {
-                RoomJoinRule.Public -> "Anyone can join"
-                RoomJoinRule.Knock, RoomJoinRule.KnockRestricted -> "Knock required before joining"
-                RoomJoinRule.Restricted -> "Restricted room membership"
-                RoomJoinRule.Invite -> "Invite only"
-                null -> "Join rule unavailable"
+                RoomJoinRule.Public -> getString(Res.string.anyone_can_join)
+                RoomJoinRule.Knock, RoomJoinRule.KnockRestricted -> getString(Res.string.knock_required_before_joining)
+                RoomJoinRule.Restricted -> getString(Res.string.restricted_room_membership)
+                RoomJoinRule.Invite -> getString(Res.string.invite_only)
+                null -> getString(Res.string.join_rule_unavailable)
             }
         }
 
@@ -346,9 +347,9 @@ class DiscoverViewModel(
         }
 
         val actionLabel = when (action) {
-            DirectJoinAction.Join -> "Join"
-            DirectJoinAction.Knock -> "Knock"
-            DirectJoinAction.None -> "Unavailable"
+            DirectJoinAction.Join -> getString(Res.string.join)
+            DirectJoinAction.Knock -> getString(Res.string.knock)
+            DirectJoinAction.None -> getString(Res.string.unavailable)
         }
 
         return DirectJoinPreview(

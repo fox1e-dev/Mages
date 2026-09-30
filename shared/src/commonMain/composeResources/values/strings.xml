@@ -1289,10 +1289,6 @@
         <item quantity="one">%1$d item</item>
         <item quantity="other">%1$d items</item>
     </plurals>
-    <plurals name="forwarded_rooms">
-        <item quantity="one">Forwarded to %1$d/%2$d room</item>
-        <item quantity="other">Forwarded to %1$d/%2$d rooms</item>
-    </plurals>
     <plurals name="poll_vote_count">
         <item quantity="one">%1$d vote</item>
         <item quantity="other">%1$d votes</item>
@@ -1315,4 +1311,8 @@
     <string name="stop">Stop</string>
     <string name="user">User</string>
     <string name="view">View</string>
+    <string name="forwarded_room_one">Forwarded to %1$d/%2$d room</string>
+    <string name="forwarded_room_other">Forwarded to %1$d/%2$d rooms</string>
+    <string name="reacted_with_an_image">Reacted with an image</string>
+    <string name="poll_summary_with_question">%1$s: %2$s</string>
 </resources>

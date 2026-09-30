@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import mages.shared.generated.resources.*
 import mages.shared.generated.resources.Res
 import mages.shared.generated.resources.ongoing_call
 import mages.shared.generated.resources.tap_to_return

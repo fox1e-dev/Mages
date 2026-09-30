@@ -21,6 +21,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
+import mages.shared.generated.resources.*
 import org.mlm.mages.ui.LastMessageType
 import org.mlm.mages.ui.RoomListItemUi
 import org.mlm.mages.ui.components.core.Avatar
@@ -175,7 +176,7 @@ fun RoomListItem(
                 ) {
                     val preview = formatMessagePreview(
                         type = item.lastMessageType,
-                        body = item.lastMessageBody,
+                        body = item.lastMessageBody ?: item.lastMessageLabel?.let { stringResource(it) },
                         sender = item.lastMessageSender,
                         isDm = item.isDm
                     )
@@ -208,9 +209,7 @@ fun RoomListItem(
 
             Spacer(Modifier.width(Spacing.sm))
 
-            val timeLabel = remember(item.lastMessageTs) {
-                item.lastMessageTs?.let { formatRelativeTime(it) }
-            }
+            val timeLabel = item.lastMessageTs?.let { formatRelativeTime(it) }
             if (timeLabel != null) {
                 Text(
                     text = timeLabel,
@@ -283,9 +282,10 @@ fun InviteListItem(
                 )
 
                 // Show topic if we have one (reusing lastMessageBody field for now)
-                if (!item.lastMessageBody.isNullOrBlank()) {
+                val topic = item.lastMessageBody ?: item.lastMessageLabel?.let { stringResource(it) }
+                if (!topic.isNullOrBlank()) {
                     Text(
-                        text = item.lastMessageBody,
+                        text = topic,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -354,7 +354,7 @@ private fun formatMessagePreview(
         )
 
         LastMessageType.File -> MessagePreview(
-            text = senderPrefix + (body?.takeIf { !it.startsWith("mxc://") } ?: "File"),
+            text = senderPrefix + (body?.takeIf { !it.startsWith("mxc://") } ?: stringResource(Res.string.file)),
             icon = Icons.Default.AttachFile
         )
 
@@ -369,12 +369,12 @@ private fun formatMessagePreview(
         )
 
         LastMessageType.Poll -> MessagePreview(
-            text = senderPrefix + "Poll",
+            text = senderPrefix + stringResource(Res.string.picker_poll),
             icon = Icons.Default.Poll
         )
 
         LastMessageType.Call -> MessagePreview(
-            text = senderPrefix + "Call",
+            text = senderPrefix + stringResource(Res.string.call),
             icon = Icons.Default.Call
         )
 
@@ -423,7 +423,7 @@ fun formatRelativeTime(timestamp: Long): String {
             "${pad2(localMessage.hour)}:${pad2(localMessage.minute)}"
         }
 
-        localNow.date.minus(1, DateTimeUnit.DAY) == localMessage.date -> "Yesterday"
+        localNow.date.minus(1, DateTimeUnit.DAY) == localMessage.date -> stringResource(Res.string.yesterday)
         duration.inWholeDays < 7 -> {
             localMessage.dayOfWeek.name.lowercase()
                 .replaceFirstChar { it.uppercase() }

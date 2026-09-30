@@ -22,7 +22,7 @@ data class NotificationPresentation(
     companion object {
         private const val BODY_MAX_CHARS = 240
 
-        fun of(
+        suspend fun of(
             notification: RenderedNotification,
             showPreview: Boolean,
             redactedBody: String,

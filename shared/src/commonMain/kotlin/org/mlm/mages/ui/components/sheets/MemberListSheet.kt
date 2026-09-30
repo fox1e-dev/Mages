@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.theme.Sizes
@@ -158,7 +159,7 @@ private fun MembershipBadge(membership: String) {
         "join" -> MaterialTheme.colorScheme.primary to stringResource(Res.string.member)
         "invite" -> MaterialTheme.colorScheme.tertiary to stringResource(Res.string.invited)
         "ban" -> MaterialTheme.colorScheme.error to stringResource(Res.string.banned)
-        "leave" -> MaterialTheme.colorScheme.outline to "Left"
+        "leave" -> MaterialTheme.colorScheme.outline to stringResource(Res.string.left)
         else -> MaterialTheme.colorScheme.outline to membership
     }
     

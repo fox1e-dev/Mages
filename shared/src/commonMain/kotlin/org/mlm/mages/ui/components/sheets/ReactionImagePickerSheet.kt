@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import mages.shared.generated.resources.Res
 import mages.shared.generated.resources.picker_no_reaction_images
 import mages.shared.generated.resources.picker_search_images

@@ -2,6 +2,7 @@ package org.mlm.mages.ui.viewmodel
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
+import mages.shared.generated.resources.*
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.RoomJoinRule
 import org.mlm.mages.matrix.RoomListMembership
@@ -130,11 +131,12 @@ class SpaceDetailViewModel(
     private fun loadHierarchy(from: String? = null) {
         launch(
             onError = { t ->
+                val text = t.message ?: getString(Res.string.failed_to_load_hierarchy)
                 updateState { 
                     copy(
                         isLoading = false,
                         isLoadingMore = false,
-                        error = t.message ?: getString(Res.string.failed_to_load_hierarchy)
+                        error = text
                     ) 
                 }
             }
@@ -191,11 +193,12 @@ class SpaceDetailViewModel(
                     )
                 }
             } else {
+                val text = result.toUserMessage(getString(Res.string.failed_to_load_space_contents))
                 updateState { 
                     copy(
                         isLoading = false,
                         isLoadingMore = false,
-                        error = result.toUserMessage(getString(Res.string.failed_to_load_space_contents))
+                        error = text
                     ) 
                 }
             }

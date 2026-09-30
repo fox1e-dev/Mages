@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mages.shared.generated.resources.*
 import org.koin.compose.koinInject
 import org.mlm.mages.emoji.RecentEmojiStore
 import org.mlm.mages.ui.theme.Spacing
@@ -31,7 +32,7 @@ fun EmojiPickerSheet(
         if (recent.isEmpty()) {
             emojiCategories
         } else {
-            listOf(EmojiCategory(stringResource(Res.string.recent), recent.map { it.emoji })) + emojiCategories
+            listOf(EmojiCategory(Res.string.recent, recent.map { it.emoji })) + emojiCategories
         }
     }
 
@@ -56,7 +57,7 @@ fun EmojiPickerSheet(
                     Tab(
                         selected = category == selectedCategory,
                         onClick = { selectedCategory = category },
-                        text = { Text(category.name, style = MaterialTheme.typography.labelSmall) }
+                        text = { Text(stringResource(category.name), style = MaterialTheme.typography.labelSmall) }
                     )
                 }
             }

@@ -3,6 +3,7 @@ package org.mlm.mages.ui.util
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
+import mages.shared.generated.resources.*
 import okio.Path.Companion.toPath
 import kotlin.math.roundToInt
 import kotlin.time.Clock

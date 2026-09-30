@@ -2,6 +2,7 @@ package org.mlm.mages.push
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.coroutines.test.runTest
 import org.mlm.mages.AttachmentKind
 import org.mlm.mages.matrix.NotificationContent
 import org.mlm.mages.matrix.NotificationContentKind
@@ -11,7 +12,7 @@ import org.mlm.mages.matrix.RenderedNotification
 class NotificationPresentationTest {
 
     @Test
-    fun dmNamesTheSenderInItsTitleOnly() {
+    fun dmNamesTheSenderInItsTitleOnly() = runTest {
         val dm = presentation(sender = "Alice", roomName = "Alice", isDm = true)
 
         assertEquals("Alice", dm.title)
@@ -19,7 +20,7 @@ class NotificationPresentationTest {
     }
 
     @Test
-    fun roomTitlesLeaveTheSenderToTheBody() {
+    fun roomTitlesLeaveTheSenderToTheBody() = runTest {
         val room = presentation(sender = "Alice", roomName = "Book Club", isDm = false)
 
         assertEquals("Book Club", room.title)
@@ -27,7 +28,7 @@ class NotificationPresentationTest {
     }
 
     @Test
-    fun platformLabelledLinesNeverRepeatTheSender() {
+    fun platformLabelledLinesNeverRepeatTheSender() = runTest {
         val room = presentation(
             sender = "Alice",
             roomName = "Book Club",
@@ -39,7 +40,7 @@ class NotificationPresentationTest {
     }
 
     @Test
-    fun captionsFollowTheSameRuleAsBody() {
+    fun captionsFollowTheSameRuleAsBody() = runTest {
         val photo = NotificationContent(
             kind = NotificationContentKind.Media,
             attachmentKind = AttachmentKind.Image,
@@ -64,7 +65,7 @@ class NotificationPresentationTest {
         assertEquals("at the beach", labelled.bodyWithMedia)
     }
 
-    private fun presentation(
+    private suspend fun presentation(
         sender: String,
         roomName: String,
         isDm: Boolean,

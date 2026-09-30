@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.mlm.mages.matrix.PollData
 import org.mlm.mages.matrix.PollKind
 import org.mlm.mages.matrix.PollOption
@@ -110,7 +111,7 @@ fun PollBubble(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = pluralStringResource(Res.plurals.poll_vote_count, poll.totalVotes, poll.totalVotes),
+                text = pluralStringResource(Res.plurals.poll_vote_count, poll.totalVotes.toInt(), poll.totalVotes),
                 style = MaterialTheme.typography.labelSmall,
                 color = contentColor.copy(alpha = 0.7f)
             )

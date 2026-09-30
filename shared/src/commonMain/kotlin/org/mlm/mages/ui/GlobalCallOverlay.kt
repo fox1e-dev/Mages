@@ -18,6 +18,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.mlm.mages.calls.CallManager
 import org.mlm.mages.platform.CallWebViewHost
 import org.mlm.mages.platform.SystemBarsEffect

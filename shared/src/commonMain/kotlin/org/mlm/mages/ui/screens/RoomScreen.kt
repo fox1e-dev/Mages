@@ -78,7 +78,6 @@ import org.mlm.mages.ui.util.formatTimelineDate
 import org.mlm.mages.ui.util.formatTypingText
 import org.mlm.mages.ui.util.rememberTopVisibleRoomEventTimestamp
 import org.mlm.mages.ui.viewmodel.RoomViewModel
-import org.jetbrains.compose.resources.stringResource
 import mages.shared.generated.resources.*
 import org.mlm.mages.ui.components.snackbar.snackbarHost
 import org.mlm.mages.ui.components.snackbar.rememberErrorPoster
@@ -97,6 +96,7 @@ import org.mlm.mages.ui.components.message.toBubbleModel
 import org.mlm.mages.ui.components.timeline.TimelineContent
 import org.mlm.mages.ui.components.timeline.TimelineEventItem
 import org.mlm.mages.ui.components.timeline.toTimelineContent
+import org.jetbrains.compose.resources.getString
 
 @Suppress("NewApi")
 @Composable
@@ -688,6 +688,7 @@ fun RoomScreen(
                     .associate { event -> event.sender to (event.senderDisplayName ?: event.sender) }
             }
 
+            val roomLabel = stringResource(Res.string.room)
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -695,7 +696,7 @@ fun RoomScreen(
                 RoomUpgradeBanner(
                     successor = state.successor,
                     predecessor = state.predecessor,
-                    onNavigateToRoom = { roomId -> onNavigateToRoom(roomId, "Room") }
+                    onNavigateToRoom = { roomId -> onNavigateToRoom(roomId, roomLabel) }
                 )
 
                 if (state.liveLocationShares.values.any { it.isLive }) {

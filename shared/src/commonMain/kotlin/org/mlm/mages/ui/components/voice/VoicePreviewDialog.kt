@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import mages.shared.generated.resources.*
 import org.mlm.mages.platform.PlaybackState
 import org.mlm.mages.platform.createAudioPlayer
 import org.mlm.mages.ui.theme.Spacing
@@ -106,7 +107,7 @@ fun VoicePreviewDialog(
                         } else {
                             Icon(
                                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = if (isPlaying) stringResource(Res.string.pause) else "Play",
+                                contentDescription = if (isPlaying) stringResource(Res.string.pause) else stringResource(Res.string.play),
                                 tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(26.dp)
                             )

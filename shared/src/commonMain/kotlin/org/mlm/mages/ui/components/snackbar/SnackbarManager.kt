@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import mages.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import mages.shared.generated.resources.Res
 import mages.shared.generated.resources.copy

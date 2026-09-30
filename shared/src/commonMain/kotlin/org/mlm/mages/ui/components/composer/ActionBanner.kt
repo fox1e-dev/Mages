@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.ui.components.message.ReplyPreview
 import org.mlm.mages.ui.theme.Spacing

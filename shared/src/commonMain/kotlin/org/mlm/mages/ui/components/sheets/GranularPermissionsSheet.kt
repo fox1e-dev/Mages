@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.mlm.mages.matrix.RoomPowerLevelChanges
 import org.mlm.mages.matrix.RoomPowerLevels
 import org.mlm.mages.ui.theme.Spacing
@@ -296,9 +297,9 @@ private fun PermissionSliderRow(
 private fun RoleBadge(level: Long) {
     val (text, color) = when {
         level >= 100 -> stringResource(Res.string.admin) to MaterialTheme.colorScheme.primary
-        level >= 50 -> "Mod" to MaterialTheme.colorScheme.tertiary
+        level >= 50 -> stringResource(Res.string.mod) to MaterialTheme.colorScheme.tertiary
         level > 0 -> stringResource(Res.string.custom) to MaterialTheme.colorScheme.secondary
-        else -> "User" to MaterialTheme.colorScheme.onSurfaceVariant
+        else -> stringResource(Res.string.user) to MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Surface(

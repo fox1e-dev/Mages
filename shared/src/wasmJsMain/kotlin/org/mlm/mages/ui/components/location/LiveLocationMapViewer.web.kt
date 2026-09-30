@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import mages.shared.generated.resources.*
 import org.mlm.mages.matrix.LiveLocationShare
 import org.mlm.mages.ui.theme.Spacing
 import org.jetbrains.compose.resources.stringResource

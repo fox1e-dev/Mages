@@ -21,6 +21,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import mages.shared.generated.resources.*
+import org.jetbrains.compose.resources.getString
 import org.mlm.mages.matrix.MatrixPort
 import org.mlm.mages.ui.theme.Spacing
 import org.jetbrains.compose.resources.stringResource
@@ -73,12 +75,12 @@ fun CreateRoomSheet(
 
         if (!isValidAlias(roomAlias)) {
             aliasAvailability = AliasAvailability.Invalid
-            aliasCheckMessage = stringResource(Res.string.invalid_characters_in_address)
+            aliasCheckMessage = getString(Res.string.invalid_characters_in_address)
             return@LaunchedEffect
         }
 
         aliasAvailability = AliasAvailability.Checking
-        aliasCheckMessage = stringResource(Res.string.checking_availability)
+        aliasCheckMessage = getString(Res.string.checking_availability)
         delay(400)
 
         scope.launch {
@@ -89,10 +91,10 @@ fun CreateRoomSheet(
 
             if (resolved != null) {
                 aliasAvailability = AliasAvailability.Taken
-                aliasCheckMessage = stringResource(Res.string.this_address_is_already_in_use)
+                aliasCheckMessage = getString(Res.string.this_address_is_already_in_use)
             } else {
                 aliasAvailability = AliasAvailability.Available
-                aliasCheckMessage = stringResource(Res.string.this_address_is_available)
+                aliasCheckMessage = getString(Res.string.this_address_is_available)
             }
         }
     }
@@ -279,7 +281,7 @@ fun CreateRoomSheet(
                                     roomAlias.ifBlank { null }
                                 )
                             } catch (e: Exception) {
-                                errorMessage = e.message ?: stringResource(Res.string.failed_to_create_room)
+                                errorMessage = e.message ?: getString(Res.string.failed_to_create_room)
                                 isCreating = false
                             }
                         }

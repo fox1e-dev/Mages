@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import mages.shared.generated.resources.*
 import org.koin.core.component.inject
 import org.mlm.mages.*
 import org.mlm.mages.calls.CallManager
@@ -1153,10 +1154,11 @@ class RoomViewModel(
                     resolveMessageInfoAvatars(sorted)
                 }
                 .onFailure { error ->
+                    val text = error.message ?: getString(Res.string.failed_to_load_read_receipts)
                     updateState {
                         copy(
                             isLoadingMessageInfo = false,
-                            messageInfoError = error.message ?: getString(Res.string.failed_to_load_read_receipts),
+                            messageInfoError = text,
                             messageInfoEntries = emptyList(),
                             messageInfoReadersTruncated = false,
                         )
@@ -1186,12 +1188,13 @@ class RoomViewModel(
     fun selectMemberForAction(userId: String) {
         val member = currentState.roomMembers.firstOrNull { it.userId == userId } ?: return
         launch {
+            val reason = getString(Res.string.checking_whether_you_can_start_a_conversation)
             updateState {
                 copy(
                     selectedMemberForAction = member,
                     selectedMemberDmAction = ActionAvailabilityUi(
                         presentation = ActionPresentationUi.Disabled,
-                        reason = getString(Res.string.checking_whether_you_can_start_a_conversation),
+                        reason = reason,
                     ),
                 )
             }
@@ -2277,7 +2280,7 @@ class RoomViewModel(
             if (success) {
                 _events.send(Event.ShowSuccess(getString(Res.string.message_forwarded)))
                 val targetName = currentState.forwardableRooms
-                    .find { it.roomId == targetRoomId }?.name ?: "Room"
+                    .find { it.roomId == targetRoomId }?.name ?: getString(Res.string.room)
                 _events.send(Event.NavigateToRoom(targetRoomId, targetName))
             } else {
                 _events.send(Event.ShowError(getString(Res.string.failed_to_forward_message)))

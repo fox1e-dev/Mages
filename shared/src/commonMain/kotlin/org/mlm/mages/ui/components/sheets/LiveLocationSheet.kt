@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.mlmgames.settings.core.annotations.SettingPlatform
 import io.github.mlmgames.settings.core.platform.currentPlatform
+import mages.shared.generated.resources.*
 import org.mlm.mages.platform.LiveLocationProvider
 import org.mlm.mages.ui.theme.Spacing
 import org.jetbrains.compose.resources.stringResource

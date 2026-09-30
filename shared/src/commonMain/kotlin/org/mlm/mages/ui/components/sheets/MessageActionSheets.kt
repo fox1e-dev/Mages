@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.mlmgames.settings.core.annotations.SettingPlatform
 import io.github.mlmgames.settings.core.platform.currentPlatform
+import mages.shared.generated.resources.*
 import mages.shared.generated.resources.Res
 import mages.shared.generated.resources.message_info
 import mages.shared.generated.resources.retry
@@ -123,7 +124,7 @@ fun MessageActionSheet(
                     onDismiss()
                 }
             }
-            ActionItem(Icons.Default.ContentCopy, "Copy") {
+            ActionItem(Icons.Default.ContentCopy, stringResource(Res.string.copy)) {
                 clipboardManager.setText(AnnotatedString(event.body))
                 onDismiss()
             }
@@ -165,7 +166,7 @@ fun MessageActionSheet(
                     event.eventType != EventType.Location &&
                     event.eventType != EventType.LiveLocation
                 ) {
-                    ActionItem(Icons.Default.Edit, "Edit") { onEdit(); onDismiss() }
+                    ActionItem(Icons.Default.Edit, stringResource(Res.string.edit)) { onEdit(); onDismiss() }
                 }
             }
             if (isMine || (canDeleteOthers && event.eventId.isNotBlank())) {
@@ -175,7 +176,7 @@ fun MessageActionSheet(
                 if (isPinned && onUnpin != null) {
                     ActionItem(Icons.Default.PushPin, stringResource(Res.string.unpin)) { onUnpin(); onDismiss() }
                 } else if (!isPinned && onPin != null) {
-                    ActionItem(Icons.Default.PushPin, "Pin") { onPin(); onDismiss() }
+                    ActionItem(Icons.Default.PushPin, stringResource(Res.string.pin)) { onPin(); onDismiss() }
                 }
             }
             ActionItem(Icons.Default.Deselect, stringResource(Res.string.select)) { onSelect(); onDismiss() }

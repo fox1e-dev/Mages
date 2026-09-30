@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import mages.shared.generated.resources.*
 import org.mlm.mages.platform.RecordingState
 import org.mlm.mages.platform.createAudioRecorder
 import org.mlm.mages.ui.theme.Spacing

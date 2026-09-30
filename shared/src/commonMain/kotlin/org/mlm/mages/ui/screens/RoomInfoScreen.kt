@@ -363,7 +363,7 @@ fun RoomInfoScreen(
                         SettingsNavRow(
                             icon = Icons.Default.Notifications,
                             title = stringResource(Res.string.notifications),
-                            subtitle = state.notificationMode?.displayName ?: stringResource(Res.string.default),
+                            subtitle = state.notificationMode?.displayName() ?: stringResource(Res.string.default),
                             onClick = onShowNotificationSettings
                         )
                         HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
@@ -962,7 +962,7 @@ private fun SettingsCopyRow(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            Icon(Icons.Default.ContentCopy, "Copy", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            Icon(Icons.Default.ContentCopy, stringResource(Res.string.copy), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -1121,7 +1121,7 @@ private fun getRoleName(powerLevel: Long): String = when {
     powerLevel >= 100 -> stringResource(Res.string.admin)
     powerLevel >= 50 -> stringResource(Res.string.moderator)
     powerLevel > 0 -> stringResource(Res.string.role_custom_level, powerLevel)
-    else -> "User"
+    else -> stringResource(Res.string.user)
 }
 
 @Composable

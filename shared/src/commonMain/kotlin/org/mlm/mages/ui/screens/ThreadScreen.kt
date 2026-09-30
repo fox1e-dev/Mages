@@ -72,6 +72,7 @@ fun ThreadRoute(
 
     LaunchedEffect(Unit) { viewModel.refreshImagePacks() }
 
+    val messageNotFound = stringResource(Res.string.message_not_found)
     ThreadScreen(
         state = state,
         myUserId = viewModel.myUserId,
@@ -79,7 +80,7 @@ fun ThreadRoute(
         onBack = onBack,
         onLoadMore = viewModel::loadMore,
         onClearFocus = viewModel::clearFocusedEvent,
-        onFocusMissing = { postError(stringResource(Res.string.message_not_found)) },
+        onFocusMissing = { postError(messageNotFound) },
         onSend = {
             scope.launch {
                 if (state.editingEvent != null) {

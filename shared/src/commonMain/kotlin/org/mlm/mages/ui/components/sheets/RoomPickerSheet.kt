@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.mlm.mages.AttachmentKind
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.ui.ForwardableRoom
@@ -225,7 +226,7 @@ private fun RoomPickerItem(room: ForwardableRoom, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    if (room.isDm) stringResource(Res.string.direct_message) else "Room",
+                    if (room.isDm) stringResource(Res.string.direct_message) else stringResource(Res.string.room),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -11,6 +11,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.mlmgames.settings.core.annotations.SettingPlatform
 import io.github.mlmgames.settings.core.platform.currentPlatform
+import mages.shared.generated.resources.*
 import org.mlm.mages.matrix.LiveLocationShare
 import org.mlm.mages.platform.LiveLocationProvider
 import org.mlm.mages.ui.theme.Spacing
@@ -93,13 +94,13 @@ fun LiveLocationBanner(
             
             if (isMeSharing && onStopSharing != null) {
                 IconButton(onClick = onStopSharing) {
-                    Icon(Icons.Default.Stop, "Stop")
+                    Icon(Icons.Default.Stop, stringResource(Res.string.stop))
                 }
             }
 
             if (currentPlatform == SettingPlatform.ANDROID || currentPlatform == SettingPlatform.JVM) {
                 IconButton(onClick = onViewAll) {
-                    Icon(Icons.Default.Map, "View")
+                    Icon(Icons.Default.Map, stringResource(Res.string.view))
                 }
             }
         }

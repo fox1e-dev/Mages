@@ -7,6 +7,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
+import mages.shared.generated.resources.*
 import org.mlm.mages.accounts.MatrixAccount
 import org.mlm.mages.accounts.MatrixClients
 import org.mlm.mages.matrix.MatrixPort
@@ -157,12 +158,16 @@ class LoginViewModel(
 
         val hs = s.effectiveHomeserver
         if (hs.isBlank()) {
-            updateState { copy(error = "Please enter a server") }
+            launch {
+                val pleaseEnterAServerFallback = getString(Res.string.please_enter_a_server)
+                updateState { copy(error = pleaseEnterAServerFallback) }
+            }
             return
         }
 
         launch(onError = { t ->
-            updateState { copy(isBusy = false, error = t.message ?: getString(Res.string.login_failed)) }
+            val loginFailedFallback = getString(Res.string.login_failed)
+            updateState { copy(isBusy = false, error = t.message ?: loginFailedFallback) }
         }) {
             updateState { copy(isBusy = true, error = null) }
 
@@ -187,10 +192,11 @@ class LoginViewModel(
                         val country = s.phoneCountry.trim().uppercase()
                         if (country.length != 2) {
                             port.close()
+                            val countryError = getString(Res.string.enter_a_2_letter_country_code_e_g_us_or_de)
                             updateState {
                                 copy(
                                     isBusy = false,
-                                    error = getString(Res.string.enter_a_2_letter_country_code_e_g_us_or_de)
+                                    error = countryError
                                 )
                             }
                             return@launch
@@ -202,14 +208,16 @@ class LoginViewModel(
 
                 if (!port.isLoggedInSuspend()) {
                     port.close()
-                    updateState { copy(isBusy = false, error = getString(Res.string.login_failed)) }
+                    val loginFailedFallback2 = getString(Res.string.login_failed)
+                    updateState { copy(isBusy = false, error = loginFailedFallback2) }
                     return@launch
                 }
 
                 val userId = port.whoami()
                 if (userId.isNullOrBlank()) {
                     port.close()
-                    updateState { copy(isBusy = false, error = getString(Res.string.login_failed_the_server_did_not_return_a_user_id_try_again)) }
+                    val loginFailedTheServerDidNotReturnAUserIdTryAgainFallback = getString(Res.string.login_failed_the_server_did_not_return_a_user_id_try_again)
+                    updateState { copy(isBusy = false, error = loginFailedTheServerDidNotReturnAUserIdTryAgainFallback) }
                     return@launch
                 }
 
@@ -238,7 +246,8 @@ class LoginViewModel(
                 _events.send(Event.LoginSuccess)
             } catch (e: Exception) {
                 runCatching { port.close() }
-                updateState { copy(isBusy = false, error = e.message ?: getString(Res.string.login_failed)) }
+                val loginFailedFallback22 = getString(Res.string.login_failed)
+                updateState { copy(isBusy = false, error = e.message ?: loginFailedFallback22) }
             }
         }
     }
@@ -252,13 +261,17 @@ class LoginViewModel(
 
         val hs = s.effectiveHomeserver
         if (hs.isBlank()) {
-            updateState { copy(error = "Please enter a server") }
+            launch {
+                val pleaseEnterAServerFallback2 = getString(Res.string.please_enter_a_server)
+                updateState { copy(error = pleaseEnterAServerFallback2) }
+            }
             return
         }
 
         ssoJob = launch(onError = { t ->
             if (t !is CancellationException) {
-                updateState { copy(isBusy = false, ssoInProgress = false, error = t.message ?: getString(Res.string.sso_failed)) }
+                val ssoFailedFallback = getString(Res.string.sso_failed)
+                updateState { copy(isBusy = false, ssoInProgress = false, error = t.message ?: ssoFailedFallback) }
             }
         }) {
             updateState { copy(isBusy = true, ssoInProgress = true, error = null) }
@@ -274,11 +287,12 @@ class LoginViewModel(
                 val ssoResult = port.loginSsoLoopback(openUrl, deviceName = getDeviceDisplayName())
                 if (ssoResult.isFailure) {
                     port.close()
+                    val ssoError = ssoResult.exceptionOrNull()?.message ?: getString(Res.string.sso_failed_or_was_cancelled)
                     updateState {
                         copy(
                             isBusy = false,
                             ssoInProgress = false,
-                            error = ssoResult.exceptionOrNull()?.message ?: getString(Res.string.sso_failed_or_was_cancelled)
+                            error = ssoError
                         )
                     }
                     return@launch
@@ -287,7 +301,8 @@ class LoginViewModel(
                 val userId = port.whoami()
                 if (userId.isNullOrBlank()) {
                     port.close()
-                    updateState { copy(isBusy = false, ssoInProgress = false, error = getString(Res.string.sso_failed_the_server_did_not_return_a_user_id_try_again)) }
+                    val ssoFailedTheServerDidNotReturnAUserIdTryAgainFallback = getString(Res.string.sso_failed_the_server_did_not_return_a_user_id_try_again)
+                    updateState { copy(isBusy = false, ssoInProgress = false, error = ssoFailedTheServerDidNotReturnAUserIdTryAgainFallback) }
                     return@launch
                 }
 
@@ -319,7 +334,8 @@ class LoginViewModel(
                 throw e
             } catch (e: Exception) {
                 runCatching { port.close() }
-                updateState { copy(isBusy = false, ssoInProgress = false, error = e.message ?: getString(Res.string.sso_failed)) }
+                val ssoFailedFallback2 = getString(Res.string.sso_failed)
+                updateState { copy(isBusy = false, ssoInProgress = false, error = e.message ?: ssoFailedFallback2) }
             }
         }
     }
@@ -339,13 +355,17 @@ class LoginViewModel(
 
         val hs = s.effectiveHomeserver
         if (hs.isBlank()) {
-            updateState { copy(error = "Please enter a server") }
+            launch {
+                val pleaseEnterAServerFallback22 = getString(Res.string.please_enter_a_server)
+                updateState { copy(error = pleaseEnterAServerFallback22) }
+            }
             return
         }
 
         oauthJob = launch(onError = { t ->
             if (t !is CancellationException) {
-                updateState { copy(isBusy = false, oauthInProgress = false, error = t.message ?: getString(Res.string.oauth_failed)) }
+                val oauthFailedFallback = getString(Res.string.oauth_failed)
+                updateState { copy(isBusy = false, oauthInProgress = false, error = t.message ?: oauthFailedFallback) }
             }
         }) {
             updateState { copy(isBusy = true, oauthInProgress = true, error = null) }
@@ -366,11 +386,12 @@ class LoginViewModel(
 
                     is MatrixPort.OauthLoginResult.Failed -> {
                         port.close()
+                        val oauthError = result.message ?: getString(Res.string.oauth_failed)
                         updateState {
                             copy(
                                 isBusy = false,
                                 oauthInProgress = false,
-                                error = result.message ?: getString(Res.string.oauth_failed)
+                                error = oauthError
                             )
                         }
                         return@launch
@@ -384,7 +405,8 @@ class LoginViewModel(
                 val userId = port.whoami()
                 if (userId.isNullOrBlank()) {
                     port.close()
-                    updateState { copy(isBusy = false, oauthInProgress = false, error = getString(Res.string.oauth_failed_the_server_did_not_return_a_user_id_try_again)) }
+                    val oauthFailedTheServerDidNotReturnAUserIdTryAgainFallback = getString(Res.string.oauth_failed_the_server_did_not_return_a_user_id_try_again)
+                    updateState { copy(isBusy = false, oauthInProgress = false, error = oauthFailedTheServerDidNotReturnAUserIdTryAgainFallback) }
                     return@launch
                 }
 
@@ -416,7 +438,8 @@ class LoginViewModel(
                 throw e
             } catch (e: Exception) {
                 runCatching { port.close() }
-                updateState { copy(isBusy = false, oauthInProgress = false, error = e.message ?: getString(Res.string.oauth_failed)) }
+                val oauthFailedFallback2 = getString(Res.string.oauth_failed)
+                updateState { copy(isBusy = false, oauthInProgress = false, error = e.message ?: oauthFailedFallback2) }
             }
         }
     }

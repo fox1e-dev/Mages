@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import mages.shared.generated.resources.Res
 

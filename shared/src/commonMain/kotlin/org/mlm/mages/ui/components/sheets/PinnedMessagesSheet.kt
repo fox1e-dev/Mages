@@ -15,10 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.mlm.mages.ui.PinnedMessageUi
 import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.components.message.ReactionChipsRow
 import org.mlm.mages.ui.isForwardable
+import org.mlm.mages.ui.previewText
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.util.formatPinnedTimestamp

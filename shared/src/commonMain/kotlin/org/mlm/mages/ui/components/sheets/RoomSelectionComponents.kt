@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.mlm.mages.ui.ForwardableRoom
 import org.mlm.mages.ui.theme.Spacing
 import org.jetbrains.compose.resources.stringResource
@@ -160,7 +161,7 @@ fun SelectableRoomItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    if (room.isDm) stringResource(Res.string.direct_message) else "Room",
+                    if (room.isDm) stringResource(Res.string.direct_message) else stringResource(Res.string.room),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

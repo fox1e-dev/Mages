@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import mages.shared.generated.resources.*
 import org.koin.core.component.inject
 import org.mlm.mages.MatrixService
 import org.mlm.mages.MessageEvent
@@ -350,7 +351,8 @@ class ThreadViewModel(
      */
     private fun loadInitialThread() {
         launch(onError = {
-            updateState { copy(isLoading = false, error = it.message ?: getString(Res.string.failed_to_load_thread)) }
+            val failedToLoadThreadFallback = getString(Res.string.failed_to_load_thread)
+            updateState { copy(isLoading = false, error = it.message ?: failedToLoadThreadFallback) }
         }) {
             updateState { copy(isLoading = true, error = null) }
 

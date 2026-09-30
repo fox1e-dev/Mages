@@ -11,7 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.mlm.mages.ui.PinnedMessageUi
+import org.mlm.mages.ui.previewText
 import org.mlm.mages.ui.theme.Spacing
 import org.jetbrains.compose.resources.stringResource
 import mages.shared.generated.resources.Res

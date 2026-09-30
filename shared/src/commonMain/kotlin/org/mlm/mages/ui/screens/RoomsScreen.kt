@@ -31,6 +31,7 @@ import org.mlm.mages.ui.components.sheets.RoomActionsSheet
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.viewmodel.RoomsViewModel
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.StringResource
 import mages.shared.generated.resources.*
 import org.mlm.mages.ui.components.common.InviteListItem
 import org.mlm.mages.ui.components.dialogs.DeclineInviteDialog
@@ -130,7 +131,7 @@ fun RoomsScreen(
             !hasAnyRooms && state.offlineBanner != null -> {
                 EmptyState(
                     icon = Icons.Default.CloudOff,
-                    title = state.offlineBanner ?: stringResource(Res.string.offline),
+                    title = state.offlineBanner?.let { stringResource(it) } ?: stringResource(Res.string.offline),
                     subtitle = stringResource(Res.string.connect_to_internet),
                     modifier = Modifier.padding(innerPadding),
                     action = {
@@ -331,7 +332,7 @@ fun RoomsScreen(
 
 @Composable
 private fun RoomsTopBar(
-    offlineBanner: String?,
+    offlineBanner: StringResource?,
     syncBanner: String?,
     isLoading: Boolean,
     searchQuery: String,
@@ -370,7 +371,7 @@ private fun RoomsTopBar(
 
         // Connection banners
         StatusBanner(
-            message = offlineBanner,
+            message = offlineBanner?.let { stringResource(it) },
             type = BannerType.OFFLINE
         )
 
@@ -439,7 +440,7 @@ private fun RoomsTopBar(
             FilterChip(
                 selected = typeFilter == RoomTypeFilter.Dms,
                 onClick = { onSetTypeFilter(RoomTypeFilter.Dms) },
-                label = { Text(withCount("DMs", unreadDmsCount, unreadOnly)) },
+                label = { Text(withCount(stringResource(Res.string.dms), unreadDmsCount, unreadOnly)) },
                 leadingIcon = if (typeFilter == RoomTypeFilter.Dms) {
                     { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
                 } else null

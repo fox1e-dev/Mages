@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import mages.shared.generated.resources.*
 import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.ui.ActionAvailabilityUi
 import org.mlm.mages.ui.ActionPresentationUi

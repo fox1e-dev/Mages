@@ -1,5 +1,6 @@
 package org.mlm.mages.ui.components.message
 
+import mages.shared.generated.resources.*
 import org.mlm.mages.AttachmentKind
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.captionOr
@@ -35,7 +36,7 @@ private fun MessageEvent.toAttachmentUi(
             mime = info.mime,
             sizeBytes = info.sizeBytes,
             title = info.fileName?.takeIf { it.isNotBlank() }
-                ?: body.trim().ifBlank { "File" },
+                ?: body.trim().ifBlank { stringResource(Res.string.file) },
             subtitle = buildAttachmentSubtitle(info.mime, info.sizeBytes),
             caption = caption,
             captionFormattedBody = captionFormattedBody,

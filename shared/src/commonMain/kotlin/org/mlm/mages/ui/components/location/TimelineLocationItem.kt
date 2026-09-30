@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.mlmgames.settings.core.SettingsRepository
+import mages.shared.generated.resources.*
 import org.koin.compose.koinInject
 import org.mlm.mages.ui.components.timeline.TimelineContent
 import org.mlm.mages.settings.AppSettings

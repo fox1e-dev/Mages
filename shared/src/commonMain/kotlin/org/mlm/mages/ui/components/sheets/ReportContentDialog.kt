@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.mlm.mages.ui.theme.Spacing
 import org.jetbrains.compose.resources.stringResource
 import mages.shared.generated.resources.Res
@@ -24,7 +25,7 @@ fun ReportContentDialog(
     var selectedCategory by remember { mutableStateOf<String?>(null) }
 
     val categories = listOf(
-        "spam" to "Spam",
+        "spam" to stringResource(Res.string.spam),
         "abuse" to stringResource(Res.string.abuse),
         "illegal" to stringResource(Res.string.illegal_content),
         "other" to stringResource(Res.string.other)

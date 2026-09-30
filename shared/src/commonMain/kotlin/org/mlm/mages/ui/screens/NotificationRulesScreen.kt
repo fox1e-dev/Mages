@@ -115,8 +115,8 @@ fun NotificationRulesScreen(
                 items(NotificationToggles.all) { toggle ->
                     val checked = toggles[toggle.id] ?: toggle.defaultUiValue
                     SwitchRow(
-                        title = toggle.label,
-                        subtitle = toggle.description,
+                        title = stringResource(toggle.label),
+                        subtitle = stringResource(toggle.description),
                         checked = checked,
                         onCheckedChange = { enabled ->
                             val previous = toggles[toggle.id] ?: toggle.defaultUiValue
@@ -280,7 +280,7 @@ private fun NotificationModeDropdown(
                 onClick = { expanded = true },
                 enabled = !hasError,
             ) {
-                Text(if (hasError) stringResource(Res.string.error) else currentValue.displayName)
+                Text(if (hasError) stringResource(Res.string.error) else currentValue.displayName())
             }
 
             DropdownMenu(
@@ -289,7 +289,7 @@ private fun NotificationModeDropdown(
             ) {
                 options.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(option.displayName) },
+                        text = { Text(option.displayName()) },
                         onClick = {
                             onValueChange(option)
                             expanded = false

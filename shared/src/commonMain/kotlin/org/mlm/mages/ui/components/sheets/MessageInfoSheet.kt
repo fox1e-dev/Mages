@@ -121,7 +121,7 @@ fun MessageInfoSheet(
                     )
                     InfoRow(
                         label = stringResource(Res.string.send_status),
-                        value = event.sendState?.name?.let(readableEnumName) ?: stringResource(Res.string.sent),
+                        value = event.sendState?.name?.let { readableEnumName(it) } ?: stringResource(Res.string.sent),
                     )
                     InfoRow(
                         label = stringResource(Res.string.edited),

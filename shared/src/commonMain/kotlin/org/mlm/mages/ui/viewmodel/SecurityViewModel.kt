@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import mages.shared.generated.resources.*
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.MatrixPort
 import org.mlm.mages.settings.AppSettings
@@ -224,13 +225,18 @@ class SecurityViewModel(
             val port = service.portOrNull ?: return@launch
 
             if (isChange) {
-                updateStateIfCurrent(version) { copy(isEnablingRecovery = true, recoveryProgress = getString(Res.string.resetting_recovery_key)) }
+                val resetting = getString(Res.string.resetting_recovery_key)
+                updateStateIfCurrent(version) { copy(isEnablingRecovery = true, recoveryProgress = resetting) }
                 val result = runCatching { port.resetRecoveryKey() }.getOrElse { e ->
+                    val resetError = getString(
+                        Res.string.could_not_reset_recovery_key,
+                        e.message ?: getString(Res.string.unknown_error),
+                    )
                     updateStateIfCurrent(version) {
                         copy(
                             isEnablingRecovery = false,
                             recoveryProgress = null,
-                            error = "Could not reset the recovery key: ${e.message ?: "unknown error"}"
+                            error = resetError
                         )
                     }
                     return@launch
@@ -238,8 +244,9 @@ class SecurityViewModel(
                 result.fold(
                     onSuccess = { key ->
                         if (key.isBlank()) {
+                            val emptyKey = getString(Res.string.recovery_returned_an_empty_key)
                             updateStateIfCurrent(version) {
-                                copy(isEnablingRecovery = false, recoveryProgress = null, error = getString(Res.string.recovery_returned_an_empty_key))
+                                copy(isEnablingRecovery = false, recoveryProgress = null, error = emptyKey)
                             }
                         } else {
                             updateStateIfCurrent(version) {
@@ -252,11 +259,15 @@ class SecurityViewModel(
                         }
                     },
                     onFailure = { e ->
+                        val resetError = getString(
+                            Res.string.could_not_reset_recovery_key,
+                            e.message ?: getString(Res.string.unknown_error),
+                        )
                         updateStateIfCurrent(version) {
                             copy(
                                 isEnablingRecovery = false,
                                 recoveryProgress = null,
-                                error = "Could not reset the recovery key: ${e.message ?: "unknown error"}"
+                                error = resetError
                             )
                         }
                     }
@@ -280,17 +291,21 @@ class SecurityViewModel(
                 }
 
                 override fun onError(message: String) {
-                    updateStateIfCurrent(version) {
-                        copy(
-                            isEnablingRecovery = false,
-                            recoveryProgress = null,
-                            error = "Recovery error: $message"
-                        ) 
+                    launch {
+                        val text = getString(Res.string.recovery_error, message)
+                        updateStateIfCurrent(version) {
+                            copy(
+                                isEnablingRecovery = false,
+                                recoveryProgress = null,
+                                error = text
+                            )
+                        }
                     }
                 }
             }
 
-            updateStateIfCurrent(version) { copy(isEnablingRecovery = true, recoveryProgress = "Starting...") }
+            val starting = getString(Res.string.starting)
+            updateStateIfCurrent(version) { copy(isEnablingRecovery = true, recoveryProgress = starting) }
             val ok = port.setupRecovery(observer)
         }
     }
@@ -389,10 +404,11 @@ class SecurityViewModel(
 
         launch(onError = { t ->
             if (isCurrentAccountData(version)) {
+                val deviceError = getString(Res.string.failed_to_load_devices, t.message ?: "")
                 updateState {
                     copy(
                         isLoadingDevices = false,
-                        error = getString(Res.string.failed_to_load_devices, t.message)
+                        error = deviceError
                     )
                 }
             }
@@ -417,7 +433,10 @@ class SecurityViewModel(
     fun submitRecoveryKey() {
         val key = currentState.recoveryKeyInput.trim()
         if (key.isBlank()) {
-            updateState { copy(error = "Enter a recovery key") }
+            launch {
+                val enterARecoveryKeyFallback = getString(Res.string.enter_a_recovery_key)
+                updateState { copy(error = enterARecoveryKeyFallback) }
+            }
             return
         }
 
@@ -442,10 +461,11 @@ class SecurityViewModel(
                     _events.send(Event.ShowSuccess(getString(Res.string.recovery_successful)))
                 }
             } else {
+                val submitError = result.toUserMessage(getString(Res.string.recovery_failed))
                 updateStateIfCurrent(version) {
                     copy(
                         isSubmittingRecoveryKey = false,
-                        error = result.toUserMessage(getString(Res.string.recovery_failed))
+                        error = submitError
                     )
                 }
             }

@@ -4,6 +4,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import mages.shared.generated.resources.*
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.ImagePackImageEntry
 import org.mlm.mages.matrix.ImagePackSummary
@@ -13,6 +14,7 @@ import org.mlm.mages.ui.ImagePackEditorUiState
 import org.mlm.mages.ui.PackEditorEntry
 import org.mlm.mages.ui.PendingPackImage
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.StringResource
 import mages.shared.generated.resources.Res
 
 /**
@@ -190,12 +192,12 @@ class ImagePackEditorViewModel(
                     if (it.localId != localId) {
                         it
                     } else {
-                        val error = when {
-                            shortcode.isEmpty() -> "Enter a shortcode"
+                        val error: StringResource? = when {
+                            shortcode.isEmpty() -> Res.string.enter_a_shortcode
                             !SHORTCODE_PATTERN.matches(shortcode) ->
-                                "Use letters, numbers, - and _ only"
-                            shortcode.length > 100 -> "Shortcodes can be at most 100 characters"
-                            shortcode in taken -> "This shortcode is already used"
+                                Res.string.use_letters_numbers_and_only
+                            shortcode.length > 100 -> Res.string.shortcodes_can_be_at_most_100_characters
+                            shortcode in taken -> Res.string.this_shortcode_is_already_used
                             else -> null
                         }
                         it.copy(shortcode = shortcode, shortcodeError = error)
@@ -247,7 +249,7 @@ class ImagePackEditorViewModel(
     fun save() {
         val dirty = currentState.packs.filter { it.imageCount > 0 }
         if (dirty.isEmpty()) {
-            _events.trySend(Event.ShowError("Add at least one image before saving"))
+            launch { _events.trySend(Event.ShowError(getString(Res.string.add_at_least_one_image_before_saving))) }
             return
         }
         // Clearing this at the end rather than recomputing means a global-toggle
@@ -325,7 +327,7 @@ class ImagePackEditorViewModel(
             }
             _events.send(
                 if (failures.isEmpty()) Event.ShowSuccess(getString(Res.string.image_packs_saved))
-                else Event.ShowError("Could not save ${failures.joinToString(", ")}")
+                else Event.ShowError(getString(Res.string.could_not_save_images, failures.joinToString(", ")))
             )
             load()
         }

@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import mages.shared.generated.resources.*
 import org.mlm.mages.accounts.AccountStore
 import org.mlm.mages.accounts.MatrixAccount
 import org.mlm.mages.accounts.MatrixClients

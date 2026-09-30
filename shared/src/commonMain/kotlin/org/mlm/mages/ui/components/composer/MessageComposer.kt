@@ -22,6 +22,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import mages.shared.generated.resources.*
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.platform.ClipboardAttachmentHandler
@@ -287,7 +288,7 @@ private fun ComposerInputRow(
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else if (canSend) {
-                Icon(Icons.AutoMirrored.Filled.Send, "Send")
+                Icon(Icons.AutoMirrored.Filled.Send, stringResource(Res.string.send))
             } else {
                 Icon(Icons.Default.Mic, stringResource(Res.string.record_voice))
             }

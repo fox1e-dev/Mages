@@ -3,13 +3,16 @@ package org.mlm.mages.matrix
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import mages.shared.generated.resources.*
 import org.mlm.mages.AttachmentInfo
 import org.mlm.mages.AttachmentKind
 import org.mlm.mages.EncFile
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.RoomSummary
 import org.mlm.mages.StickerInfo
+import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 import mages.shared.generated.resources.Res
 
 @Serializable
@@ -169,12 +172,12 @@ enum class PushRuleKind {
     Content
 }
 
-val RoomNotificationMode.displayName: String
-    get() = when (this) {
-        RoomNotificationMode.AllMessages -> "All messages"
-        RoomNotificationMode.MentionsAndKeywordsOnly -> "Mentions only"
-        RoomNotificationMode.Mute -> "Muted"
-    }
+@Composable
+fun RoomNotificationMode.displayName(): String = when (this) {
+    RoomNotificationMode.AllMessages -> stringResource(Res.string.all_messages)
+    RoomNotificationMode.MentionsAndKeywordsOnly -> stringResource(Res.string.mentions_only)
+    RoomNotificationMode.Mute -> stringResource(Res.string.muted)
+}
 
 @Serializable
 enum class Presence {
@@ -394,39 +397,45 @@ private fun formatDuration(ms: Long?): String? {
     else "0:${seconds.toString().padStart(2, '0')}"
 }
 
-fun notificationSummary(content: ClassifiedNotification): String = when (content) {
+suspend fun notificationSummary(content: ClassifiedNotification): String = when (content) {
     is ClassifiedNotification.Text -> content.body
     is ClassifiedNotification.Media -> when (content.attachment.kind) {
-        AttachmentKind.Image -> "Sent an image"
-        AttachmentKind.Video -> "Sent a video"
+        AttachmentKind.Image -> getString(Res.string.sent_an_image)
+        AttachmentKind.Video -> getString(Res.string.sent_a_video)
         AttachmentKind.Audio -> {
             val duration = formatDuration(content.attachment.durationMs)
-            if (content.attachment.isVoice == true && duration != null) "Voice message ($duration)"
-            else if (content.attachment.isVoice == true) "Voice message"
-            else "Sent an audio message"
+            if (content.attachment.isVoice == true && duration != null) {
+                getString(Res.string.voice_message_with_duration, duration)
+            } else if (content.attachment.isVoice == true) {
+                getString(Res.string.voice_message)
+            } else {
+                getString(Res.string.sent_an_audio_message)
+            }
         }
         AttachmentKind.File -> content.attachment.fileName
             ?.takeIf { it.isNotBlank() }
-            ?.let { "Sent $it" }
-            ?: "Sent a file"
+            ?.let { getString(Res.string.sent_named, it) }
+            ?: getString(Res.string.sent_a_file)
     }
-    is ClassifiedNotification.Sticker -> "Sent a sticker"
-    is ClassifiedNotification.Poll -> when {
-        content.question.isBlank() -> if (content.isEnd) "Ended a poll" else "Started a poll"
-        else -> "${if (content.isEnd) "Ended a poll" else "Started a poll"}: ${content.question}"
+    is ClassifiedNotification.Sticker -> getString(Res.string.sent_a_sticker)
+    is ClassifiedNotification.Poll -> {
+        val summary = if (content.isEnd) getString(Res.string.ended_a_poll) else getString(Res.string.started_a_poll)
+        if (content.question.isBlank()) summary
+        else getString(Res.string.poll_summary_with_question, summary, content.question)
     }
     is ClassifiedNotification.Location -> when {
-        content.isLive -> "Started sharing their live location"
-        content.geoUri.isBlank() -> "Shared a location"
-        else -> "Location was shared at ${content.geoUri}"
+        content.isLive -> getString(Res.string.started_sharing_their_live_location)
+        content.geoUri.isBlank() -> getString(Res.string.shared_a_location)
+        else -> getString(Res.string.location_shared_at, content.geoUri)
     }
     // MSC4027 lets the key be an mxc URI, which shows up ugly in notifs.
     is ClassifiedNotification.Reaction ->
-        if (content.key.startsWith("mxc://")) "Reacted with an image"
-        else "Reacted ${content.key}"
-    is ClassifiedNotification.Call -> if (content.invite) "Incoming call" else "Call update"
-    ClassifiedNotification.Invite -> "Room invite"
-    ClassifiedNotification.Unknown -> "New event"
+        if (content.key.startsWith("mxc://")) getString(Res.string.reacted_with_an_image)
+        else getString(Res.string.reacted_with, content.key)
+    is ClassifiedNotification.Call ->
+        if (content.invite) getString(Res.string.incoming_call) else getString(Res.string.call_update)
+    ClassifiedNotification.Invite -> getString(Res.string.room_invite)
+    ClassifiedNotification.Unknown -> getString(Res.string.new_event)
 }
 
 @Serializable

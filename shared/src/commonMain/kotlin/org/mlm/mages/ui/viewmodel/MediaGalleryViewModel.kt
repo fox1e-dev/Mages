@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import mages.shared.generated.resources.*
 import org.koin.core.component.inject
 import org.mlm.mages.AttachmentKind
 import org.mlm.mages.MatrixService

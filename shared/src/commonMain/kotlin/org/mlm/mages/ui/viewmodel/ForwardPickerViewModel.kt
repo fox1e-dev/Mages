@@ -2,6 +2,7 @@ package org.mlm.mages.ui.viewmodel
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
+import mages.shared.generated.resources.*
 import kotlin.math.max
 import org.mlm.mages.MatrixService
 import org.mlm.mages.MessageEvent
@@ -58,17 +59,19 @@ data class BatchForwardSummary(
     val firstSuccessfulRoom: RoomForwardResult? get() = results.firstOrNull { it.isSuccess }
 }
 
-fun BatchForwardSummary.userMessage(): String = buildString {
+suspend fun BatchForwardSummary.userMessage(): String = buildString {
     if (results.isEmpty()) {
-        append("Nothing was forwarded")
+        append(getString(Res.string.nothing_was_forwarded))
         return@buildString
     }
 
-    append("Forwarded to $successfulRooms/$totalRooms room")
-    if (totalRooms != 1) append("s")
+    append(
+        if (totalRooms == 1) getString(Res.string.forwarded_room_one, successfulRooms, totalRooms)
+        else getString(Res.string.forwarded_room_other, successfulRooms, totalRooms)
+    )
 
-    if (partialRooms > 0) append(" • $partialRooms partial")
-    if (failedRooms > 0) append(" • $failedRooms failed")
+    if (partialRooms > 0) append(" • ").append(getString(Res.string.batch_summary_partial, partialRooms))
+    if (failedRooms > 0) append(" • ").append(getString(Res.string.batch_summary_failed, failedRooms))
 }
 
 data class ForwardPickerUiState(

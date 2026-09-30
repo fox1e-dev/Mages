@@ -2,6 +2,7 @@ package org.mlm.mages.ui.viewmodel
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
+import mages.shared.generated.resources.*
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.SpaceInfo
 import org.mlm.mages.ui.SpacesUiState
@@ -32,7 +33,8 @@ class SpacesViewModel(
     fun loadSpaces() {
         launch(
             onError = { t ->
-                updateState { copy(isLoading = false, error = t.message ?: getString(Res.string.failed_to_load_spaces)) }
+                val failedToLoadSpacesFallback = getString(Res.string.failed_to_load_spaces)
+                updateState { copy(isLoading = false, error = t.message ?: failedToLoadSpacesFallback) }
             }
         ) {
             updateState { copy(isLoading = true, error = null) }

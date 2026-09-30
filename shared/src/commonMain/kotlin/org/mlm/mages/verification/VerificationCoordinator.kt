@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import mages.shared.generated.resources.*
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.SasPhase
 import org.mlm.mages.matrix.MatrixPort
@@ -105,7 +106,9 @@ class VerificationCoordinator(
             }
 
             override fun onError(message: String) {
-                _state.value = _state.value.copy(sasError = "Verification inbox: $message")
+                scope.launch {
+                    _state.value = _state.value.copy(sasError = getString(Res.string.verification_inbox_error, message))
+                }
             }
         })
     }

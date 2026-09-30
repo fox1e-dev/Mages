@@ -1,6 +1,9 @@
 package org.mlm.mages.notifications
 
+import mages.shared.generated.resources.*
 import org.mlm.mages.matrix.PushRuleKind
+import org.jetbrains.compose.resources.StringResource
+import mages.shared.generated.resources.Res
 
 data class PushRuleBinding(
     val kind: PushRuleKind,
@@ -9,8 +12,8 @@ data class PushRuleBinding(
 
 data class PushRuleToggle(
     val id: String,
-    val label: String,
-    val description: String,
+    val label: StringResource,
+    val description: StringResource,
     val rules: List<PushRuleBinding>,
     val invertedSemantics: Boolean = false,
     val defaultUiValue: Boolean = true,
@@ -20,8 +23,8 @@ object NotificationToggles {
 
     val dmMessages = PushRuleToggle(
         id = "dm_messages",
-        label = "Messages in DMs",
-        description = "Direct messages from contacts",
+        label = Res.string.messages_in_dms,
+        description = Res.string.direct_messages_from_contacts,
         rules = listOf(
             PushRuleBinding(PushRuleKind.Underride, ".m.rule.room_one_to_one"),
             PushRuleBinding(PushRuleKind.Underride, ".m.rule.encrypted_room_one_to_one"),
@@ -30,8 +33,8 @@ object NotificationToggles {
 
     val groupMessages = PushRuleToggle(
         id = "group_messages",
-        label = "Messages in groups",
-        description = "Messages in group rooms",
+        label = Res.string.messages_in_groups,
+        description = Res.string.messages_in_group_rooms,
         rules = listOf(
             PushRuleBinding(PushRuleKind.Underride, ".m.rule.message"),
             PushRuleBinding(PushRuleKind.Underride, ".m.rule.encrypted"),
@@ -40,8 +43,8 @@ object NotificationToggles {
 
     val mentions = PushRuleToggle(
         id = "mentions",
-        label = "Mentions",
-        description = "When someone mentions you by name",
+        label = Res.string.mentions,
+        description = Res.string.when_someone_mentions_you_by_name,
         rules = listOf(
             PushRuleBinding(PushRuleKind.Override, ".m.rule.is_user_mention"),
         ),
@@ -49,8 +52,8 @@ object NotificationToggles {
 
     val roomMentions = PushRuleToggle(
         id = "room_mentions",
-        label = "@room mentions",
-        description = "When someone uses @room",
+        label = Res.string.at_room_mentions,
+        description = Res.string.when_someone_uses_at_room,
         rules = listOf(
             PushRuleBinding(PushRuleKind.Override, ".m.rule.is_room_mention"),
         ),
@@ -58,8 +61,8 @@ object NotificationToggles {
 
     val reactions = PushRuleToggle(
         id = "reactions",
-        label = "Reactions",
-        description = "Emoji reactions to messages",
+        label = Res.string.reactions,
+        description = Res.string.emoji_reactions_to_messages,
         invertedSemantics = false,
         rules = emptyList(),
         defaultUiValue = false,
@@ -67,8 +70,8 @@ object NotificationToggles {
 
     val invites = PushRuleToggle(
         id = "invites",
-        label = "Invites",
-        description = "Room invitations",
+        label = Res.string.invites,
+        description = Res.string.room_invitations,
         rules = listOf(
             PushRuleBinding(PushRuleKind.Override, ".m.rule.invite_for_me"),
         ),
@@ -76,8 +79,8 @@ object NotificationToggles {
 
     val calls = PushRuleToggle(
         id = "calls",
-        label = "Calls",
-        description = "Incoming voice and video calls",
+        label = Res.string.calls,
+        description = Res.string.incoming_voice_and_video_calls,
         rules = listOf(
             PushRuleBinding(PushRuleKind.Underride, ".m.rule.call"),
         ),
@@ -85,8 +88,8 @@ object NotificationToggles {
 
     val roomUpgrades = PushRuleToggle(
         id = "room_upgrades",
-        label = "Room upgrades",
-        description = "When a room is upgraded to a new version",
+        label = Res.string.room_upgrades,
+        description = Res.string.when_a_room_is_upgraded_to_a_new_version,
         rules = listOf(
             PushRuleBinding(PushRuleKind.Override, ".m.rule.tombstone"),
         ),
@@ -94,8 +97,8 @@ object NotificationToggles {
 
     val suppressBotNotices = PushRuleToggle(
         id = "bot_notices",
-        label = "Bot messages",
-        description = "Messages from bots and bridges",
+        label = Res.string.bot_messages,
+        description = Res.string.messages_from_bots_and_bridges,
         invertedSemantics = true,
         rules = listOf(
             PushRuleBinding(PushRuleKind.Override, ".m.rule.suppress_notices"),

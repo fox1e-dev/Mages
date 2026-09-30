@@ -36,6 +36,8 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import co.touchlab.kermit.Logger
+import mages.shared.generated.resources.*
+import org.jetbrains.compose.resources.getString
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -250,7 +252,7 @@ private fun AppContent(
                 previousAppLockEnabled = nowEnabled
                 if (nowEnabled && !wasEnabled) {
                     if (!appLockController.isAvailable) {
-                        snackbarManager.showError(stringResource(Res.string.set_a_screen_lock_in_system_settings_first))
+                        snackbarManager.showError(getString(Res.string.set_a_screen_lock_in_system_settings_first))
                         suppressNextDisablePrompt = true
                         settingsRepository.update { it.copy(appLockEnabled = false) }
                     }
@@ -262,7 +264,7 @@ private fun AppContent(
                     appLockController.requestUnlock { success ->
                         if (!success) {
                             scope.launch {
-                                snackbarManager.showError(stringResource(Res.string.authentication_required_to_disable_app_lock))
+                                snackbarManager.showError(getString(Res.string.authentication_required_to_disable_app_lock))
                                 previousAppLockEnabled = true
                                 settingsRepository.update { it.copy(appLockEnabled = true) }
                             }
@@ -295,7 +297,7 @@ private fun AppContent(
 
                 val link = parseMatrixLink(raw)
                 if (link is MatrixLink.Unsupported) {
-                    snackbarManager.showError(stringResource(Res.string.could_not_open_link, raw))
+                    snackbarManager.showError(getString(Res.string.could_not_open_link, raw))
                     return@LaunchedEffect
                 }
 
@@ -305,7 +307,7 @@ private fun AppContent(
                 }
                 val resolved = target
                 if (!opened || resolved == null) {
-                    snackbarManager.showError(stringResource(Res.string.could_not_open_link, raw))
+                    snackbarManager.showError(getString(Res.string.could_not_open_link, raw))
                     return@LaunchedEffect
                 }
                 localDeepLinks.emit(DeepLinkAction(roomId = resolved.first, eventId = resolved.second))
@@ -378,8 +380,8 @@ private fun AppContent(
                 service.port.observeSends().collect { update ->
                     if (update.txnId.isBlank() && update.error?.contains("send queue disabled") == true) {
                         snackbarManager.show(
-                            message = stringResource(Res.string.sending_paused),
-                            actionLabel = stringResource(Res.string.resume),
+                            message = getString(Res.string.sending_paused),
+                            actionLabel = getString(Res.string.resume),
                             duration = SnackbarDuration.Indefinite,
                             onAction = { runCatching { service.port.sendQueueSetEnabled(true) } }
                         )
@@ -545,7 +547,7 @@ private fun AppContent(
                                                 backStack.add(Route.Room(roomId, name ?: roomId))
                                             }.onFailure { e ->
                                                 snackbarManager.showError(
-                                                    e.message ?: stringResource(Res.string.failed_to_create_room)
+                                                    e.message ?: getString(Res.string.failed_to_create_room)
                                                 )
                                             }
                                         }
@@ -654,9 +656,9 @@ private fun AppContent(
                                             val result = service.switchAccount(account)
                                             if (result.isSuccess) {
                                                 sessionEpoch++
-                                                snackbarManager.show(stringResource(Res.string.switched_to_account, account.userId))
+                                                snackbarManager.show(getString(Res.string.switched_to_account, account.userId))
                                             } else {
-                                                snackbarManager.showError(result.exceptionOrNull()?.message ?: stringResource(Res.string.failed_to_switch_account))
+                                                snackbarManager.showError(result.exceptionOrNull()?.message ?: getString(Res.string.failed_to_switch_account))
                                             }
                                         }
                                     },
@@ -962,7 +964,7 @@ private fun AppContent(
                                             }
                                             service.port.downloadAttachmentToCache(att, hint)
                                                 .onSuccess { path -> openExternal(path, att.mime) }
-                                                .onFailure { postError(stringResource(Res.string.download_failed)) }
+                                                .onFailure { postError(getString(Res.string.download_failed)) }
                                         }
                                     }
                                 },

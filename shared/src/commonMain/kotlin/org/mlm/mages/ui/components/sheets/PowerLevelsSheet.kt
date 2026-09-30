@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import mages.shared.generated.resources.*
 import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.matrix.RoomPowerLevels
 import org.mlm.mages.ui.theme.Spacing
@@ -300,5 +301,5 @@ private fun getRoleLabel(powerLevel: Long): String = when {
     powerLevel >= 100 -> stringResource(Res.string.admin)
     powerLevel >= 50 -> stringResource(Res.string.moderator)
     powerLevel > 0 -> stringResource(Res.string.role_custom_level, powerLevel)
-    else -> "User"
+    else -> stringResource(Res.string.user)
 }

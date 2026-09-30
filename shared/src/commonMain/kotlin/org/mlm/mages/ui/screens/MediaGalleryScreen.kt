@@ -33,6 +33,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import org.jetbrains.compose.resources.getString
 import org.koin.compose.koinInject
 import org.mlm.mages.AttachmentKind
 import org.mlm.mages.MessageEvent
@@ -82,7 +83,7 @@ fun MediaGalleryScreen(
                         ShareContent(
                             filePaths = event.paths,
                             mimeTypes = event.mimeTypes,
-                            subject = "Mages"
+                            subject = getString(Res.string.mages)
                         )
                     )) {
                         ShareOutcome.Shared -> Unit
@@ -719,7 +720,7 @@ private fun FileListItem(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = event.body.ifBlank { "File" },
+                    text = event.body.ifBlank { stringResource(Res.string.file) },
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
