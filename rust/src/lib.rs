@@ -4223,6 +4223,9 @@ fn map_timeline_event(
 
             match &ml.kind {
                 MsgLikeKind::Message(msg) => {
+                    if is_verification_request(msg.msgtype()) {
+                        return None;
+                    }
                     attachment = extract_attachment(msg.msgtype());
                     is_edited = msg.is_edited();
                     let raw = msg.body();
@@ -4771,6 +4774,15 @@ fn render_message_text(msg: &matrix_sdk_ui::timeline::Message) -> String {
     }
 }
 
+fn is_verification_request(
+    msgtype: &matrix_sdk::ruma::events::room::message::MessageType,
+) -> bool {
+    matches!(
+        msgtype,
+        matrix_sdk::ruma::events::room::message::MessageType::VerificationRequest(_)
+    )
+}
+
 fn is_call_noise(event: &AnySyncTimelineEvent) -> bool {
     let ty = event.event_type().to_string();
 
@@ -4848,6 +4860,9 @@ fn map_latest_event_from_content(
             use matrix_sdk_ui::timeline::MsgLikeKind;
             match &ml.kind {
                 MsgLikeKind::Message(m) => {
+                    if is_verification_request(m.msgtype()) {
+                        return None;
+                    }
                     let text = render_message_text(m);
                     if text.trim().is_empty() {
                         return None;
@@ -5042,6 +5057,9 @@ fn try_map_timeline_event(
     match ev.content() {
         TimelineItemContent::MsgLike(ml) => match &ml.kind {
             MsgLikeKind::Message(m) => {
+                if is_verification_request(m.msgtype()) {
+                    return None;
+                }
                 let text = render_message_text(m);
                 if text.trim().is_empty() {
                     return None;
@@ -5544,7 +5562,13 @@ fn should_filter_notification_event(ev: &AnySyncTimelineEvent) -> bool {
     match ev {
         AnySyncTimelineEvent::State(state) => !is_live_location_start(state),
         // A running share pings every few seconds; only its start notifies.
-        AnySyncTimelineEvent::MessageLike(m) => matches!(m, AnySyncMessageLikeEvent::Beacon(_)),
+        AnySyncTimelineEvent::MessageLike(m) => match m {
+            AnySyncMessageLikeEvent::Beacon(_) => true,
+            AnySyncMessageLikeEvent::RoomMessage(rm) => rm
+                .as_original()
+                .is_some_and(|orig| is_verification_request(&orig.content.msgtype)),
+            _ => false,
+        },
     }
 }
 
