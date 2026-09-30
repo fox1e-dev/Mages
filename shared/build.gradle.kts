@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalWasmDsl::class)
 
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -195,7 +196,7 @@ tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMet
     mustRunAfter("kspCommonMainKotlinMetadata")
 }
 
-tasks.matching { it.name.startsWith("compile") && it.name.contains("Kotlin") }.configureEach {
+tasks.withType<KotlinCompilationTask<*>>().configureEach {
     dependsOn("kspCommonMainKotlinMetadata")
 }
 
