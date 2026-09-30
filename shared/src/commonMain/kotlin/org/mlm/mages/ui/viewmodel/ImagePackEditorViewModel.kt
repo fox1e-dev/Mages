@@ -12,6 +12,8 @@ import org.mlm.mages.matrix.PackWrite
 import org.mlm.mages.ui.ImagePackEditorUiState
 import org.mlm.mages.ui.PackEditorEntry
 import org.mlm.mages.ui.PendingPackImage
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 /**
  * Editor for a room's image packs (spec v1.19 `m.room.image_pack`).
@@ -134,7 +136,7 @@ class ImagePackEditorViewModel(
             // A pack this pick created has no name yet, and its state key is
             // derived from one, so say so instead of leaving Save to fail.
             if (landed != null && currentState.packs.getOrNull(landed!!)?.isNew == true) {
-                _events.send(Event.ShowSuccess("Give this pack a name, then save"))
+                _events.send(Event.ShowSuccess(getString(Res.string.give_this_pack_a_name_then_save)))
             }
         }
     }
@@ -168,7 +170,7 @@ class ImagePackEditorViewModel(
         }
         launch {
             service.port.setImagePackEnabled(roomId, pack.stateKey, enabled)
-                .onFailure { _events.send(Event.ShowError("Could not update this pack")) }
+                .onFailure { _events.send(Event.ShowError(getString(Res.string.could_not_update_this_pack))) }
             updateState { copy(stateKeysBeingSaved = stateKeysBeingSaved - pack.stateKey) }
             load()
         }
@@ -226,7 +228,7 @@ class ImagePackEditorViewModel(
         launch {
             val result = service.port.removeImagePack(roomId, pack.stateKey)
             if (result.isFailure) {
-                _events.send(Event.ShowError("Could not remove this pack"))
+                _events.send(Event.ShowError(getString(Res.string.could_not_remove_this_pack)))
             } else {
                 load()
             }
@@ -275,7 +277,7 @@ class ImagePackEditorViewModel(
                 // no pack.
                 for (pending in pack.pendingImages) {
                     if (pending.shortcodeError != null) {
-                        failures.add(pending.shortcode.ifBlank { "an image" })
+                        failures.add(pending.shortcode.ifBlank { getString(Res.string.an_image) })
                     } else {
                         service.port.uploadPackImage(pending.path, pending.mime)
                             .onSuccess { uploaded ->
@@ -287,7 +289,7 @@ class ImagePackEditorViewModel(
                                     )
                                 )
                             }
-                            .onFailure { failures.add(pending.shortcode.ifBlank { "an image" }) }
+                            .onFailure { failures.add(pending.shortcode.ifBlank { getString(Res.string.an_image) }) }
                     }
                     step++
                     updateState { copy(uploadProgress = step.toFloat() / total) }
@@ -296,7 +298,7 @@ class ImagePackEditorViewModel(
                 if (pack.displayName.isBlank()) {
                     // A pack's state key is derived from its name, so there is
                     // nothing sensible to file it under.
-                    failures.add("an unnamed pack")
+                    failures.add(getString(Res.string.an_unnamed_pack))
                     step++
                     continue
                 }
@@ -322,7 +324,7 @@ class ImagePackEditorViewModel(
                 )
             }
             _events.send(
-                if (failures.isEmpty()) Event.ShowSuccess("Image packs saved")
+                if (failures.isEmpty()) Event.ShowSuccess(getString(Res.string.image_packs_saved))
                 else Event.ShowError("Could not save ${failures.joinToString(", ")}")
             )
             load()

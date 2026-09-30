@@ -32,6 +32,8 @@ import org.mlm.mages.ui.util.downloadNameHint
 import org.mlm.mages.matrix.ReactionSummary
 import org.mlm.mages.AttachmentKind
 import kotlin.getValue
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 class ThreadViewModel(
     private val service: MatrixService,
@@ -348,7 +350,7 @@ class ThreadViewModel(
      */
     private fun loadInitialThread() {
         launch(onError = {
-            updateState { copy(isLoading = false, error = it.message ?: "Failed to load thread") }
+            updateState { copy(isLoading = false, error = it.message ?: getString(Res.string.failed_to_load_thread)) }
         }) {
             updateState { copy(isLoading = true, error = null) }
 
@@ -413,7 +415,7 @@ class ThreadViewModel(
 
         launch(onError = { e ->
             updateState { copy(isLoading = false) }
-            launch { _events.send(Event.ShowError(e.message ?: "Failed to load more messages")) }
+            launch { _events.send(Event.ShowError(e.message ?: getString(Res.string.failed_to_load_more_messages))) }
         }) {
             updateState { copy(isLoading = true) }
 
@@ -603,13 +605,13 @@ class ThreadViewModel(
             result
                 .onSuccess { path ->
                     if (path.isBlank()) {
-                        _events.send(Event.ShowError("Downloaded file is missing or empty"))
+                        _events.send(Event.ShowError(getString(Res.string.downloaded_file_is_missing_or_empty)))
                     } else {
                         onOpen(path, mime)
                     }
                 }
                 .onFailure { t ->
-                    _events.send(Event.ShowError(t.message ?: "Download failed"))
+                    _events.send(Event.ShowError(t.message ?: getString(Res.string.download_failed)))
                 }
         }
     }
@@ -753,7 +755,7 @@ class ThreadViewModel(
         if (result?.isSuccess == true) {
             updateState { copy(editingEvent = null, input = "") }
         } else {
-            _events.send(Event.ShowError(result.toUserMessage("Failed to edit message")))
+            _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.failed_to_edit_message))))
         }
 
         return result?.isSuccess == true
@@ -767,7 +769,7 @@ class ThreadViewModel(
 
         val result = runSafe { service.redact(roomId, event.eventId, null) }
         if (result?.isSuccess != true) {
-            _events.send(Event.ShowError(result.toUserMessage("Failed to delete message")))
+            _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.failed_to_delete_message))))
         }
         return result?.isSuccess == true
     }
@@ -811,7 +813,7 @@ class ThreadViewModel(
 
         if (result?.isSuccess != true) {
             updateState { copy(input = text, replyingTo = replyingTo) }
-            _events.send(Event.ShowError(result.toUserMessage("Failed to send message")))
+            _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.failed_to_send_message))))
         }
 
         return result?.isSuccess == true

@@ -129,35 +129,35 @@ fun MessageActionSheet(
             }
             if (onShare != null) {
                 ActionItem(Icons.Default.Share,
-                    if (currentPlatform == SettingPlatform.WEB) "Download" else "Share") { onShare(); onDismiss() }
+                    if (currentPlatform == SettingPlatform.WEB) stringResource(Res.string.download) else stringResource(Res.string.share)) { onShare(); onDismiss() }
             }
             if (onForward != null && event.isForwardable()) {
-                ActionItem(Icons.AutoMirrored.Filled.Forward, "Forward") { onForward(); onDismiss() }
+                ActionItem(Icons.AutoMirrored.Filled.Forward, stringResource(Res.string.forward)) { onForward(); onDismiss() }
             }
-            ActionItem(Icons.AutoMirrored.Filled.Reply, "Reply") { onReply(); onDismiss() }
+            ActionItem(Icons.AutoMirrored.Filled.Reply, stringResource(Res.string.reply_action)) { onReply(); onDismiss() }
             if (onReplyInThread != null) {
-                ActionItem(Icons.Default.Forum, "Reply in thread") { onReplyInThread(); onDismiss() }
+                ActionItem(Icons.Default.Forum, stringResource(Res.string.reply_in_thread)) { onReplyInThread(); onDismiss() }
             }
             if (isMine && event.sendState == SendState.Failed && onRetry != null) {
                 ActionItem(Icons.Default.Refresh, stringResource(Res.string.retry)) { onRetry(); onDismiss() }
             }
-            ActionItem(Icons.Default.Bookmark, "Mark as read here") { onMarkReadHere(); onDismiss() }
+            ActionItem(Icons.Default.Bookmark, stringResource(Res.string.mark_as_read_here)) { onMarkReadHere(); onDismiss() }
             if (isMine && event.sendState != SendState.Failed && event.eventId.isNotBlank()) {
                 if (event.pollData != null) {
                     if (event.pollData?.isEnded == false && onEditPoll != null) {
-                        ActionItem(Icons.Default.Poll, "Edit poll") { onEditPoll(); onDismiss() }
+                        ActionItem(Icons.Default.Poll, stringResource(Res.string.edit_poll)) { onEditPoll(); onDismiss() }
                     }
                 } else if (event.attachment != null) {
                     if (onEditCaption != null) {
                         ActionItem(
                             Icons.Default.Edit,
-                            if (event.hasCaption()) "Edit caption" else "Add caption",
+                            if (event.hasCaption()) stringResource(Res.string.edit_caption) else stringResource(Res.string.add_caption),
                         ) { onEditCaption(); onDismiss() }
                     }
                     if (event.hasCaption() && onRemoveCaption != null) {
                         ActionItem(
                             Icons.Default.Close,
-                            "Remove caption",
+                            stringResource(Res.string.remove_caption),
                             MaterialTheme.colorScheme.error,
                         ) { onRemoveCaption(); onDismiss() }
                     }
@@ -169,19 +169,19 @@ fun MessageActionSheet(
                 }
             }
             if (isMine || (canDeleteOthers && event.eventId.isNotBlank())) {
-                ActionItem(Icons.Default.Delete, "Delete", MaterialTheme.colorScheme.error) { onDelete(); onDismiss() }
+                ActionItem(Icons.Default.Delete, stringResource(Res.string.delete), MaterialTheme.colorScheme.error) { onDelete(); onDismiss() }
             }
             if (canPin && event.eventId.isNotBlank()) {
                 if (isPinned && onUnpin != null) {
-                    ActionItem(Icons.Default.PushPin, "Unpin") { onUnpin(); onDismiss() }
+                    ActionItem(Icons.Default.PushPin, stringResource(Res.string.unpin)) { onUnpin(); onDismiss() }
                 } else if (!isPinned && onPin != null) {
                     ActionItem(Icons.Default.PushPin, "Pin") { onPin(); onDismiss() }
                 }
             }
-            ActionItem(Icons.Default.Deselect, "Select") { onSelect(); onDismiss() }
+            ActionItem(Icons.Default.Deselect, stringResource(Res.string.select)) { onSelect(); onDismiss() }
             HorizontalDivider(Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm))
             if (onReport != null && event.eventId.isNotBlank()) {
-                ActionItem(Icons.Default.Flag, "Report", MaterialTheme.colorScheme.error) { onReport(); onDismiss() }
+                ActionItem(Icons.Default.Flag, stringResource(Res.string.report), MaterialTheme.colorScheme.error) { onReport(); onDismiss() }
             }
         }
     }
@@ -212,7 +212,7 @@ private fun QuickReactionsRow(
     onOpenPicker: () -> Unit,
     onOpenImagePicker: () -> Unit
 ) {
-    Text("Quick reactions", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = Spacing.lg), fontWeight = FontWeight.Medium)
+    Text(stringResource(Res.string.quick_reactions), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = Spacing.lg), fontWeight = FontWeight.Medium)
     Spacer(Modifier.height(Spacing.sm))
     LazyRow(contentPadding = PaddingValues(horizontal = Spacing.lg), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         items(quickReactions) { emoji ->
@@ -223,14 +223,14 @@ private fun QuickReactionsRow(
         item {
             Surface(onClick = onOpenPicker, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.size(48.dp)) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Add, contentDescription = "More emoji", modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Add, contentDescription = stringResource(Res.string.more_emoji), modifier = Modifier.size(20.dp))
                 }
             }
         }
         item {
             Surface(onClick = onOpenImagePicker, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.size(48.dp)) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Image, contentDescription = "React with an image", modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Image, contentDescription = stringResource(Res.string.react_with_an_image), modifier = Modifier.size(20.dp))
                 }
             }
         }

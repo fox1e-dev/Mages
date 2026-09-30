@@ -16,6 +16,9 @@ import androidx.compose.ui.unit.dp
 import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.matrix.RoomPowerLevels
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
+import androidx.compose.runtime.Composable
 
 @Composable
 fun PowerLevelsSheet(
@@ -36,7 +39,7 @@ fun PowerLevelsSheet(
                 .padding(Spacing.lg)
         ) {
             Text(
-                "Manage Permissions",
+                stringResource(Res.string.manage_permissions),
                 style = MaterialTheme.typography.titleLarge
             )
 
@@ -52,12 +55,12 @@ fun PowerLevelsSheet(
                 ) {
                     Column(modifier = Modifier.padding(Spacing.md)) {
                         Text(
-                            "Default permissions",
+                            stringResource(Res.string.default_permissions),
                             style = MaterialTheme.typography.titleSmall
                         )
                         Spacer(Modifier.height(Spacing.sm))
                         Text(
-                            "Ban: ${pl.ban}, Kick: ${pl.kick}, Redact: ${pl.redact}, Invite: ${pl.invite}",
+                            stringResource(Res.string.power_levels_summary, pl.ban, pl.kick, pl.redact, pl.invite),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -67,7 +70,7 @@ fun PowerLevelsSheet(
             Spacer(Modifier.height(Spacing.lg))
 
             Text(
-                "Members",
+                stringResource(Res.string.members_room),
                 style = MaterialTheme.typography.titleSmall
             )
 
@@ -127,7 +130,7 @@ fun PowerLevelsSheet(
                             }
                             if (canEdit) {
                                 Text(
-                                    "Tap to edit",
+                                    stringResource(Res.string.tap_to_edit),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -143,7 +146,7 @@ fun PowerLevelsSheet(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Close")
+                Text(stringResource(Res.string.close))
             }
 
             Spacer(Modifier.height(Spacing.md))
@@ -160,11 +163,11 @@ fun PowerLevelsSheet(
                 showRoleDialog = false
                 selectedMember = null
             },
-            title = { Text("Change role for ${member.displayName ?: member.userId}") },
+            title = { Text(stringResource(Res.string.change_role_for, member.displayName ?: member.userId)) },
             text = {
                 Column {
                     RoleOption(
-                        label = "Admin (100)",
+                        label = stringResource(Res.string.admin_100),
                         selected = currentLevel >= 100,
                         onClick = {
                             onUpdatePowerLevel(member.userId, 100)
@@ -172,7 +175,7 @@ fun PowerLevelsSheet(
                         }
                     )
                     RoleOption(
-                        label = "Moderator (50)",
+                        label = stringResource(Res.string.moderator_50),
                         selected = currentLevel in 50..99,
                         onClick = {
                             onUpdatePowerLevel(member.userId, 50)
@@ -180,7 +183,7 @@ fun PowerLevelsSheet(
                         }
                     )
                     RoleOption(
-                        label = "User (0)",
+                        label = stringResource(Res.string.user_0),
                         selected = currentLevel < 50,
                         onClick = {
                             onUpdatePowerLevel(member.userId, 0)
@@ -188,7 +191,7 @@ fun PowerLevelsSheet(
                         }
                     )
                     RoleOption(
-                        label = "Custom",
+                        label = stringResource(Res.string.custom),
                         selected = currentLevel > 0 && currentLevel != 50L && currentLevel != 100L,
                         onClick = {
                             showRoleDialog = false
@@ -203,7 +206,7 @@ fun PowerLevelsSheet(
                     showRoleDialog = false
                     selectedMember = null
                 }) {
-                    Text("Cancel")
+                    Text(stringResource(Res.string.cancel))
                 }
             }
         )
@@ -220,16 +223,16 @@ fun PowerLevelsSheet(
                 showCustomLevelDialog = false
                 selectedMember = null
             },
-            title = { Text("Set custom power level") },
+            title = { Text(stringResource(Res.string.set_custom_power_level)) },
             text = {
                 Column {
                     Text(
-                        "Enter a custom power level for ${member.displayName ?: member.userId}",
+                        stringResource(Res.string.custom_power_level_for, member.displayName ?: member.userId),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(Modifier.height(Spacing.md))
                     Text(
-                        "Current: ${customLevel.toInt()}",
+                        stringResource(Res.string.current_power_level, customLevel.toInt()),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -242,7 +245,7 @@ fun PowerLevelsSheet(
                     )
                     Spacer(Modifier.height(Spacing.sm))
                     Text(
-                        "Level ${customLevel.toInt()}: ${getRoleLabel(customLevel.toLong())}",
+                        stringResource(Res.string.level_with_label, customLevel.toInt(), getRoleLabel(customLevel.toLong())),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -256,7 +259,7 @@ fun PowerLevelsSheet(
                         selectedMember = null
                     }
                 ) {
-                    Text("Set")
+                    Text(stringResource(Res.string.set))
                 }
             },
             dismissButton = {
@@ -264,7 +267,7 @@ fun PowerLevelsSheet(
                     showCustomLevelDialog = false
                     selectedMember = null
                 }) {
-                    Text("Cancel")
+                    Text(stringResource(Res.string.cancel))
                 }
             }
         )
@@ -283,7 +286,7 @@ private fun RoleOption(
             {
                 Icon(
                     Icons.Default.AdminPanelSettings,
-                    contentDescription = "Selected",
+                    contentDescription = stringResource(Res.string.selected),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -292,9 +295,10 @@ private fun RoleOption(
     )
 }
 
+@Composable
 private fun getRoleLabel(powerLevel: Long): String = when {
-    powerLevel >= 100 -> "Admin"
-    powerLevel >= 50 -> "Moderator"
-    powerLevel > 0 -> "Custom ($powerLevel)"
+    powerLevel >= 100 -> stringResource(Res.string.admin)
+    powerLevel >= 50 -> stringResource(Res.string.moderator)
+    powerLevel > 0 -> stringResource(Res.string.role_custom_level, powerLevel)
     else -> "User"
 }

@@ -18,6 +18,8 @@ import org.mlm.mages.platform.RecordingState
 import org.mlm.mages.platform.createAudioRecorder
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.util.formatDuration
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun VoiceRecorderBar(
@@ -60,7 +62,7 @@ fun VoiceRecorderBar(
             }) {
                 Icon(
                     Icons.Default.Delete,
-                    contentDescription = "Cancel recording",
+                    contentDescription = stringResource(Res.string.cancel_recording),
                     tint = MaterialTheme.colorScheme.error
                 )
             }
@@ -89,7 +91,7 @@ fun VoiceRecorderBar(
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Send voice message",
+                    contentDescription = stringResource(Res.string.send_voice_message),
                     modifier = Modifier.size(20.dp)
                 )
             }

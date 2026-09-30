@@ -40,6 +40,8 @@ import org.mlm.mages.matrix.KnockRequestSummary
 import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun KnockRequestsSheet(
@@ -68,7 +70,7 @@ fun KnockRequestsSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Knock requests (${requests.size})",
+                    stringResource(Res.string.knock_requests_count, requests.size),
                     style = MaterialTheme.typography.titleMedium
                 )
             }
@@ -81,7 +83,7 @@ fun KnockRequestsSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "No pending knock requests",
+                        stringResource(Res.string.no_pending_knock_requests),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -121,12 +123,12 @@ fun KnockRequestsSheet(
                                     }) {
                                         Icon(Icons.Default.Close, contentDescription = null)
                                         Spacer(Modifier.width(Spacing.xs))
-                                        Text("Decline")
+                                        Text(stringResource(Res.string.decline))
                                     }
                                     Button(onClick = { onAccept(request.userId) }) {
                                         Icon(Icons.Default.Check, contentDescription = null)
                                         Spacer(Modifier.width(Spacing.xs))
-                                        Text("Accept")
+                                        Text(stringResource(Res.string.accept))
                                     }
                                 }
                             }
@@ -140,8 +142,8 @@ fun KnockRequestsSheet(
 
     declineTarget?.let { request ->
         DeclineKnockDialog(
-            title = "Decline ${request.displayName ?: request.userId}",
-            message = "Their request to join this room will be declined.",
+            title = stringResource(Res.string.decline_user_named, request.displayName ?: request.userId),
+            message = stringResource(Res.string.their_request_to_join_this_room_will_be_declined),
             reasonValue = declineReason,
             onReasonChange = { declineReason = it },
             onConfirm = {
@@ -171,7 +173,7 @@ private fun DeclineKnockDialog(
                 OutlinedTextField(
                     value = reasonValue,
                     onValueChange = onReasonChange,
-                    label = { Text("Reason (optional)") },
+                    label = { Text(stringResource(Res.string.reason_optional)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -182,12 +184,12 @@ private fun DeclineKnockDialog(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
             ) {
-                Text("Decline")
+                Text(stringResource(Res.string.decline))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(Res.string.cancel))
             }
         }
     )

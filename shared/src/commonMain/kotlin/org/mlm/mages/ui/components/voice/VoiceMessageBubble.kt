@@ -27,6 +27,8 @@ import org.mlm.mages.platform.PlaybackState
 import org.mlm.mages.platform.createAudioPlayer
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.util.formatDuration
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 private val SPEED_OPTIONS = listOf(1f, 1.5f, 2f)
 
@@ -105,7 +107,7 @@ fun VoiceMessageBubble(
                 } else {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        contentDescription = if (isPlaying) stringResource(Res.string.pause) else "Play",
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(24.dp)
                     )

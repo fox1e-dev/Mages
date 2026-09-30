@@ -20,6 +20,8 @@ import org.mlm.mages.platform.PlaybackState
 import org.mlm.mages.platform.createAudioPlayer
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.util.formatDuration
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun VoicePreviewDialog(
@@ -65,7 +67,7 @@ fun VoicePreviewDialog(
                     .padding(horizontal = Spacing.xl, vertical = Spacing.xl)
             ) {
                 Text(
-                    text = "Voice message",
+                    text = stringResource(Res.string.voice_message),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -104,7 +106,7 @@ fun VoicePreviewDialog(
                         } else {
                             Icon(
                                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = if (isPlaying) "Pause" else "Play",
+                                contentDescription = if (isPlaying) stringResource(Res.string.pause) else "Play",
                                 tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(26.dp)
                             )

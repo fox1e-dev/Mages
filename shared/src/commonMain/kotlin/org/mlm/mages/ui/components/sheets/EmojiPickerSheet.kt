@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.sp
 import org.koin.compose.koinInject
 import org.mlm.mages.emoji.RecentEmojiStore
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun EmojiPickerSheet(
@@ -29,7 +31,7 @@ fun EmojiPickerSheet(
         if (recent.isEmpty()) {
             emojiCategories
         } else {
-            listOf(EmojiCategory("Recent", recent.map { it.emoji })) + emojiCategories
+            listOf(EmojiCategory(stringResource(Res.string.recent), recent.map { it.emoji })) + emojiCategories
         }
     }
 

@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.dp
 import org.mlm.mages.matrix.RoomPredecessorInfo
 import org.mlm.mages.matrix.RoomUpgradeInfo
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun RoomUpgradeBanner(
@@ -40,7 +42,7 @@ fun RoomUpgradeBanner(
                     Spacer(Modifier.width(Spacing.sm))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "This room has been upgraded",
+                            stringResource(Res.string.this_room_has_been_upgraded),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -53,7 +55,7 @@ fun RoomUpgradeBanner(
                         }
                     }
                     TextButton(onClick = { onNavigateToRoom(successor.roomId) }) {
-                        Text("Go to new room")
+                        Text(stringResource(Res.string.go_to_new_room))
                         Icon(Icons.AutoMirrored.Filled.ArrowForward, null, Modifier.size(16.dp))
                     }
                 }
@@ -84,7 +86,7 @@ fun RoomUpgradeBanner(
 //                        modifier = Modifier.weight(1f)
 //                    )
 //                    TextButton(onClick = { onNavigateToRoom(predecessor.roomId) }) {
-//                        Text("View old room")
+//                        Text(stringResource(Res.string.view_old_room))
 //                    }
 //                }
 //            }

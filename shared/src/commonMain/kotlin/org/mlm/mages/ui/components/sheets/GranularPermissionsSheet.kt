@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import org.mlm.mages.matrix.RoomPowerLevelChanges
 import org.mlm.mages.matrix.RoomPowerLevels
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun GranularPermissionsSheet(
@@ -33,7 +35,7 @@ fun GranularPermissionsSheet(
     onDismiss: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("General", "Messages", "Room Settings", "Advanced")
+    val tabs = listOf(stringResource(Res.string.general), stringResource(Res.string.messages), stringResource(Res.string.room_settings), stringResource(Res.string.advanced))
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -42,7 +44,7 @@ fun GranularPermissionsSheet(
                 .padding(Spacing.lg)
         ) {
             Text(
-                "Room Permissions",
+                stringResource(Res.string.room_permissions),
                 style = MaterialTheme.typography.titleLarge
             )
 
@@ -75,7 +77,7 @@ fun GranularPermissionsSheet(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Done")
+                Text(stringResource(Res.string.done))
             }
 
             Spacer(Modifier.height(Spacing.md))
@@ -94,7 +96,7 @@ private fun GeneralPermissionsTab(
     LazyColumn(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         item {
             PermissionSliderRow(
-                label = "Ban users",
+                label = stringResource(Res.string.ban_users),
                 icon = Icons.Default.Block,
                 value = powerLevels?.ban ?: 50,
                 canEdit = canEdit,
@@ -103,7 +105,7 @@ private fun GeneralPermissionsTab(
         }
         item {
             PermissionSliderRow(
-                label = "Kick users",
+                label = stringResource(Res.string.kick_users),
                 icon = Icons.AutoMirrored.Filled.ExitToApp,
                 value = powerLevels?.kick ?: 50,
                 canEdit = canEdit,
@@ -112,7 +114,7 @@ private fun GeneralPermissionsTab(
         }
         item {
             PermissionSliderRow(
-                label = "Invite users",
+                label = stringResource(Res.string.invite_users),
                 icon = Icons.Default.PersonAdd,
                 value = powerLevels?.invite ?: 0,
                 canEdit = canEdit,
@@ -121,7 +123,7 @@ private fun GeneralPermissionsTab(
         }
         item {
             PermissionSliderRow(
-                label = "Redact messages (others)",
+                label = stringResource(Res.string.redact_messages_others),
                 icon = Icons.Default.Delete,
                 value = powerLevels?.redact ?: 50,
                 canEdit = canEdit,
@@ -142,7 +144,7 @@ private fun MessagePermissionsTab(
     LazyColumn(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         item {
             PermissionSliderRow(
-                label = "Send messages (default)",
+                label = stringResource(Res.string.send_messages_default),
                 icon = Icons.AutoMirrored.Filled.Message,
                 value = powerLevels?.eventsDefault ?: 0,
                 canEdit = canEdit,
@@ -163,7 +165,7 @@ private fun RoomSettingsTab(
     LazyColumn(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         item {
             PermissionSliderRow(
-                label = "Change room name",
+                label = stringResource(Res.string.change_room_name),
                 icon = Icons.Default.Edit,
                 value = powerLevels?.roomName ?: 50,
                 canEdit = canEdit,
@@ -172,7 +174,7 @@ private fun RoomSettingsTab(
         }
         item {
             PermissionSliderRow(
-                label = "Change room avatar",
+                label = stringResource(Res.string.change_room_avatar),
                 icon = Icons.Default.Image,
                 value = powerLevels?.roomAvatar ?: 50,
                 canEdit = canEdit,
@@ -181,7 +183,7 @@ private fun RoomSettingsTab(
         }
         item {
             PermissionSliderRow(
-                label = "Change topic",
+                label = stringResource(Res.string.change_topic),
                 icon = Icons.AutoMirrored.Filled.Subject,
                 value = powerLevels?.roomTopic ?: 50,
                 canEdit = canEdit,
@@ -202,7 +204,7 @@ private fun AdvancedPermissionsTab(
     LazyColumn(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         item {
             PermissionSliderRow(
-                label = "Default user level",
+                label = stringResource(Res.string.default_user_level),
                 icon = Icons.Default.Person,
                 value = powerLevels?.usersDefault ?: 0,
                 canEdit = canEdit,
@@ -211,7 +213,7 @@ private fun AdvancedPermissionsTab(
         }
         item {
             PermissionSliderRow(
-                label = "Default state event level",
+                label = stringResource(Res.string.default_state_event_level),
                 icon = Icons.Default.Settings,
                 value = powerLevels?.stateDefault ?: 50,
                 canEdit = canEdit,
@@ -220,7 +222,7 @@ private fun AdvancedPermissionsTab(
         }
         item {
             PermissionSliderRow(
-                label = "Manage space children",
+                label = stringResource(Res.string.manage_space_children),
                 icon = Icons.Default.AccountTree,
                 value = powerLevels?.spaceChild ?: 100,
                 canEdit = canEdit,
@@ -229,7 +231,7 @@ private fun AdvancedPermissionsTab(
         }
         item {
             PermissionSliderRow(
-                label = "Share live location",
+                label = stringResource(Res.string.share_live_location),
                 icon = Icons.Default.LocationOn,
                 value = powerLevels?.beacon ?: 0,
                 canEdit = canEdit,
@@ -238,7 +240,7 @@ private fun AdvancedPermissionsTab(
         }
         item {
             PermissionSliderRow(
-                label = "Manage live location",
+                label = stringResource(Res.string.manage_live_location),
                 icon = Icons.Default.LocationOn,
                 value = powerLevels?.beaconInfo ?: 50,
                 canEdit = canEdit,
@@ -281,7 +283,7 @@ private fun PermissionSliderRow(
                 )
             } else {
                 Text(
-                    "You don't have permission to change this",
+                    stringResource(Res.string.you_don_t_have_permission_to_change_this),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -293,9 +295,9 @@ private fun PermissionSliderRow(
 @Composable
 private fun RoleBadge(level: Long) {
     val (text, color) = when {
-        level >= 100 -> "Admin" to MaterialTheme.colorScheme.primary
+        level >= 100 -> stringResource(Res.string.admin) to MaterialTheme.colorScheme.primary
         level >= 50 -> "Mod" to MaterialTheme.colorScheme.tertiary
-        level > 0 -> "Custom" to MaterialTheme.colorScheme.secondary
+        level > 0 -> stringResource(Res.string.custom) to MaterialTheme.colorScheme.secondary
         else -> "User" to MaterialTheme.colorScheme.onSurfaceVariant
     }
 
@@ -304,7 +306,7 @@ private fun RoleBadge(level: Long) {
         shape = MaterialTheme.shapes.small
     ) {
         Text(
-            "$text ($level)",
+            stringResource(Res.string.role_chip, text, level),
             style = MaterialTheme.typography.labelSmall,
             color = color,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)

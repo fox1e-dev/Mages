@@ -23,6 +23,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.mlm.mages.matrix.MatrixPort
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 enum class AliasAvailability {
     Unknown,
@@ -71,12 +73,12 @@ fun CreateRoomSheet(
 
         if (!isValidAlias(roomAlias)) {
             aliasAvailability = AliasAvailability.Invalid
-            aliasCheckMessage = "Invalid characters in address"
+            aliasCheckMessage = stringResource(Res.string.invalid_characters_in_address)
             return@LaunchedEffect
         }
 
         aliasAvailability = AliasAvailability.Checking
-        aliasCheckMessage = "Checking availability..."
+        aliasCheckMessage = stringResource(Res.string.checking_availability)
         delay(400)
 
         scope.launch {
@@ -87,10 +89,10 @@ fun CreateRoomSheet(
 
             if (resolved != null) {
                 aliasAvailability = AliasAvailability.Taken
-                aliasCheckMessage = "This address is already in use"
+                aliasCheckMessage = stringResource(Res.string.this_address_is_already_in_use)
             } else {
                 aliasAvailability = AliasAvailability.Available
-                aliasCheckMessage = "This address is available"
+                aliasCheckMessage = stringResource(Res.string.this_address_is_available)
             }
         }
     }
@@ -121,17 +123,17 @@ fun CreateRoomSheet(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
-                Text("New room", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(Res.string.new_room_action), style = MaterialTheme.typography.titleMedium)
 
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(Res.string.name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     isError = name.isBlank() && isPublic,
                     supportingText = if (name.isBlank() && isPublic) {
-                        { Text("Room name is required for public rooms") }
+                        { Text(stringResource(Res.string.room_name_is_required_for_public_rooms)) }
                     } else null,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(
@@ -142,13 +144,13 @@ fun CreateRoomSheet(
                 OutlinedTextField(
                     value = topic,
                     onValueChange = { topic = it },
-                    label = { Text("Topic (optional)") },
+                    label = { Text(stringResource(Res.string.topic_optional)) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Checkbox(checked = isPublic, onCheckedChange = { isPublic = it })
-                    Text("Make room public (visible in room directory)")
+                    Text(stringResource(Res.string.make_room_public_visible_in_room_directory))
                 }
 
                 AnimatedVisibility(visible = isPublic) {
@@ -156,7 +158,7 @@ fun CreateRoomSheet(
                         OutlinedTextField(
                             value = roomAlias,
                             onValueChange = { roomAlias = slugifyInput(it) },
-                            label = { Text("Room address") },
+                            label = { Text(stringResource(Res.string.room_address)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             isError = aliasAvailability == AliasAvailability.Taken || aliasAvailability == AliasAvailability.Invalid,
@@ -180,10 +182,10 @@ fun CreateRoomSheet(
                                         CircularWavyProgressIndicator(modifier = Modifier.size(20.dp))
                                     }
                                     AliasAvailability.Available -> {
-                                        Icon(Icons.Default.Check, contentDescription = "Available", tint = MaterialTheme.colorScheme.primary)
+                                        Icon(Icons.Default.Check, contentDescription = stringResource(Res.string.available), tint = MaterialTheme.colorScheme.primary)
                                     }
                                     AliasAvailability.Taken, AliasAvailability.Invalid -> {
-                                        Icon(Icons.Default.Warning, contentDescription = "Error", tint = MaterialTheme.colorScheme.error)
+                                        Icon(Icons.Default.Warning, contentDescription = stringResource(Res.string.error), tint = MaterialTheme.colorScheme.error)
                                     }
                                     else -> {}
                                 }
@@ -204,7 +206,7 @@ fun CreateRoomSheet(
                     OutlinedTextField(
                         value = inviteeInput,
                         onValueChange = { inviteeInput = it },
-                        label = { Text("@user:server (optional)") },
+                        label = { Text(stringResource(Res.string.at_user_server_optional)) },
                         singleLine = true,
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -222,7 +224,7 @@ fun CreateRoomSheet(
                         },
                         enabled = isValidMxid(inviteeInput.trim())
                     ) {
-                        Icon(Icons.Default.Add, "Add")
+                        Icon(Icons.Default.Add, stringResource(Res.string.add))
                     }
                 }
 
@@ -241,7 +243,7 @@ fun CreateRoomSheet(
                                         onClick = { invitees = invitees - mxid },
                                         modifier = Modifier.size(18.dp)
                                     ) {
-                                        Icon(Icons.Default.Close, "Remove", Modifier.size(14.dp))
+                                        Icon(Icons.Default.Close, stringResource(Res.string.remove), Modifier.size(14.dp))
                                     }
                                 }
                             )
@@ -260,7 +262,7 @@ fun CreateRoomSheet(
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = onDismiss, enabled = !isCreating) {
-                    Text("Cancel")
+                    Text(stringResource(Res.string.cancel))
                 }
                 Spacer(Modifier.width(Spacing.sm))
                 Button(
@@ -277,7 +279,7 @@ fun CreateRoomSheet(
                                     roomAlias.ifBlank { null }
                                 )
                             } catch (e: Exception) {
-                                errorMessage = e.message ?: "Failed to create room"
+                                errorMessage = e.message ?: stringResource(Res.string.failed_to_create_room)
                                 isCreating = false
                             }
                         }
@@ -290,7 +292,7 @@ fun CreateRoomSheet(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("Create")
+                        Text(stringResource(Res.string.create))
                     }
                 }
             }

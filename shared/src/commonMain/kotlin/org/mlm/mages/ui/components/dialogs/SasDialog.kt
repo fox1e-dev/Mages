@@ -21,6 +21,7 @@ import org.mlm.mages.ui.animation.AnimationSpecs
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
 import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun SasDialog(
@@ -30,9 +31,8 @@ fun SasDialog(
     otherDevice: String,
     error: String?,
     showAcceptRequest: Boolean,
-    showContinue: Boolean,
     actionInFlight: Boolean,
-    onAcceptOrContinue: () -> Unit,
+    onAccept: () -> Unit,
     onConfirm: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -74,13 +74,12 @@ fun SasDialog(
                 AnimatedContent(
                     targetState = phase,
                     transitionSpec = { AnimationSpecs.contentTransform() },
-                    label = "SasPhase"
+                    label = stringResource(Res.string.sasphase)
                 ) { currentPhase ->
                     SasPhaseContent(
                         phase = currentPhase,
                         emojis = emojis,
                         showAcceptRequest = showAcceptRequest,
-                        showContinue = showContinue,
                         actionInFlight = actionInFlight
                     )
                 }
@@ -102,9 +101,8 @@ fun SasDialog(
                 SasActions(
                     phase = phase,
                     showAcceptRequest = showAcceptRequest,
-                    showContinue = showContinue,
                     actionInFlight = actionInFlight,
-                    onAcceptOrContinue = onAcceptOrContinue,
+                    onAccept = onAccept,
                     onConfirm = onConfirm,
                     onCancel = onCancel
                 )
@@ -118,7 +116,6 @@ private fun SasPhaseContent(
     phase: SasPhase?,
     emojis: List<String>,
     showAcceptRequest: Boolean,
-    showContinue: Boolean,
     actionInFlight: Boolean
 ) {
     when (phase) {
@@ -133,10 +130,10 @@ private fun SasPhaseContent(
         SasPhase.Requested -> {
             if (showAcceptRequest && !actionInFlight) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Verification request received", style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                    Text(stringResource(Res.string.verification_request_received), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(Spacing.sm))
                     Text(
-                        "Accept to continue with emoji verification",
+                        stringResource(Res.string.accept_to_continue_with_emoji_verification),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -151,42 +148,21 @@ private fun SasPhaseContent(
             }
         }
 
-        SasPhase.Ready, SasPhase.Started -> {
-            if (showContinue && !actionInFlight) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Ready to start emoji verification", style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(Spacing.sm))
-                    Text(
-                        "Press Continue on both devices",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            } else {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    LoadingIndicator()
-                    Spacer(Modifier.height(Spacing.sm))
-                    Text("Continuing…")
-                }
-            }
-        }
-
-        SasPhase.Accepted -> {
+        SasPhase.Ready, SasPhase.Started, SasPhase.Accepted -> {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 LoadingIndicator()
                 Spacer(Modifier.height(Spacing.sm))
-                Text("Waiting for the other device…", textAlign = TextAlign.Center)
+                Text(stringResource(Res.string.waiting_for_the_other_device), textAlign = TextAlign.Center)
             }
         }
 
         SasPhase.Emojis -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Compare these emojis", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            Text(stringResource(Res.string.compare_these_emojis), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(Spacing.lg))
             EmojiGrid(emojis)
             Spacer(Modifier.height(Spacing.lg))
             Text(
-                "Do these match on the other device?",
+                stringResource(Res.string.do_these_match_on_the_other_device),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -196,7 +172,7 @@ private fun SasPhaseContent(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 LoadingIndicator()
                 Spacer(Modifier.height(Spacing.sm))
-                Text("Confirmed. Finishing…", textAlign = TextAlign.Center)
+                Text(stringResource(Res.string.confirmed_finishing), textAlign = TextAlign.Center)
             }
         }
 
@@ -217,7 +193,7 @@ private fun SasPhaseContent(
             }
             Spacer(Modifier.height(Spacing.lg))
             Text(
-                "Verification Complete!",
+                stringResource(Res.string.verification_complete),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -226,10 +202,10 @@ private fun SasPhaseContent(
 
         SasPhase.Failed -> {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Verification failed", style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                Text(stringResource(Res.string.verification_failed), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(Spacing.sm))
                 Text(
-                    "You can cancel and try again.",
+                    stringResource(Res.string.you_can_cancel_and_try_again),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -239,14 +215,14 @@ private fun SasPhaseContent(
 
         SasPhase.Cancelled -> {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Verification cancelled", style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                Text(stringResource(Res.string.verification_cancelled), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
             }
         }
 
         else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularWavyProgressIndicator()
             Spacer(Modifier.height(Spacing.sm))
-            Text("Preparing…")
+            Text(stringResource(Res.string.preparing))
         }
     }
 }
@@ -272,9 +248,8 @@ private fun EmojiGrid(emojis: List<String>) {
 private fun SasActions(
     phase: SasPhase?,
     showAcceptRequest: Boolean,
-    showContinue: Boolean,
     actionInFlight: Boolean,
-    onAcceptOrContinue: () -> Unit,
+    onAccept: () -> Unit,
     onConfirm: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -285,7 +260,7 @@ private fun SasActions(
                     OutlinedButton(onClick = onCancel, enabled = !actionInFlight, modifier = Modifier.weight(1f)) {
                         Text(stringResource(Res.string.reject))
                     }
-                    Button(onClick = onAcceptOrContinue, enabled = !actionInFlight, modifier = Modifier.weight(1f)) {
+                    Button(onClick = onAccept, enabled = !actionInFlight, modifier = Modifier.weight(1f)) {
                         Text(stringResource(Res.string.accept))
                     }
                 } else {
@@ -296,17 +271,8 @@ private fun SasActions(
             }
 
             SasPhase.Ready, SasPhase.Started -> {
-                if (showContinue) {
-                    OutlinedButton(onClick = onCancel, enabled = !actionInFlight, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(Res.string.cancel))
-                    }
-                    Button(onClick = onAcceptOrContinue, enabled = !actionInFlight, modifier = Modifier.weight(1f)) {
-                        Text(if (actionInFlight) stringResource(Res.string.sending) else stringResource(Res.string.next))
-                    }
-                } else {
-                    OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(Res.string.cancel))
-                    }
+                OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(Res.string.cancel))
                 }
             }
 

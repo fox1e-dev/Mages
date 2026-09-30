@@ -1811,8 +1811,8 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         awaitClose { }
     }
 
-    override suspend fun acceptSas(flowId: String, otherUserId: String): Boolean =
-        requireClient().acceptSas(flowId, otherUserId).awaitPlainBool()
+    override suspend fun isUserVerified(userId: String): Boolean =
+        requireClient().isUserVerified(userId).awaitPlainBool()
 
     override suspend fun confirmSas(flowId: String, otherUserId: String?): Boolean =
         if (otherUserId.isNullOrEmpty()) requireClient().confirmSas(flowId).awaitPlainBool()

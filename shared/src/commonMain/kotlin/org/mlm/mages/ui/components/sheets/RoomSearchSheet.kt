@@ -23,6 +23,7 @@ import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.util.formatTime
 import mages.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun RoomSearchSheet(
@@ -65,7 +66,7 @@ fun RoomSearchSheet(
                 trailingIcon = {
                     if (query.isNotEmpty()) {
                         IconButton(onClick = { onQueryChange("") }) {
-                            Icon(Icons.Default.Close, "Clear")
+                            Icon(Icons.Default.Close, stringResource(Res.string.clear))
                         }
                     }
                 },

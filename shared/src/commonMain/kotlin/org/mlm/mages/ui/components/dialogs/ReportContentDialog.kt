@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.ui.displayPreview
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun ReportContentDialog(
@@ -27,7 +29,7 @@ fun ReportContentDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.OutlinedFlag, contentDescription = null) },
-        title = { Text("Report message") },
+        title = { Text(stringResource(Res.string.report_message)) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(Spacing.md)
@@ -60,8 +62,8 @@ fun ReportContentDialog(
                 OutlinedTextField(
                     value = reason,
                     onValueChange = { reason = it },
-                    label = { Text("Reason (optional)") },
-                    placeholder = { Text("Why are you reporting this?") },
+                    label = { Text(stringResource(Res.string.reason_optional)) },
+                    placeholder = { Text(stringResource(Res.string.why_are_you_reporting_this)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
                     maxLines = 4
@@ -85,7 +87,7 @@ fun ReportContentDialog(
                     )
                     Spacer(Modifier.width(Spacing.xs))
                     Text(
-                        "Block this user",
+                        stringResource(Res.string.block_this_user),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -99,12 +101,12 @@ fun ReportContentDialog(
                 ),
                 enabled = reason.isNotBlank() || !blockUser // Allow empty reason if just blocking
             ) {
-                Text("Report")
+                Text(stringResource(Res.string.report))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(Res.string.cancel))
             }
         }
     )

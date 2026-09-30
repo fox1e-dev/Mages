@@ -34,6 +34,8 @@ import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.viewmodel.SpaceSettingsViewModel
 import mages.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
+import androidx.compose.runtime.Composable
 
 @Composable
 fun SpaceSettingsScreen(
@@ -56,7 +58,7 @@ fun SpaceSettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Space Settings", fontWeight = FontWeight.SemiBold) },
+                title = { Text(stringResource(Res.string.space_settings), fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.back))
@@ -94,14 +96,14 @@ fun SpaceSettingsScreen(
 
                 // Actions
                 item(key = "actions_title") {
-                    SectionTitle("Actions")
+                    SectionTitle(stringResource(Res.string.actions))
                 }
 
                 if (state.canEditDetails) {
                     item(key = "action_edit_details") {
                         ListItem(
-                            headlineContent = { Text("Edit details") },
-                            supportingContent = { Text("Name, topic, and address") },
+                            headlineContent = { Text(stringResource(Res.string.edit_details)) },
+                            supportingContent = { Text(stringResource(Res.string.name_topic_and_address)) },
                             leadingContent = {
                                 Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary)
                             },
@@ -114,8 +116,8 @@ fun SpaceSettingsScreen(
 
                 item(key = "action_people") {
                     ListItem(
-                        headlineContent = { Text("People") },
-                        supportingContent = { Text("${state.members.size} members") },
+                        headlineContent = { Text(stringResource(Res.string.people)) },
+                        supportingContent = { Text(stringResource(Res.string.n_members, state.members.size)) },
                         leadingContent = {
                             Icon(Icons.Default.Group, null, tint = MaterialTheme.colorScheme.primary)
                         },
@@ -126,8 +128,8 @@ fun SpaceSettingsScreen(
                 if (state.canManageSettings) {
                     item(key = "action_roles") {
                         ListItem(
-                            headlineContent = { Text("Roles and permissions") },
-                            supportingContent = { Text("Who can change what") },
+                            headlineContent = { Text(stringResource(Res.string.roles_and_permissions)) },
+                            supportingContent = { Text(stringResource(Res.string.who_can_change_what)) },
                             leadingContent = {
                                 Icon(Icons.Default.AdminPanelSettings, null, tint = MaterialTheme.colorScheme.primary)
                             },
@@ -140,8 +142,8 @@ fun SpaceSettingsScreen(
 
                 item(key = "action_new_room") {
                     ListItem(
-                        headlineContent = { Text("New room in this space") },
-                        supportingContent = { Text("Create a room inside this space") },
+                        headlineContent = { Text(stringResource(Res.string.new_room_in_this_space)) },
+                        supportingContent = { Text(stringResource(Res.string.create_a_room_inside_this_space)) },
                         leadingContent = {
                             Icon(Icons.Default.AddComment, null, tint = MaterialTheme.colorScheme.primary)
                         },
@@ -153,8 +155,8 @@ fun SpaceSettingsScreen(
 
                 item(key = "action_add_room") {
                     ListItem(
-                        headlineContent = { Text("Add rooms") },
-                        supportingContent = { Text("Add existing rooms to this space") },
+                        headlineContent = { Text(stringResource(Res.string.add_rooms)) },
+                        supportingContent = { Text(stringResource(Res.string.add_existing_rooms_to_this_space)) },
                         leadingContent = {
                             Icon(
                                 Icons.Default.Add,
@@ -171,8 +173,8 @@ fun SpaceSettingsScreen(
                 item(key = "action_invite") {
                     if (state.canInvite || !state.canManageSettings) {
                         ListItem(
-                            headlineContent = { Text("Invite users") },
-                            supportingContent = { Text("Invite users to this space") },
+                            headlineContent = { Text(stringResource(Res.string.invite_users)) },
+                            supportingContent = { Text(stringResource(Res.string.invite_users_to_this_space)) },
                             leadingContent = {
                                 Icon(
                                     Icons.Default.PersonAdd,
@@ -190,7 +192,7 @@ fun SpaceSettingsScreen(
                 item(key = "action_leave") {
                     ListItem(
                         headlineContent = {
-                            Text("Leave space", color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(Res.string.leave_space), color = MaterialTheme.colorScheme.error)
                         },
                         leadingContent = {
                             Icon(
@@ -211,18 +213,18 @@ fun SpaceSettingsScreen(
 
                 if (state.canManageSettings) {
                     item(key = "security_title") {
-                        SectionTitle("Who can join")
+                        SectionTitle(stringResource(Res.string.who_can_join))
                     }
                     item(key = "security_join_rule") {
                         var expanded by remember { mutableStateOf(false) }
                         val rule = state.joinRule ?: RoomJoinRule.Invite
                         val allowCount = state.joinRuleAllowedSpaceIds.size
                         val subtitle = when (rule) {
-                            RoomJoinRule.Public -> "Anyone can join"
-                            RoomJoinRule.Invite -> "Invite only"
-                            RoomJoinRule.Knock -> "Ask to join"
-                            RoomJoinRule.Restricted -> "Space members can join"
-                            RoomJoinRule.KnockRestricted -> "Ask to join with space members"
+                            RoomJoinRule.Public -> stringResource(Res.string.anyone_can_join)
+                            RoomJoinRule.Invite -> stringResource(Res.string.invite_only)
+                            RoomJoinRule.Knock -> stringResource(Res.string.ask_to_join)
+                            RoomJoinRule.Restricted -> stringResource(Res.string.space_members_can_join)
+                            RoomJoinRule.KnockRestricted -> stringResource(Res.string.ask_to_join_with_space_members)
                         }
                         ExposedDropdownMenuBox(
                             expanded = expanded,
@@ -232,10 +234,10 @@ fun SpaceSettingsScreen(
                             OutlinedTextField(
                                 value = if (allowCount > 0 &&
                                     (rule == RoomJoinRule.Restricted || rule == RoomJoinRule.KnockRestricted)
-                                ) "$rule: $allowCount spaces allowed" else "$rule ($subtitle)",
+                                ) stringResource(Res.string.rule_n_spaces_allowed, rule, allowCount) else "$rule ($subtitle)",
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Access") },
+                                label = { Text(stringResource(Res.string.access)) },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                                 modifier = Modifier
                                     .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
@@ -264,13 +266,13 @@ fun SpaceSettingsScreen(
 
                 // Children
                 item(key = "children_title") {
-                    SectionTitle("Rooms in this space (${state.children.size})")
+                    SectionTitle(stringResource(Res.string.rooms_in_space_count, state.children.size))
                 }
 
                 if (state.children.isEmpty() && !state.isLoading) {
                     item(key = "empty") {
                         Text(
-                            "No rooms in this space yet",
+                            stringResource(Res.string.no_rooms_in_this_space_yet),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(Spacing.lg)
@@ -313,16 +315,16 @@ fun SpaceSettingsScreen(
     if (state.showLeaveConfirm) {
         AlertDialog(
             onDismissRequest = viewModel::hideLeaveConfirm,
-            title = { Text("Leave space") },
-            text = { Text("Are you sure you want to leave this space?") },
+            title = { Text(stringResource(Res.string.leave_space)) },
+            text = { Text(stringResource(Res.string.are_you_sure_you_want_to_leave_this_space)) },
             confirmButton = {
                 TextButton(
                     onClick = viewModel::leaveSpace,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) { Text("Leave") }
+                ) { Text(stringResource(Res.string.leave)) }
             },
             dismissButton = {
-                TextButton(onClick = viewModel::hideLeaveConfirm) { Text("Cancel") }
+                TextButton(onClick = viewModel::hideLeaveConfirm) { Text(stringResource(Res.string.cancel)) }
             }
         )
     }
@@ -331,36 +333,36 @@ fun SpaceSettingsScreen(
     if (state.showEditDetails) {
         AlertDialog(
             onDismissRequest = viewModel::hideEditDetailsDialog,
-            title = { Text("Edit details") },
+            title = { Text(stringResource(Res.string.edit_details)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     OutlinedTextField(
                         value = state.editName,
                         onValueChange = viewModel::setEditName,
-                        label = { Text("Name") },
+                        label = { Text(stringResource(Res.string.name)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = state.editTopic,
                         onValueChange = viewModel::setEditTopic,
-                        label = { Text("Topic") },
+                        label = { Text(stringResource(Res.string.topic)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = state.editAlias,
                         onValueChange = viewModel::setEditAlias,
-                        label = { Text("Address") },
+                        label = { Text(stringResource(Res.string.address)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
             },
             confirmButton = {
-                TextButton(onClick = viewModel::saveEditDetails, enabled = !state.isSaving) { Text("Save") }
+                TextButton(onClick = viewModel::saveEditDetails, enabled = !state.isSaving) { Text(stringResource(Res.string.save)) }
             },
             dismissButton = {
-                TextButton(onClick = viewModel::hideEditDetailsDialog) { Text("Cancel") }
+                TextButton(onClick = viewModel::hideEditDetailsDialog) { Text(stringResource(Res.string.cancel)) }
             }
         )
     }
@@ -369,20 +371,20 @@ fun SpaceSettingsScreen(
     if (state.showCreateRoom) {
         AlertDialog(
             onDismissRequest = viewModel::hideCreateRoom,
-            title = { Text("New room") },
+            title = { Text(stringResource(Res.string.new_room_action)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     OutlinedTextField(
                         value = state.newRoomName,
                         onValueChange = viewModel::setNewRoomName,
-                        label = { Text("Name") },
+                        label = { Text(stringResource(Res.string.name)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = state.newRoomTopic,
                         onValueChange = viewModel::setNewRoomTopic,
-                        label = { Text("Topic") },
+                        label = { Text(stringResource(Res.string.topic)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -391,15 +393,15 @@ fun SpaceSettingsScreen(
                             onCheckedChange = viewModel::setNewRoomIsPublic
                         )
                         Spacer(Modifier.width(Spacing.sm))
-                        Text("Make this room public")
+                        Text(stringResource(Res.string.make_this_room_public))
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = viewModel::createRoomInSpace, enabled = !state.isSaving) { Text("Create") }
+                TextButton(onClick = viewModel::createRoomInSpace, enabled = !state.isSaving) { Text(stringResource(Res.string.create)) }
             },
             dismissButton = {
-                TextButton(onClick = viewModel::hideCreateRoom) { Text("Cancel") }
+                TextButton(onClick = viewModel::hideCreateRoom) { Text(stringResource(Res.string.cancel)) }
             }
         )
     }
@@ -408,10 +410,10 @@ fun SpaceSettingsScreen(
     if (state.showLeaveWithChildren) {
         AlertDialog(
             onDismissRequest = viewModel::hideLeaveWithChildren,
-            title = { Text("Leave space") },
+            title = { Text(stringResource(Res.string.leave_space)) },
             text = {
                 Column {
-                    Text("Select any rooms to leave as well.")
+                    Text(stringResource(Res.string.select_any_rooms_to_leave_as_well))
                     Spacer(Modifier.height(Spacing.sm))
                     state.joinedChildren.forEach { child ->
                         Row(
@@ -436,10 +438,10 @@ fun SpaceSettingsScreen(
                     onClick = viewModel::leaveSpaceWithChildren,
                     enabled = !state.isSaving,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) { Text("Leave") }
+                ) { Text(stringResource(Res.string.leave)) }
             },
             dismissButton = {
-                TextButton(onClick = viewModel::hideLeaveWithChildren) { Text("Cancel") }
+                TextButton(onClick = viewModel::hideLeaveWithChildren) { Text(stringResource(Res.string.cancel)) }
             }
         )
     }
@@ -530,7 +532,7 @@ private fun SpaceInfoHeader(space: SpaceInfo, avatarPath: String?) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "${space.memberCount} members",
+                    stringResource(Res.string.n_members, space.memberCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -580,7 +582,7 @@ private fun ChildRoomItem(
             IconButton(onClick = onRemove, enabled = !isRemoving) {
                 Icon(
                     Icons.Default.RemoveCircleOutline,
-                    "Remove",
+                    stringResource(Res.string.remove),
                     tint = MaterialTheme.colorScheme.error
                 )
             }
@@ -588,12 +590,13 @@ private fun ChildRoomItem(
     )
 }
 
+@Composable
 private fun RoomJoinRule.displayNameForSpace(): String = when (this) {
-    RoomJoinRule.Public -> "Public (anyone can join)"
-    RoomJoinRule.Invite -> "Invite only"
-    RoomJoinRule.Knock -> "Knock (ask to join)"
-    RoomJoinRule.Restricted -> "Space members can join"
-    RoomJoinRule.KnockRestricted -> "Ask to join with space members"
+    RoomJoinRule.Public -> stringResource(Res.string.public_anyone_can_join)
+    RoomJoinRule.Invite -> stringResource(Res.string.invite_only)
+    RoomJoinRule.Knock -> stringResource(Res.string.knock_ask_to_join)
+    RoomJoinRule.Restricted -> stringResource(Res.string.space_members_can_join)
+    RoomJoinRule.KnockRestricted -> stringResource(Res.string.ask_to_join_with_space_members)
 }
 
 @Composable
@@ -607,12 +610,12 @@ private fun AddRoomDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add room to space") },
+        title = { Text(stringResource(Res.string.add_room_to_space)) },
         text = {
             Column {
                 if (availableRooms.isEmpty()) {
                     Text(
-                        "All your rooms are already in this space",
+                        stringResource(Res.string.all_your_rooms_are_already_in_this_space),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -653,7 +656,7 @@ private fun AddRoomDialog(
                             onCheckedChange = { suggested = it }
                         )
                         Spacer(Modifier.width(Spacing.sm))
-                        Text("Mark as suggested")
+                        Text(stringResource(Res.string.mark_as_suggested))
                     }
                 }
             }
@@ -663,12 +666,12 @@ private fun AddRoomDialog(
                 onClick = { selectedRoom?.let { onAdd(it.id, suggested) } },
                 enabled = selectedRoom != null
             ) {
-                Text("Add")
+                Text(stringResource(Res.string.add))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(Res.string.cancel))
             }
         }
     )
@@ -687,13 +690,13 @@ private fun InviteUserToSpaceDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.PersonAdd, null) },
-        title = { Text("Invite user to space") },
+        title = { Text(stringResource(Res.string.invite_user_to_space)) },
         text = {
             OutlinedTextField(
                 value = userId,
                 onValueChange = onUserIdChange,
-                label = { Text("User ID") },
-                placeholder = { Text("@user:server.com") },
+                label = { Text(stringResource(Res.string.user_id)) },
+                placeholder = { Text(stringResource(Res.string.user_id_placeholder)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 enabled = !isSaving,
@@ -711,12 +714,12 @@ private fun InviteUserToSpaceDialog(
                     )
                     Spacer(Modifier.width(Spacing.sm))
                 }
-                Text("Invite")
+                Text(stringResource(Res.string.invite))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(Res.string.cancel))
             }
         }
     )

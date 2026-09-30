@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun PollCreatorSheet(
@@ -55,12 +57,12 @@ fun PollCreatorSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    if (isEditing) "Edit poll" else "Create poll",
+                    if (isEditing) stringResource(Res.string.edit_poll) else stringResource(Res.string.create_poll),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, "Close")
+                    Icon(Icons.Default.Close, stringResource(Res.string.close))
                 }
             }
 
@@ -77,8 +79,8 @@ fun PollCreatorSheet(
                 OutlinedTextField(
                     value = question,
                     onValueChange = { question = it },
-                    label = { Text("Question") },
-                    placeholder = { Text("Ask something...") },
+                    label = { Text(stringResource(Res.string.question)) },
+                    placeholder = { Text(stringResource(Res.string.ask_something)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = false,
                     maxLines = 3,
@@ -88,7 +90,7 @@ fun PollCreatorSheet(
                 Spacer(Modifier.height(Spacing.sm))
 
                 Text(
-                    "Options (minimum 2)",
+                    stringResource(Res.string.options_minimum_2),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium
                 )
@@ -100,7 +102,7 @@ fun PollCreatorSheet(
                         onValueChange = { newValue ->
                             answers = answers.toMutableList().apply { set(index, newValue) }
                         },
-                        label = { Text("Option ${index + 1}") },
+                        label = { Text(stringResource(Res.string.option_number, index + 1)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
@@ -115,7 +117,7 @@ fun PollCreatorSheet(
                                 IconButton(onClick = {
                                     answers = answers.toMutableList().apply { removeAt(index) }
                                 }) {
-                                    Icon(Icons.Default.Close, "Remove option")
+                                    Icon(Icons.Default.Close, stringResource(Res.string.remove_option))
                                 }
                             }
                         }
@@ -129,7 +131,7 @@ fun PollCreatorSheet(
                     ) {
                         Icon(Icons.Default.Add, null)
                         Spacer(Modifier.width(Spacing.sm))
-                        Text("Add option")
+                        Text(stringResource(Res.string.add_option))
                     }
                 }
 
@@ -139,7 +141,7 @@ fun PollCreatorSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Allow multiple answers",
+                        stringResource(Res.string.allow_multiple_answers),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Switch(
@@ -157,7 +159,7 @@ fun PollCreatorSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancel")
+                    Text(stringResource(Res.string.cancel))
                 }
                 Spacer(Modifier.width(Spacing.sm))
                 Button(
@@ -175,7 +177,7 @@ fun PollCreatorSheet(
                         Icon(Icons.AutoMirrored.Filled.Send, null)
                         Spacer(Modifier.width(Spacing.sm))
                     }
-                    Text(if (isEditing) "Save poll" else "Create poll")
+                    Text(if (isEditing) stringResource(Res.string.save_poll) else stringResource(Res.string.create_poll))
                 }
             }
         }

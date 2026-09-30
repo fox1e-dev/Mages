@@ -49,6 +49,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.mlm.mages.ui.components.snackbar.SnackbarManager
 import org.mlm.mages.ui.components.snackbar.snackbarHost
 import org.mlm.mages.ui.components.snackbar.rememberErrorPoster
+import mages.shared.generated.resources.Res
 
 
 @Composable
@@ -106,7 +107,7 @@ fun MediaGalleryScreen(
                 )
             } else {
                 TopAppBar(
-                    title = { Text("Media & Files") },
+                    title = { Text(stringResource(Res.string.media_files)) },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.back))
@@ -146,7 +147,7 @@ fun MediaGalleryScreen(
                     Tab(
                         selected = selectedTab == tab,
                         onClick = { selectedTab = tab },
-                        text = { Text("${tab.name} ($count)") }
+                        text = { Text(stringResource(Res.string.media_tab_count, tab.name, count)) }
                     )
                 }
             }
@@ -238,15 +239,15 @@ fun SelectionTopBar(
     onSelectAll: () -> Unit
 ) {
     TopAppBar(
-        title = { Text("$selectedCount selected") },
+        title = { Text(stringResource(Res.string.n_selected, selectedCount)) },
         navigationIcon = {
             IconButton(onClick = onClearSelection) {
-                Icon(Icons.Default.Close, "Clear selection")
+                Icon(Icons.Default.Close, stringResource(Res.string.clear_selection))
             }
         },
         actions = {
             IconButton(onClick = onSelectAll) {
-                Icon(Icons.Default.SelectAll, "Select all")
+                Icon(Icons.Default.SelectAll, stringResource(Res.string.select_all))
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -274,19 +275,19 @@ private fun SelectionBottomBar(
             TextButton(onClick = onShare) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.Share, null)
-                    Text("Share", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(Res.string.share), style = MaterialTheme.typography.labelSmall)
                 }
             }
             TextButton(onClick = onForward) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.AutoMirrored.Filled.Forward, null)
-                    Text("Forward", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(Res.string.forward), style = MaterialTheme.typography.labelSmall)
                 }
             }
             TextButton(onClick = onDownload) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.Download, null)
-                    Text("Download", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(Res.string.download), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
@@ -342,7 +343,7 @@ fun MediaGrid(
 
     if (galleryItems.isEmpty()) {
         if (hitStart) {
-            EmptyTabContent(icon = Icons.Default.Image, text = "No media found")
+            EmptyTabContent(icon = Icons.Default.Image, text = stringResource(Res.string.no_media_found))
         } else {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -619,7 +620,7 @@ private fun FilesList(
 
     if (items.isEmpty()) {
         if (hitStart) {
-            EmptyTabContent(icon = Icons.Default.Folder, text = "No files found")
+            EmptyTabContent(icon = Icons.Default.Folder, text = stringResource(Res.string.no_files_found))
         } else {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -788,7 +789,7 @@ private fun LinksList(
 
     if (links.isEmpty()) {
         if (hitStart) {
-            EmptyTabContent(icon = Icons.Default.Link, text = "No links found")
+            EmptyTabContent(icon = Icons.Default.Link, text = stringResource(Res.string.no_links_found))
         } else {
             Box(
                 modifier = Modifier.fillMaxSize(),

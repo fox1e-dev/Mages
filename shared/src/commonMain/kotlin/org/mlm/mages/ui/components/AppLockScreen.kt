@@ -19,6 +19,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun AppLockScreen(
@@ -49,18 +51,18 @@ fun AppLockScreen(
             )
             Spacer(Modifier.height(24.dp))
             Text(
-                text = "Mages is locked",
+                text = stringResource(Res.string.mages_is_locked),
                 style = MaterialTheme.typography.headlineSmall
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Unlock with biometrics or device PIN",
+                text = stringResource(Res.string.unlock_with_biometrics_or_device_pin),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(32.dp))
             Button(onClick = onUnlock) {
-                Text("Unlock")
+                Text(stringResource(Res.string.unlock))
             }
         }
     }

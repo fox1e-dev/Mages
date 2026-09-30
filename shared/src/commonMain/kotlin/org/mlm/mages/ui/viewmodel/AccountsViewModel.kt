@@ -5,6 +5,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import org.mlm.mages.MatrixService
 import org.mlm.mages.accounts.AccountStore
 import org.mlm.mages.accounts.MatrixAccount
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 data class AccountsUiState(
     val accounts: List<MatrixAccount> = emptyList(),
@@ -47,7 +49,7 @@ class AccountsViewModel(
 
         launch(onError = { t ->
             updateState { copy(isSwitching = false, error = t.message) }
-            launch { _events.send(Event.ShowError(t.message ?: "Failed to switch account")) }
+            launch { _events.send(Event.ShowError(t.message ?: getString(Res.string.failed_to_switch_account))) }
         }) {
             updateState { copy(isSwitching = true, error = null) }
 
@@ -58,14 +60,14 @@ class AccountsViewModel(
             if (result.isSuccess) {
                 _events.send(Event.AccountSwitched)
             } else {
-                _events.send(Event.ShowError(result.toUserMessage("Failed to switch to ${account.userId}")))
+                _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.failed_to_switch_to_account, account.userId))))
             }
         }
     }
 
     fun removeAccount(account: MatrixAccount) {
         launch(onError = { t ->
-            launch { _events.send(Event.ShowError(t.message ?: "Failed to remove account")) }
+            launch { _events.send(Event.ShowError(t.message ?: getString(Res.string.failed_to_remove_account))) }
         }) {
             service.removeAccount(account.id)
             _events.send(Event.AccountRemoved)

@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun RecoveryDialog(keyValue: String, onChange: (String) -> Unit, onCancel: () -> Unit, onConfirm: () -> Unit) {
@@ -23,14 +25,14 @@ fun RecoveryDialog(keyValue: String, onChange: (String) -> Unit, onCancel: () ->
                 }
             }
         },
-        title = { Text("Enter Recovery Key", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center) },
+        title = { Text(stringResource(Res.string.enter_recovery_key), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-                Text("Paste your recovery key to restore end-to-end encryption and verify this session.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                OutlinedTextField(value = keyValue, onValueChange = onChange, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Enter recovery key...") }, supportingText = { Text("Recovery keys are usually 48 characters in groups of 4") }, shape = MaterialTheme.shapes.medium, singleLine = false, minLines = 3)
+                Text(stringResource(Res.string.paste_your_recovery_key_to_restore_end_to_end_encryption_and_verify_this_session), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedTextField(value = keyValue, onValueChange = onChange, modifier = Modifier.fillMaxWidth(), placeholder = { Text(stringResource(Res.string.enter_recovery_key)) }, supportingText = { Text(stringResource(Res.string.recovery_keys_are_usually_48_characters_in_groups_of_4)) }, shape = MaterialTheme.shapes.medium, singleLine = false, minLines = 3)
             }
         },
-        confirmButton = { Button(onClick = onConfirm, enabled = keyValue.isNotBlank()) { Text("Recover") } },
-        dismissButton = { TextButton(onClick = onCancel) { Text("Cancel") } }
+        confirmButton = { Button(onClick = onConfirm, enabled = keyValue.isNotBlank()) { Text(stringResource(Res.string.recover)) } },
+        dismissButton = { TextButton(onClick = onCancel) { Text(stringResource(Res.string.cancel)) } }
     )
 }

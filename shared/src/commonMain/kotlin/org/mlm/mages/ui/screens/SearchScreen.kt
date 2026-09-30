@@ -27,6 +27,7 @@ import org.mlm.mages.ui.components.core.EmptyState
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.util.formatTime
 import org.mlm.mages.ui.viewmodel.SearchViewModel
+import mages.shared.generated.resources.Res
 
 @Composable
 fun SearchScreen(
@@ -85,7 +86,7 @@ fun SearchScreen(
                     EmptyState(
                         icon = Icons.Default.ErrorOutline,
                         title = stringResource(Res.string.search_error),
-                        subtitle = error.message ?: "Unknown error"
+                        subtitle = error.message ?: stringResource(Res.string.unknown_error)
                     )
                 }
 
@@ -201,7 +202,7 @@ private fun SearchTopBar(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (query.isNotEmpty()) {
                         IconButton(onClick = { onQueryChange("") }) {
-                            Icon(Icons.Default.Clear, "Clear")
+                            Icon(Icons.Default.Clear, stringResource(Res.string.clear))
                         }
                     }
                     if (isSearching) {

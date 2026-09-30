@@ -9,6 +9,9 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+import androidx.compose.runtime.Composable
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 private fun pad2(value: Int): String = value.toString().padStart(2, '0')
 
@@ -20,6 +23,7 @@ fun formatTime(epochMs: Long): String {
 }
 
 @OptIn(ExperimentalTime::class)
+@Composable
 fun formatDate(timestampMs: Long): String {
     val instant = Instant.fromEpochMilliseconds(timestampMs)
     val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
@@ -27,8 +31,8 @@ fun formatDate(timestampMs: Long): String {
     val yesterday = Clock.System.now().minus(1.days).toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     return when (localDateTime.date) {
-        today -> "Today"
-        yesterday -> "Yesterday"
+        today -> stringResource(Res.string.today)
+        yesterday -> stringResource(Res.string.yesterday)
         else -> {
             val month = localDateTime.month.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
             "${localDateTime.day} $month ${localDateTime.year}"
@@ -37,6 +41,7 @@ fun formatDate(timestampMs: Long): String {
 }
 
 @OptIn(ExperimentalTime::class)
+@Composable
 fun formatPinnedTimestamp(timestampMs: Long): String {
     val local = Instant.fromEpochMilliseconds(timestampMs)
         .toLocalDateTime(TimeZone.currentSystemDefault())
@@ -46,7 +51,7 @@ fun formatPinnedTimestamp(timestampMs: Long): String {
     val time = "${pad2(local.hour)}:${pad2(local.minute)}"
     val day = when (local.date) {
         today -> return time
-        yesterday -> "Yesterday"
+        yesterday -> stringResource(Res.string.yesterday)
         else -> {
             val month = local.month.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
             "${local.day} $month ${local.year}"
@@ -79,18 +84,20 @@ fun formatBytes(bytes: Long): String = when {
     else -> "${bytes / (1024 * 1024 * 1024)} GB"
 }
 
+@Composable
 fun formatTypingText(users: List<String>): String = when (users.size) {
     0 -> ""
-    1 -> "${users[0]} is typing"
-    2 -> "${users[0]} and ${users[1]} are typing"
-    else -> "${users[0]}, ${users[1]} and ${users.size - 2} others are typing"
+    1 -> stringResource(Res.string.typing_one, users[0])
+    2 -> stringResource(Res.string.typing_two, users[0], users[1])
+    else -> stringResource(Res.string.typing_many, users[0], users[1], users.size - 2)
 }
 
+@Composable
 fun formatSeenBy(names: List<String>): String = when (names.size) {
     0 -> ""
-    1 -> "Seen by ${names[0]}"
-    2 -> "Seen by ${names[0]} and ${names[1]}"
-    else -> "Seen by ${names[0]}, ${names[1]} +${names.size - 2}"
+    1 -> stringResource(Res.string.seen_by_one, names[0])
+    2 -> stringResource(Res.string.seen_by_two, names[0], names[1])
+    else -> stringResource(Res.string.seen_by_many, names[0], names[1], names.size - 2)
 }
 
 @OptIn(ExperimentalTime::class)

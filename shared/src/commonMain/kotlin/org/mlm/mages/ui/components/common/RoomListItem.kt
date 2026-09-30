@@ -29,6 +29,8 @@ import org.mlm.mages.ui.theme.Limits
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun RoomListItem(
@@ -108,7 +110,7 @@ fun RoomListItem(
                         Spacer(Modifier.width(4.dp))
                         Icon(
                             Icons.Default.Star,
-                            contentDescription = "Favourite",
+                            contentDescription = stringResource(Res.string.favourite_room),
                             modifier = Modifier.size(14.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -118,7 +120,7 @@ fun RoomListItem(
                         Spacer(Modifier.width(4.dp))
                         Icon(
                             Icons.Default.Lock,
-                            contentDescription = "Encrypted",
+                            contentDescription = stringResource(Res.string.encrypted),
                             modifier = Modifier.size(14.dp),
                             tint = MaterialTheme.colorScheme.tertiary
                         )
@@ -128,7 +130,7 @@ fun RoomListItem(
                         Spacer(Modifier.width(4.dp))
                         Icon(
                             Icons.Default.MyLocation,
-                            contentDescription = "Sharing live location",
+                            contentDescription = stringResource(Res.string.sharing_live_location),
                             modifier = Modifier.size(14.dp),
                             tint = MaterialTheme.colorScheme.error
                         )
@@ -207,7 +209,7 @@ fun RoomListItem(
             Spacer(Modifier.width(Spacing.sm))
 
             val timeLabel = remember(item.lastMessageTs) {
-                item.lastMessageTs?.let(::formatRelativeTime)
+                item.lastMessageTs?.let { formatRelativeTime(it) }
             }
             if (timeLabel != null) {
                 Text(
@@ -275,7 +277,7 @@ fun InviteListItem(
                 Spacer(Modifier.height(2.dp))
 
                 Text(
-                    text = "Invited you to join",
+                    text = stringResource(Res.string.invited_you_to_join),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -303,11 +305,11 @@ fun InviteListItem(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("Decline")
+                    Text(stringResource(Res.string.decline))
                 }
 
                 Button(onClick = onAccept) {
-                    Text("Accept")
+                    Text(stringResource(Res.string.accept))
                 }
             }
         }
@@ -319,6 +321,7 @@ private data class MessagePreview(
     val icon: ImageVector? = null
 )
 
+@Composable
 private fun formatMessagePreview(
     type: LastMessageType,
     body: String?,
@@ -331,22 +334,22 @@ private fun formatMessagePreview(
 
     return when (type) {
         LastMessageType.Text -> {
-            val text = body?.take(Limits.previewCharsMedium)?.replace('\n', ' ') ?: "No messages yet"
+            val text = body?.take(Limits.previewCharsMedium)?.replace('\n', ' ') ?: stringResource(Res.string.no_messages_yet)
             MessagePreview(text = senderPrefix + text)
         }
 
         LastMessageType.Image -> MessagePreview(
-            text = senderPrefix + "Photo",
+            text = senderPrefix + stringResource(Res.string.photo),
             icon = Icons.Default.Image
         )
 
         LastMessageType.Video -> MessagePreview(
-            text = senderPrefix + "Video",
+            text = senderPrefix + stringResource(Res.string.video),
             icon = Icons.Default.Videocam
         )
 
         LastMessageType.Audio -> MessagePreview(
-            text = senderPrefix + "Audio message",
+            text = senderPrefix + stringResource(Res.string.audio_message),
             icon = Icons.Default.Mic
         )
 
@@ -356,12 +359,12 @@ private fun formatMessagePreview(
         )
 
         LastMessageType.Sticker -> MessagePreview(
-            text = senderPrefix + "Sticker",
+            text = senderPrefix + stringResource(Res.string.picker_sticker),
             icon = Icons.Default.EmojiEmotions
         )
 
         LastMessageType.Location -> MessagePreview(
-            text = senderPrefix + "Location",
+            text = senderPrefix + stringResource(Res.string.location),
             icon = Icons.Default.LocationOn
         )
 
@@ -376,20 +379,20 @@ private fun formatMessagePreview(
         )
 
         LastMessageType.Encrypted -> MessagePreview(
-            text = "Encrypted message",
+            text = stringResource(Res.string.encrypted_message),
             icon = Icons.Default.Lock
         )
 
         LastMessageType.Redacted -> MessagePreview(
-            text = senderPrefix + "Message deleted"
+            text = senderPrefix + stringResource(Res.string.message_deleted)
         )
 
         LastMessageType.Membership -> MessagePreview(
-            text = body?.take(Limits.previewCharsMedium)?.replace('\n', ' ') ?: "Membership changed"
+            text = body?.take(Limits.previewCharsMedium)?.replace('\n', ' ') ?: stringResource(Res.string.membership_changed)
         )
 
         LastMessageType.Unknown -> MessagePreview(
-            text = body?.take(Limits.previewCharsMedium)?.replace('\n', ' ') ?: "Encrypted or Unknown message"
+            text = body?.take(Limits.previewCharsMedium)?.replace('\n', ' ') ?: stringResource(Res.string.encrypted_or_unknown_message)
         )
     }
 }
@@ -402,6 +405,7 @@ private fun formatSenderName(sender: String): String {
 }
 
 @OptIn(ExperimentalTime::class)
+@Composable
 fun formatRelativeTime(timestamp: Long): String {
     fun pad2(value: Int): String = value.toString().padStart(2, '0')
 

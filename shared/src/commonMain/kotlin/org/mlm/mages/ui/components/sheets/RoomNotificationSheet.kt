@@ -13,6 +13,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.mlm.mages.matrix.RoomNotificationMode
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun RoomNotificationSheet(
@@ -28,7 +30,7 @@ fun RoomNotificationSheet(
                 .padding(bottom = Spacing.xxl)
         ) {
             Text(
-                "Notification Settings",
+                stringResource(Res.string.notification_settings),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)
@@ -46,24 +48,24 @@ fun RoomNotificationSheet(
             } else {
                 NotificationOption(
                     icon = Icons.Default.Notifications,
-                    title = "All Messages",
-                    subtitle = "Get notified for every message",
+                    title = stringResource(Res.string.all_messages),
+                    subtitle = stringResource(Res.string.get_notified_for_every_message),
                     isSelected = currentMode == RoomNotificationMode.AllMessages,
                     onClick = { onModeChange(RoomNotificationMode.AllMessages); onDismiss() }
                 )
 
                 NotificationOption(
                     icon = Icons.Default.AlternateEmail,
-                    title = "Mentions & Keywords Only",
-                    subtitle = "Only notify when mentioned or keywords match",
+                    title = stringResource(Res.string.mentions_and_keywords_only),
+                    subtitle = stringResource(Res.string.only_notify_when_mentioned_or_keywords_match),
                     isSelected = currentMode == RoomNotificationMode.MentionsAndKeywordsOnly,
                     onClick = { onModeChange(RoomNotificationMode.MentionsAndKeywordsOnly); onDismiss() }
                 )
 
                 NotificationOption(
                     icon = Icons.Default.NotificationsOff,
-                    title = "Mute",
-                    subtitle = "No notifications from this room",
+                    title = stringResource(Res.string.mute),
+                    subtitle = stringResource(Res.string.no_notifications_from_this_room),
                     isSelected = currentMode == RoomNotificationMode.Mute,
                     onClick = { onModeChange(RoomNotificationMode.Mute); onDismiss() }
                 )
@@ -100,7 +102,7 @@ private fun NotificationOption(
             if (isSelected) {
                 Icon(
                     Icons.Default.Check,
-                    "Selected",
+                    stringResource(Res.string.selected),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }

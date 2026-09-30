@@ -13,6 +13,8 @@ import kotlinx.coroutines.launch
 import org.mlm.mages.matrix.MatrixPort
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 class LocationSharingCoordinatorCore(
     private val scope: CoroutineScope,
@@ -47,7 +49,7 @@ class LocationSharingCoordinatorCore(
 
     suspend fun startShare(roomId: String, durationMinutes: Int): Result<String> {
         if (!source.isSupported || !source.canSend) {
-            return Result.failure(IllegalStateException("Live location is not supported on this platform"))
+            return Result.failure(IllegalStateException(getString(Res.string.live_location_is_not_supported_on_this_platform)))
         }
 
         if (!sourceStarted) {
@@ -64,23 +66,23 @@ class LocationSharingCoordinatorCore(
                 }
                 LocationResult.NotSupported -> {
                     stopSource()
-                    return Result.failure(IllegalStateException("Live location is not supported on this platform"))
+                    return Result.failure(IllegalStateException(getString(Res.string.live_location_is_not_supported_on_this_platform)))
                 }
                 LocationResult.PermissionDenied -> {
                     stopSource()
-                    return Result.failure(IllegalStateException("Location permission denied"))
+                    return Result.failure(IllegalStateException(getString(Res.string.location_permission_denied)))
                 }
             }
             if (!sourceStarted) {
                 stopSource()
-                return Result.failure(IllegalStateException("Location updates stopped"))
+                return Result.failure(IllegalStateException(getString(Res.string.location_updates_stopped)))
             }
         }
 
         val port = matrixPort()
         if (port == null) {
             if (activeShares.value.isEmpty()) stopSource()
-            return Result.failure(IllegalStateException("Matrix not ready"))
+            return Result.failure(IllegalStateException(getString(Res.string.matrix_not_ready)))
         }
         val durationMs = durationMinutes * 60 * 1000L
         val result = port.startLiveLocationShare(roomId, durationMs)
@@ -158,7 +160,7 @@ class LocationSharingCoordinatorCore(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Throwable) {
-                handleSourceError(error.message ?: "Location updates stopped")
+                handleSourceError(error.message ?: getString(Res.string.location_updates_stopped))
             }
         }
     }

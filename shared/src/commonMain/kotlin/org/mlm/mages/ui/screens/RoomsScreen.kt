@@ -34,6 +34,7 @@ import org.jetbrains.compose.resources.stringResource
 import mages.shared.generated.resources.*
 import org.mlm.mages.ui.components.common.InviteListItem
 import org.mlm.mages.ui.components.dialogs.DeclineInviteDialog
+import mages.shared.generated.resources.Res
 
 @Composable
 fun RoomsScreen(
@@ -430,7 +431,7 @@ private fun RoomsTopBar(
             FilterChip(
                 selected = typeFilter == RoomTypeFilter.Groups,
                 onClick = { onSetTypeFilter(RoomTypeFilter.Groups) },
-                label = { Text(withCount("Groups", unreadGroupsCount, unreadOnly)) },
+                label = { Text(withCount(stringResource(Res.string.groups), unreadGroupsCount, unreadOnly)) },
                 leadingIcon = if (typeFilter == RoomTypeFilter.Groups) {
                     { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
                 } else null

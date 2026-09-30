@@ -5,6 +5,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.SpaceInfo
 import org.mlm.mages.ui.SpacesUiState
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 class SpacesViewModel(
     private val service: MatrixService
@@ -30,7 +32,7 @@ class SpacesViewModel(
     fun loadSpaces() {
         launch(
             onError = { t ->
-                updateState { copy(isLoading = false, error = t.message ?: "Failed to load spaces") }
+                updateState { copy(isLoading = false, error = t.message ?: getString(Res.string.failed_to_load_spaces)) }
             }
         ) {
             updateState { copy(isLoading = true, error = null) }
@@ -113,7 +115,7 @@ class SpacesViewModel(
     fun createSpace() {
         val s = currentState
         if (s.createName.isBlank()) {
-            launch { _events.send(Event.ShowError("Space name is required")) }
+            launch { _events.send(Event.ShowError(getString(Res.string.space_name_is_required))) }
             return
         }
         if (s.isCreating) return
@@ -121,7 +123,7 @@ class SpacesViewModel(
         launch(
             onError = { t ->
                 updateState { copy(isCreating = false) }
-                launch { _events.send(Event.ShowError(t.message ?: "Failed to create space")) }
+                launch { _events.send(Event.ShowError(t.message ?: getString(Res.string.failed_to_create_space))) }
             }
         ) {
              updateState { copy(isCreating = true) }
@@ -137,11 +139,11 @@ class SpacesViewModel(
                 val spaceId = result.getOrThrow()
                 updateState { copy(isCreating = false, showCreateSpace = false) }
                 loadSpaces()
-                _events.send(Event.ShowSuccess("Space created"))
+                _events.send(Event.ShowSuccess(getString(Res.string.space_created)))
                 _events.send(Event.OpenSpace(spaceId, s.createName.trim()))
             } else {
                 updateState { copy(isCreating = false) }
-                _events.send(Event.ShowError(result.toUserMessage("Failed to create space")))
+                _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.failed_to_create_space))))
             }
         }
     }

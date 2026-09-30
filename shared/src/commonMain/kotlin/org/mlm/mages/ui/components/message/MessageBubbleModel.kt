@@ -66,7 +66,7 @@ sealed interface MessageAttachmentUi {
         val fileName: String? = null,
         val mime: String? = null,
         val sizeBytes: Long? = null,
-        val title: String = "Audio",
+        val title: String,
         val subtitle: String? = null,
         val isVoice: Boolean = false,
     ) : MessageAttachmentUi

@@ -29,7 +29,7 @@ abstract class BaseViewModel<S>(initialState: S) : ViewModel(), KoinComponent {
     }
 
     protected fun launch(
-        onError: ((Throwable) -> Unit)? = null,
+        onError: (suspend (Throwable) -> Unit)? = null,
         block: suspend CoroutineScope.() -> Unit
     ): Job = viewModelScope.launch {
         try {
@@ -42,7 +42,7 @@ abstract class BaseViewModel<S>(initialState: S) : ViewModel(), KoinComponent {
     }
 
     protected suspend fun <T> runSafe(
-        onError: ((Throwable) -> T?)? = null,
+        onError: (suspend (Throwable) -> T?)? = null,
         block: suspend () -> T
     ): T? = try {
         block()

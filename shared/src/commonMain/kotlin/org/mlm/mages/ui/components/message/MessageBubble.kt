@@ -51,6 +51,7 @@ import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.util.formatDuration
 import org.mlm.mages.ui.util.formatTime
 import kotlin.math.min
+import org.jetbrains.compose.resources.pluralStringResource
 
 @Composable
 fun TimelineSenderAvatar(
@@ -933,7 +934,7 @@ private fun StickerMessage(
                     ) {
                         Icon(
                             imageVector = Icons.Default.EmojiEmotions,
-                            contentDescription = "Sticker",
+                            contentDescription = stringResource(Res.string.picker_sticker),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                             modifier = Modifier.size(48.dp),
                         )
@@ -975,7 +976,7 @@ private fun ThreadIndicator(count: Int, onClick: () -> Unit, modifier: Modifier 
             )
             Spacer(Modifier.width(4.dp))
             Text(
-                text = if (count == 1) "Reply" else "$count replies",
+                text = if (count == 1) stringResource(Res.string.reply_action) else pluralStringResource(Res.plurals.reply_count, count, count),
                 style = MaterialTheme.typography.labelSmall
             )
         }
@@ -1003,13 +1004,13 @@ private fun FailedIndicator() {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = Spacing.xs)) {
         Icon(
             imageVector = Icons.Default.Error,
-            contentDescription = "Failed",
+            contentDescription = stringResource(Res.string.failed),
             tint = MaterialTheme.colorScheme.error,
             modifier = Modifier.size(14.dp)
         )
         Spacer(Modifier.width(6.dp))
         Text(
-            text = "Failed to send. Check your internet?",
+            text = stringResource(Res.string.failed_to_send_check_your_internet),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.error
         )
@@ -1049,7 +1050,7 @@ fun MessageTimeAndStatus(
         if (isPinned && isMine) PinnedIndicator(tint = textColor.copy(alpha = 0.7f))
         if (isEdited) {
             Text(
-                text = "(edited)",
+                text = stringResource(Res.string.message_edited_suffix),
                 style = MaterialTheme.typography.labelSmall,
                 color = textColor.copy(alpha = 0.6f)
             )

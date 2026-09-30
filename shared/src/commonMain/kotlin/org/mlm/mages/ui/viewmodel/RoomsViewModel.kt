@@ -23,6 +23,8 @@ import org.mlm.mages.ui.RoomListItemUi
 import org.mlm.mages.ui.RoomTypeFilter
 import org.mlm.mages.ui.RoomsUiState
 import org.mlm.mages.ui.SpaceBadgeUi
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 class RoomsViewModel(
     private val service: MatrixService
@@ -124,7 +126,7 @@ class RoomsViewModel(
             } else {
                 val message = result.exceptionOrNull()?.message
                     ?: result.getOrNull()?.exceptionOrNull()?.message
-                    ?: "Could not accept the invite. Try again."
+                    ?: getString(Res.string.could_not_accept_the_invite_try_again)
                 _events.send(Event.ShowError(message))
             }
         }
@@ -171,7 +173,7 @@ class RoomsViewModel(
             val leaveResult = service.port.leaveRoom(roomId)
             if (leaveResult.isFailure) {
                 updateState { copy(isDecliningInvite = false) }
-                _events.send(Event.ShowError("Could not decline the invite. Try again."))
+                _events.send(Event.ShowError(getString(Res.string.could_not_decline_the_invite_try_again)))
                 return@launch
             }
 

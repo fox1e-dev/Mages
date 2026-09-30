@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun DeclineInviteDialog(
@@ -27,12 +29,12 @@ fun DeclineInviteDialog(
 
     AlertDialog(
         onDismissRequest = { if (!isLoading) onDismiss() },
-        title = { Text("Decline invite") },
+        title = { Text(stringResource(Res.string.decline_invite)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 Text(
                     text = buildString {
-                        append("Decline the invite to ")
+                        append(stringResource(Res.string.decline_the_invite_to))
                         append(roomName)
                         if (inviterName != null) {
                             append(" from ")
@@ -45,7 +47,7 @@ fun DeclineInviteDialog(
 
                 if (inviterName != null) {
                     DialogToggleRow(
-                        label = "Block $inviterName",
+                        label = stringResource(Res.string.block_user_named, inviterName),
                         checked = blockUser,
                         enabled = !isLoading,
                         onCheckedChange = { blockUser = it },
@@ -61,7 +63,7 @@ fun DeclineInviteDialog(
                 }
 
                 DialogToggleRow(
-                    label = "Report this room",
+                    label = stringResource(Res.string.report_this_room),
                     checked = reportRoom,
                     enabled = !isLoading,
                     onCheckedChange = { reportRoom = it },
@@ -79,7 +81,7 @@ fun DeclineInviteDialog(
                     OutlinedTextField(
                         value = reason,
                         onValueChange = { reason = it },
-                        label = { Text("Reason (optional)") },
+                        label = { Text(stringResource(Res.string.reason_optional)) },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading,
                         minLines = 2,
@@ -104,12 +106,12 @@ fun DeclineInviteDialog(
                     )
                     Spacer(Modifier.width(Spacing.sm))
                 }
-                Text("Decline")
+                Text(stringResource(Res.string.decline))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss, enabled = !isLoading) {
-                Text("Cancel")
+                Text(stringResource(Res.string.cancel))
             }
         },
     )

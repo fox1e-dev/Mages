@@ -137,7 +137,7 @@ internal fun TimelineLocationItem(
                     ) {
                         Icon(
                             Icons.Default.Close,
-                            contentDescription = "Stop sharing",
+                            contentDescription = stringResource(Res.string.stop_sharing),
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -170,7 +170,7 @@ internal fun TimelineLocationItem(
                             .padding(8.dp),
                     ) {
                         Text(
-                            text = "LIVE",
+                            text = stringResource(Res.string.live),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onError,

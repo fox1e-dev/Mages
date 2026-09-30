@@ -1,8 +1,8 @@
 package org.mlm.mages.verification
 
-import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +16,8 @@ import org.mlm.mages.matrix.MatrixPort
 import org.mlm.mages.matrix.VerifEvent
 import org.mlm.mages.matrix.VerificationService
 import org.mlm.mages.matrix.asVerificationService
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 data class VerificationUiState(
     val sasFlowId: String? = null,
@@ -25,7 +27,7 @@ data class VerificationUiState(
     val sasEmojis: List<String> = emptyList(),
     val sasError: String? = null,
     val sasIncoming: Boolean = false,
-    val sasContinuePressed: Boolean = false,
+    val sasActionInFlight: Boolean = false,
 )
 
 class VerificationCoordinator(
@@ -38,6 +40,8 @@ class VerificationCoordinator(
     val state: StateFlow<VerificationUiState> = _state.asStateFlow()
 
     private var inboxToken: ULong? = null
+
+    private var flowJob: Job? = null
 
     private var verificationService: VerificationService? = null
 
@@ -65,7 +69,19 @@ class VerificationCoordinator(
             runCatching { service.portOrNull?.stopVerificationInbox(token) }
         }
         inboxToken = null
+        flowJob?.cancel()
+        flowJob = null
         _state.value = VerificationUiState()
+    }
+
+    private fun startFlow(previous: VerificationUiState, block: suspend CoroutineScope.() -> Unit) {
+        flowJob?.cancel()
+        flowJob = scope.launch {
+            previous.sasFlowId?.let { flowId ->
+                runCatching { verificationService?.cancelVerification(flowId, previous.sasOtherUser) }
+            }
+            block()
+        }
     }
 
     private suspend fun startInboxIfPossible() {
@@ -74,6 +90,8 @@ class VerificationCoordinator(
 
         inboxToken = port.startVerificationInbox(object : MatrixPort.VerificationInboxObserver {
             override fun onRequest(flowId: String, fromUser: String, fromDevice: String) {
+                flowJob?.cancel()
+                flowJob = null
                 _state.value = _state.value.copy(
                     sasFlowId = flowId,
                     sasPhase = SasPhase.Requested,
@@ -82,7 +100,7 @@ class VerificationCoordinator(
                     sasEmojis = emptyList(),
                     sasError = null,
                     sasIncoming = true,
-                    sasContinuePressed = false
+                    sasActionInFlight = false
                 )
             }
 
@@ -93,7 +111,8 @@ class VerificationCoordinator(
     }
 
     fun startSelfVerify(deviceId: String) {
-        _state.value = _state.value.copy(
+        val previous = _state.value
+        _state.value = previous.copy(
             sasFlowId = null,
             sasPhase = SasPhase.Requested,
             sasIncoming = false,
@@ -102,7 +121,7 @@ class VerificationCoordinator(
             sasError = null
         )
 
-        scope.launch {
+        startFlow(previous) {
             try {
                 verificationService?.startDeviceVerification(deviceId)?.collect { event ->
                     handleVerifEvent(event)
@@ -110,20 +129,21 @@ class VerificationCoordinator(
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     sasPhase = SasPhase.Failed,
-                    sasError = e.message ?: "Verification failed to start",
-                    sasContinuePressed = false
+                    sasError = e.message ?: getString(Res.string.verification_failed_to_start),
+                    sasActionInFlight = false
                 )
             } ?: run {
                 _state.value = _state.value.copy(
                     sasPhase = SasPhase.Failed,
-                    sasError = "Verification service unavailable"
+                    sasError = getString(Res.string.verification_service_unavailable)
                 )
             }
         }
     }
 
     fun startUserVerify(userId: String) {
-        _state.value = _state.value.copy(
+        val previous = _state.value
+        _state.value = previous.copy(
             sasFlowId = null,
             sasPhase = SasPhase.Requested,
             sasIncoming = false,
@@ -131,7 +151,7 @@ class VerificationCoordinator(
             sasError = null
         )
 
-        scope.launch {
+        startFlow(previous) {
             try {
                 verificationService?.startUserVerification(userId)?.collect { event ->
                     handleVerifEvent(event)
@@ -139,13 +159,13 @@ class VerificationCoordinator(
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     sasPhase = SasPhase.Failed,
-                    sasError = e.message ?: "Verification failed to start",
-                    sasContinuePressed = false
+                    sasError = e.message ?: getString(Res.string.verification_failed_to_start),
+                    sasActionInFlight = false
                 )
             } ?: run {
                 _state.value = _state.value.copy(
                     sasPhase = SasPhase.Failed,
-                    sasError = "Verification service unavailable"
+                    sasError = getString(Res.string.verification_service_unavailable)
                 )
             }
         }
@@ -158,13 +178,14 @@ class VerificationCoordinator(
                     sasFlowId = event.flow_id,
                     sasPhase = SasPhase.Requested,
                     sasError = null,
-                    sasContinuePressed = false
+                    sasActionInFlight = false
                 )
             }
             is VerifEvent.Ready -> {
                 _state.value = _state.value.copy(
                     sasPhase = SasPhase.Ready,
-                    sasError = null
+                    sasError = null,
+                    sasActionInFlight = false
                 )
             }
             is VerifEvent.SasStarted -> {
@@ -206,64 +227,38 @@ class VerificationCoordinator(
                 _state.value = _state.value.copy(
                     sasPhase = SasPhase.Failed,
                     sasError = event.message,
-                    sasContinuePressed = false
+                    sasActionInFlight = false
                 )
             }
         }
     }
 
-    fun acceptOrContinue() {
-        val flowId = _state.value.sasFlowId
-        if (flowId == null) {
-            _state.value = _state.value.copy(sasError = "No active verification")
-            return
-        }
+    fun accept() {
+        val previous = _state.value
+        val flowId = previous.sasFlowId
+        if (flowId == null || previous.sasPhase != SasPhase.Requested) return
 
-        val phase = _state.value.sasPhase
-        val otherUser = _state.value.sasOtherUser
+        val otherUser = previous.sasOtherUser
+        _state.value = previous.copy(sasActionInFlight = true, sasError = null)
 
-        _state.value = _state.value.copy(sasContinuePressed = true, sasError = null)
-
-        scope.launch {
-            when (phase) {
-                SasPhase.Requested -> {
-                    try {
-                        verificationService
-                            ?.acceptAndObserveVerification(flowId, otherUser ?: "")
-                            ?.collect { event -> handleVerifEvent(event) }
-                            ?: run {
-                                _state.value = _state.value.copy(
-                                    sasContinuePressed = false,
-                                    sasError = "Verification service unavailable"
-                                )
-                            }
-                    } catch (e: Exception) {
+        flowJob?.cancel()
+        flowJob = scope.launch {
+            try {
+                verificationService
+                    ?.acceptAndObserveVerification(flowId, otherUser ?: "")
+                    ?.collect { event -> handleVerifEvent(event) }
+                    ?: run {
                         _state.value = _state.value.copy(
-                            sasPhase = SasPhase.Failed,
-                            sasError = e.message ?: "Accept failed",
-                            sasContinuePressed = false
+                            sasActionInFlight = false,
+                            sasError = getString(Res.string.verification_service_unavailable)
                         )
                     }
-                }
-                SasPhase.Ready, SasPhase.Started -> {
-                    val ok = try {
-                        verificationService?.acceptSas(flowId, otherUser ?: "") ?: false
-                    } catch (e: Throwable) {
-                        Logger.w(e) { "Verification: acceptSas failed for $flowId" }
-                        false
-                    }
-
-                    val cur = _state.value
-                    if (cur.sasFlowId == flowId) {
-                        _state.value = cur.copy(
-                            sasContinuePressed = false,
-                            sasError = if (!ok) "Continue failed" else null
-                        )
-                    }
-                }
-                else -> {
-                    _state.value = _state.value.copy(sasContinuePressed = false)
-                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    sasPhase = SasPhase.Failed,
+                    sasError = e.message ?: getString(Res.string.accept_failed),
+                    sasActionInFlight = false
+                )
             }
         }
     }
@@ -274,7 +269,7 @@ class VerificationCoordinator(
 
         scope.launch {
             val ok = verificationService?.confirmSas(flowId, otherUser) ?: false
-            if (!ok) _state.value = _state.value.copy(sasError = "Confirm failed")
+            if (!ok) _state.value = _state.value.copy(sasError = getString(Res.string.confirm_failed))
         }
     }
 
@@ -285,8 +280,10 @@ class VerificationCoordinator(
         scope.launch {
             val ok = verificationService?.cancelVerification(flowId, otherUser) ?: false
             if (!ok) {
-                _state.value = _state.value.copy(sasError = "Cancel failed")
+                _state.value = _state.value.copy(sasError = getString(Res.string.cancel_failed))
             } else {
+                flowJob?.cancel()
+                flowJob = null
                 _state.value = VerificationUiState()
             }
         }

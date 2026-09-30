@@ -20,6 +20,8 @@ import org.mlm.mages.MessageEvent
 import org.mlm.mages.ui.components.message.ReplyPreview
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.toReplyPreview
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun ActionBanner(
@@ -77,9 +79,9 @@ fun ActionBanner(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         when {
-                            !isEditing -> "Replying to $replyTargetName"
-                            event.attachment != null -> "Editing caption"
-                            else -> "Editing"
+                            !isEditing -> stringResource(Res.string.replying_to_named, replyTargetName)
+                            event.attachment != null -> stringResource(Res.string.editing_caption)
+                            else -> stringResource(Res.string.editing)
                         },
                         style = MaterialTheme.typography.labelMedium,
                         color = if (isEditing) {
@@ -105,7 +107,7 @@ fun ActionBanner(
                 ) {
                     Icon(
                         Icons.Default.Close,
-                        if (isEditing) "Cancel edit" else "Cancel reply",
+                        if (isEditing) stringResource(Res.string.cancel_edit) else stringResource(Res.string.cancel_reply),
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )

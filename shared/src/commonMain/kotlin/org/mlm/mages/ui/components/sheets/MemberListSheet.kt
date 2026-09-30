@@ -16,6 +16,8 @@ import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun MemberListSheet(
@@ -44,13 +46,13 @@ fun MemberListSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Members (${members.size})",
+                    stringResource(Res.string.members_count, members.size),
                     style = MaterialTheme.typography.titleMedium
                 )
                 FilledTonalButton(onClick = onInvite) {
                     Icon(Icons.Default.PersonAdd, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(Spacing.sm))
-                    Text("Invite")
+                    Text(stringResource(Res.string.invite))
                 }
             }
             
@@ -78,7 +80,7 @@ fun MemberListSheet(
                     if (bannedMembers.isNotEmpty()) {
                         item(key = "banned_header") {
                             Text(
-                                "Banned (${bannedMembers.size})",
+                                stringResource(Res.string.banned_count, bannedMembers.size),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.padding(
@@ -121,7 +123,7 @@ private fun MemberListItem(
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
-                            "you",
+                            stringResource(Res.string.you),
                             style = MaterialTheme.typography.labelSmall,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
@@ -153,9 +155,9 @@ private fun MemberListItem(
 @Composable
 private fun MembershipBadge(membership: String) {
     val (color, text) = when (membership.lowercase()) {
-        "join" -> MaterialTheme.colorScheme.primary to "Member"
-        "invite" -> MaterialTheme.colorScheme.tertiary to "Invited"
-        "ban" -> MaterialTheme.colorScheme.error to "Banned"
+        "join" -> MaterialTheme.colorScheme.primary to stringResource(Res.string.member)
+        "invite" -> MaterialTheme.colorScheme.tertiary to stringResource(Res.string.invited)
+        "ban" -> MaterialTheme.colorScheme.error to stringResource(Res.string.banned)
         "leave" -> MaterialTheme.colorScheme.outline to "Left"
         else -> MaterialTheme.colorScheme.outline to membership
     }

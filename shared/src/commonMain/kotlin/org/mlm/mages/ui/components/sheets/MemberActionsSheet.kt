@@ -20,6 +20,8 @@ import org.mlm.mages.ui.ActionPresentationUi
 import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun MemberActionsSheet(
@@ -84,7 +86,7 @@ fun MemberActionsSheet(
             if (dmAction.presentation != ActionPresentationUi.Hidden) {
                 ActionItem(
                     icon = Icons.AutoMirrored.Filled.Chat,
-                    title = "Send direct message",
+                    title = stringResource(Res.string.send_direct_message),
                     subtitle = if (dmAction.presentation == ActionPresentationUi.Disabled) {
                         dmAction.reason
                     } else {
@@ -98,16 +100,16 @@ fun MemberActionsSheet(
             if (onVerify != null) {
                 ActionItem(
                     icon = Icons.Default.VerifiedUser,
-                    title = "Verify user",
-                    subtitle = "Start an emoji verification with them",
+                    title = stringResource(Res.string.verify_user),
+                    subtitle = stringResource(Res.string.start_an_emoji_verification_with_them),
                     onClick = { onVerify(); onDismiss() }
                 )
             }
 
             ActionItem(
                 icon = Icons.Default.Block,
-                title = "Ignore user",
-                subtitle = "Hide their messages everywhere",
+                title = stringResource(Res.string.ignore_user),
+                subtitle = stringResource(Res.string.hide_their_messages_everywhere),
                 onClick = { onIgnore(); onDismiss() }
             )
 
@@ -115,7 +117,7 @@ fun MemberActionsSheet(
                 HorizontalDivider(Modifier.padding(vertical = Spacing.sm))
 
                 Text(
-                    "Moderation",
+                    stringResource(Res.string.moderation),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm)
@@ -124,8 +126,8 @@ fun MemberActionsSheet(
                 if (isBanned) {
                     ActionItem(
                         icon = Icons.Default.RemoveCircle,
-                        title = "Unban user",
-                        subtitle = unbanAction.takeIf { it.presentation == ActionPresentationUi.Disabled }?.reason ?: "Allow them to rejoin",
+                        title = stringResource(Res.string.unban_user),
+                        subtitle = unbanAction.takeIf { it.presentation == ActionPresentationUi.Disabled }?.reason ?: stringResource(Res.string.allow_them_to_rejoin),
                         enabled = unbanAction.isEnabled,
                         onClick = { onUnban(null); onDismiss() }
                     )
@@ -133,8 +135,8 @@ fun MemberActionsSheet(
                     if (kickAction.presentation != ActionPresentationUi.Hidden) {
                         ActionItem(
                             icon = Icons.AutoMirrored.Filled.ExitToApp,
-                            title = "Remove from room",
-                            subtitle = kickAction.takeIf { it.presentation == ActionPresentationUi.Disabled }?.reason ?: "Kick user from this room",
+                            title = stringResource(Res.string.remove_from_room),
+                            subtitle = kickAction.takeIf { it.presentation == ActionPresentationUi.Disabled }?.reason ?: stringResource(Res.string.kick_user_from_this_room),
                             enabled = kickAction.isEnabled,
                             tint = MaterialTheme.colorScheme.error,
                             onClick = { showKickDialog = true }
@@ -144,8 +146,8 @@ fun MemberActionsSheet(
                     if (banAction.presentation != ActionPresentationUi.Hidden) {
                         ActionItem(
                             icon = Icons.Default.Block,
-                            title = "Ban from room",
-                            subtitle = banAction.takeIf { it.presentation == ActionPresentationUi.Disabled }?.reason ?: "Permanently remove and prevent rejoining",
+                            title = stringResource(Res.string.ban_from_room),
+                            subtitle = banAction.takeIf { it.presentation == ActionPresentationUi.Disabled }?.reason ?: stringResource(Res.string.permanently_remove_and_prevent_rejoining),
                             enabled = banAction.isEnabled,
                             tint = MaterialTheme.colorScheme.error,
                             onClick = { showBanDialog = true }
@@ -159,8 +161,8 @@ fun MemberActionsSheet(
     // Kick confirmation dialog
     if (showKickDialog) {
         ConfirmModerationDialog(
-            title = "Remove ${member.displayName ?: member.userId}",
-            message = "They will be removed from this room but can rejoin if invited.",
+            title = stringResource(Res.string.remove_user_named, member.displayName ?: member.userId),
+            message = stringResource(Res.string.they_will_be_removed_from_this_room_but_can_rejoin_if_invited),
             reasonValue = reason,
             onReasonChange = { reason = it },
             onConfirm = {
@@ -174,8 +176,8 @@ fun MemberActionsSheet(
     // Ban confirmation dialog
     if (showBanDialog) {
         ConfirmModerationDialog(
-            title = "Ban ${member.displayName ?: member.userId}",
-            message = "They will be removed and won't be able to rejoin unless unbanned.",
+            title = stringResource(Res.string.ban_user_named, member.displayName ?: member.userId),
+            message = stringResource(Res.string.they_will_be_removed_and_won_t_be_able_to_rejoin_unless_unbanned),
             reasonValue = reason,
             onReasonChange = { reason = it },
             isDestructive = true,
@@ -236,7 +238,7 @@ private fun ConfirmModerationDialog(
                 OutlinedTextField(
                     value = reasonValue,
                     onValueChange = onReasonChange,
-                    label = { Text("Reason (optional)") },
+                    label = { Text(stringResource(Res.string.reason_optional)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -249,12 +251,12 @@ private fun ConfirmModerationDialog(
                     ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 else ButtonDefaults.buttonColors()
             ) {
-                Text("Confirm")
+                Text(stringResource(Res.string.confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(Res.string.cancel))
             }
         }
     )

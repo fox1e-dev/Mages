@@ -43,6 +43,7 @@ import org.mlm.mages.notifications.NotificationSettingsRepository
 import org.mlm.mages.notifications.NotificationToggles
 import mages.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun NotificationRulesScreen(
@@ -76,7 +77,7 @@ fun NotificationRulesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Notification rules") },
+                title = { Text(stringResource(Res.string.setting_notification_rules)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.back))
@@ -105,7 +106,7 @@ fun NotificationRulesScreen(
             ) {
                 item {
                     Text(
-                        text = "Server-backed rules",
+                        text = stringResource(Res.string.server_backed_rules),
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
@@ -134,7 +135,7 @@ fun NotificationRulesScreen(
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Default room behavior",
+                        text = stringResource(Res.string.default_room_behavior),
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
@@ -142,7 +143,7 @@ fun NotificationRulesScreen(
 
                 item {
                     NotificationModeDropdown(
-                        title = "Default for DMs (unencrypted)",
+                        title = stringResource(Res.string.default_for_dms_unencrypted),
                         value = defaultDmUnencrypted,
                         onValueChange = { mode ->
                             val previous = defaultDmUnencrypted
@@ -159,7 +160,7 @@ fun NotificationRulesScreen(
 
                 item {
                     NotificationModeDropdown(
-                        title = "Default for DMs (encrypted)",
+                        title = stringResource(Res.string.default_for_dms_encrypted),
                         value = defaultDmEncrypted,
                         onValueChange = { mode ->
                             val previous = defaultDmEncrypted
@@ -176,7 +177,7 @@ fun NotificationRulesScreen(
 
                 item {
                     NotificationModeDropdown(
-                        title = "Default for groups (unencrypted)",
+                        title = stringResource(Res.string.default_for_groups_unencrypted),
                         value = defaultGroupUnencrypted,
                         onValueChange = { mode ->
                             val previous = defaultGroupUnencrypted
@@ -193,7 +194,7 @@ fun NotificationRulesScreen(
 
                 item {
                     NotificationModeDropdown(
-                        title = "Default for groups (encrypted)",
+                        title = stringResource(Res.string.default_for_groups_encrypted),
                         value = defaultGroupEncrypted,
                         onValueChange = { mode ->
                             val previous = defaultGroupEncrypted
@@ -267,7 +268,7 @@ private fun NotificationModeDropdown(
             Text(text = title, style = MaterialTheme.typography.bodyLarge)
             if (hasError) {
                 Text(
-                    text = "Failed to load",
+                    text = stringResource(Res.string.failed_to_load),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -279,7 +280,7 @@ private fun NotificationModeDropdown(
                 onClick = { expanded = true },
                 enabled = !hasError,
             ) {
-                Text(if (hasError) "Error" else currentValue.displayName)
+                Text(if (hasError) stringResource(Res.string.error) else currentValue.displayName)
             }
 
             DropdownMenu(

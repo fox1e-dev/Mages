@@ -51,6 +51,8 @@ import io.github.mlmgames.settings.core.platform.currentPlatform
 import org.mlm.mages.platform.RoomPlatformShortcuts
 import mages.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
+import androidx.compose.runtime.Composable
 
 @Composable
 fun RoomInfoRoute(
@@ -64,10 +66,18 @@ fun RoomInfoRoute(
     val state by viewModel.state.collectAsState()
     val snackbarManager: SnackbarManager = koinInject()
     val verification: VerificationCoordinator = koinInject()
+    val verState by verification.state.collectAsState()
     val postError = rememberErrorPoster(snackbarManager)
+
+    LaunchedEffect(verState.sasFlowId) {
+        viewModel.refreshVerificationState()
+    }
 
     val shortcutSupport = remember { RoomPlatformShortcuts.support() }
 
+
+    val shortcutAddedText = stringResource(Res.string.shortcut_added)
+    val shortcutFailedText = stringResource(Res.string.unable_to_add_shortcut)
 
     fun addHomeShortcut() {
         val roomId = state.profile?.roomId ?: return
@@ -75,10 +85,10 @@ fun RoomInfoRoute(
 
         RoomPlatformShortcuts.addHomeScreenShortcut(roomId, roomName)
             .onSuccess {
-                snackbarManager.show("Shortcut added")
+                snackbarManager.show(shortcutAddedText)
             }
             .onFailure {
-                postError(it.message ?: "Unable to add shortcut")
+                postError(it.message ?: shortcutFailedText)
             }
     }
 
@@ -199,7 +209,7 @@ fun RoomInfoScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Room Info") },
+                title = { Text(stringResource(Res.string.room_info)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.back))
@@ -229,9 +239,9 @@ fun RoomInfoScreen(
                 state.successor?.let { successor ->
                     item {
                         UpgradeBanner(
-                            title = "This room has been upgraded",
+                            title = stringResource(Res.string.this_room_has_been_upgraded),
                             reason = successor.reason,
-                            buttonText = "Go to new room",
+                            buttonText = stringResource(Res.string.go_to_new_room),
                             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                             onAction = { onOpenRoom(successor.roomId) }
                         )
@@ -240,8 +250,8 @@ fun RoomInfoScreen(
                 state.predecessor?.let { predecessor ->
                     item {
                         UpgradeBanner(
-                            title = "Upgraded from another room",
-                            buttonText = "Open previous room",
+                            title = stringResource(Res.string.upgraded_from_another_room),
+                            buttonText = stringResource(Res.string.open_previous_room),
                             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                             onAction = { onOpenRoom(predecessor.roomId) }
                         )
@@ -261,13 +271,23 @@ fun RoomInfoScreen(
                 if (dmPartner != null && state.profile?.isEncrypted == true) {
                     item {
                         SettingsGroup {
-                            SettingsActionRow(
-                                icon = Icons.Default.VerifiedUser,
-                                title = "Verify user",
-                                subtitle = dmPartner.displayName ?: dmPartner.userId,
-                                actionText = "Start",
-                                onClick = { onVerifyUser(dmPartner.userId) }
-                            )
+                            if (state.dmPartnerVerified) {
+                                SettingsActionRow(
+                                    icon = Icons.Default.VerifiedUser,
+                                    title = stringResource(Res.string.verified),
+                                    iconTint = AppColors.Verified,
+                                    enabled = false,
+                                    onClick = {}
+                                )
+                            } else {
+                                SettingsActionRow(
+                                    icon = Icons.Default.VerifiedUser,
+                                    title = stringResource(Res.string.verify_user),
+                                    subtitle = dmPartner.displayName ?: dmPartner.userId,
+                                    actionText = stringResource(Res.string.start),
+                                    onClick = { onVerifyUser(dmPartner.userId) }
+                                )
+                            }
                         }
                     }
                 }
@@ -277,7 +297,7 @@ fun RoomInfoScreen(
                         SettingsGroup {
                             if (state.canEditName) {
                                 EditableSettingField(
-                                    label = "Room name",
+                                    label = stringResource(Res.string.room_name),
                                     value = state.editedName,
                                     onValueChange = onNameChange,
                                     onSave = onSaveName,
@@ -290,7 +310,7 @@ fun RoomInfoScreen(
                             }
                             if (state.canEditTopic) {
                                 EditableSettingField(
-                                    label = "Topic",
+                                    label = stringResource(Res.string.topic),
                                     value = state.editedTopic,
                                     onValueChange = onTopicChange,
                                     onSave = onSaveTopic,
@@ -325,36 +345,36 @@ fun RoomInfoScreen(
                     SettingsGroup {
                         SettingsNavRow(
                             icon = Icons.Default.People,
-                            title = "Members",
-                            subtitle = "${state.members.size} members",
+                            title = stringResource(Res.string.members_room),
+                            subtitle = stringResource(Res.string.n_members, state.members.size),
                             onClick = onShowMembers
                         )
                         if (state.canInvite) {
                             HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                             SettingsNavRow(
                                 icon = Icons.Default.HowToReg,
-                                title = "Knock requests",
-                                subtitle = if (state.knockRequests.isEmpty()) "No pending requests" else "${state.knockRequests.size} pending",
+                                title = stringResource(Res.string.knock_requests),
+                                subtitle = if (state.knockRequests.isEmpty()) stringResource(Res.string.no_pending_requests) else "${state.knockRequests.size} pending",
                                 onClick = onShowKnockRequests
                             )
                         }
                         HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                         SettingsNavRow(
                             icon = Icons.Default.Notifications,
-                            title = "Notifications",
-                            subtitle = state.notificationMode?.displayName ?: "Default",
+                            title = stringResource(Res.string.notifications),
+                            subtitle = state.notificationMode?.displayName ?: stringResource(Res.string.default),
                             onClick = onShowNotificationSettings
                         )
                         HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                         SettingsNavRow(
                             icon = Icons.Default.PhotoLibrary,
-                            title = "Media & Files",
+                            title = stringResource(Res.string.media_files),
                             onClick = onOpenMediaGallery
                         )
                         HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                         SettingsNavRow(
                             icon = Icons.Default.CollectionsBookmark,
-                            title = "Image packs",
+                            title = stringResource(Res.string.image_packs),
                             onClick = onOpenImagePackEditor
                         )
                     }
@@ -363,14 +383,14 @@ fun RoomInfoScreen(
                 val showSecuritySection = state.profile?.let { it.isEncrypted || state.canManageSettings } == true
                 if (showSecuritySection) {
                     item {
-                        SettingsGroupHeader("Security & Access")
+                        SettingsGroupHeader(stringResource(Res.string.security_and_access))
                         SettingsGroup {
                             state.profile.let { profile ->
                                 if (profile.isEncrypted) {
                                     SettingsInfoRow(
                                         icon = Icons.Default.Lock,
-                                        title = "Encryption",
-                                        value = "Enabled"
+                                        title = stringResource(Res.string.encryption),
+                                        value = stringResource(Res.string.enabled)
                                     )
                                     if (state.canManageSettings) {
                                         HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
@@ -378,9 +398,9 @@ fun RoomInfoScreen(
                                 } else if (state.canManageSettings) {
                                     SettingsActionRow(
                                         icon = Icons.Default.LockOpen,
-                                        title = "Encryption",
-                                        subtitle = "Not enabled",
-                                        actionText = "Enable",
+                                        title = stringResource(Res.string.encryption),
+                                        subtitle = stringResource(Res.string.not_enabled),
+                                        actionText = stringResource(Res.string.enable),
                                         enabled = !state.isAdminBusy,
                                         onClick = onEnableEncryption
                                     )
@@ -394,22 +414,22 @@ fun RoomInfoScreen(
                                         RoomJoinRule.KnockRestricted -> {
                                             val count = state.joinRuleAllowedSpaceIds.size
                                             val spaceWord = if (count == 1) "space" else "spaces"
-                                            "${joinRule.displayName}: $count $spaceWord allowed"
+                                            stringResource(Res.string.join_rule_n_spaces_allowed, joinRule.displayName(), count, spaceWord)
                                         }
                                         else -> null
                                     }
                                     SettingsDropdownRow(
                                         icon = Icons.Default.MeetingRoom,
-                                        label = "Who can join",
+                                        label = stringResource(Res.string.who_can_join),
                                         currentValue = state.joinRule,
-                                        displayName = { it.displayName },
+                                        displayName = { it.displayName() },
                                         subtitle = joinRuleSubtitle,
                                         options = listOf(
-                                            RoomJoinRule.Public to "Public (anyone can join)",
-                                            RoomJoinRule.Invite to "Invite only",
-                                            RoomJoinRule.Knock to "Knock (ask to join)",
-                                            RoomJoinRule.Restricted to "Space members can join",
-                                            RoomJoinRule.KnockRestricted to "Ask to join with space members",
+                                            RoomJoinRule.Public to stringResource(Res.string.public_anyone_can_join),
+                                            RoomJoinRule.Invite to stringResource(Res.string.invite_only),
+                                            RoomJoinRule.Knock to stringResource(Res.string.knock_ask_to_join),
+                                            RoomJoinRule.Restricted to stringResource(Res.string.space_members_can_join),
+                                            RoomJoinRule.KnockRestricted to stringResource(Res.string.ask_to_join_with_space_members),
                                         ),
                                         enabled = !state.isAdminBusy,
                                         canChange = true,
@@ -418,14 +438,14 @@ fun RoomInfoScreen(
                                     HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                                     SettingsDropdownRow(
                                         icon = Icons.Default.History,
-                                        label = "Message history",
+                                        label = stringResource(Res.string.message_history),
                                         currentValue = state.historyVisibility,
-                                        displayName = { it.displayName },
+                                        displayName = { it.displayName() },
                                         options = listOf(
-                                            RoomHistoryVisibility.WorldReadable to "Anyone",
-                                            RoomHistoryVisibility.Shared to "All members",
-                                            RoomHistoryVisibility.Joined to "Since joined",
-                                            RoomHistoryVisibility.Invited to "Since invited"
+                                            RoomHistoryVisibility.WorldReadable to stringResource(Res.string.anyone),
+                                            RoomHistoryVisibility.Shared to stringResource(Res.string.all_members),
+                                            RoomHistoryVisibility.Joined to stringResource(Res.string.since_joined),
+                                            RoomHistoryVisibility.Invited to stringResource(Res.string.since_invited)
                                         ),
                                         enabled = !state.isAdminBusy,
                                         canChange = true,
@@ -434,7 +454,7 @@ fun RoomInfoScreen(
                                     HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                                     SettingSwitchRow(
                                         icon = Icons.Default.Public,
-                                        title = "Listed in room directory",
+                                        title = stringResource(Res.string.listed_in_room_directory),
                                         checked = state.directoryVisibility == RoomDirectoryVisibility.Public,
                                         enabled = !state.isAdminBusy,
                                         onCheckedChange = { checked ->
@@ -449,32 +469,32 @@ fun RoomInfoScreen(
 
                 if (state.canManageSettings) {
                     item {
-                        SettingsGroupHeader("Permissions")
+                        SettingsGroupHeader(stringResource(Res.string.permissions))
                         SettingsGroup {
                             SettingsInfoRow(
                                 icon = Icons.Default.Badge,
-                                title = "Your role",
+                                title = stringResource(Res.string.your_role),
                                 value = getRoleName(state.myPowerLevel)
                             )
                             HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                             SettingsNavRow(
                                 icon = Icons.Default.AdminPanelSettings,
-                                title = "Room permissions",
-                                subtitle = "Configure what each role can do",
+                                title = stringResource(Res.string.room_permissions_section),
+                                subtitle = stringResource(Res.string.configure_what_each_role_can_do),
                                 onClick = { showGranularPermissionsSheet = true }
                             )
                             HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                             SettingsNavRow(
                                 icon = Icons.Default.Shield,
-                                title = "Manage roles",
-                                subtitle = "Change member power levels",
+                                title = stringResource(Res.string.manage_roles),
+                                subtitle = stringResource(Res.string.change_member_power_levels),
                                 onClick = { showPowerLevelsSheet = true }
                             )
                             HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                             SettingsNavRow(
                                 icon = Icons.Default.Edit,
-                                title = "Room addresses",
-                                subtitle = state.profile?.canonicalAlias ?: "No primary address",
+                                title = stringResource(Res.string.room_addresses),
+                                subtitle = state.profile?.canonicalAlias ?: stringResource(Res.string.no_primary_address),
                                 onClick = { showAliasesSheet = true }
                             )
                         }
@@ -483,12 +503,12 @@ fun RoomInfoScreen(
 
                 if (showHomeScreenShortcut) {
                     item {
-                        SettingsGroupHeader("Shortcuts")
+                        SettingsGroupHeader(stringResource(Res.string.shortcuts))
                         SettingsGroup {
                             SettingsActionRow(
                                 icon = Icons.Default.Home,
-                                title = "Add to Home screen",
-                                subtitle = "Create a launcher shortcut for this room",
+                                title = stringResource(Res.string.add_to_home_screen),
+                                subtitle = stringResource(Res.string.create_a_launcher_shortcut_for_this_room),
                                 onClick = onAddHomeScreenShortcut
                             )
                         }
@@ -496,25 +516,25 @@ fun RoomInfoScreen(
                 }
 
                 item {
-                    SettingsGroupHeader("Advanced")
+                    SettingsGroupHeader(stringResource(Res.string.advanced))
                     SettingsGroup {
                         SettingsNavRow(
                             icon = if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            title = if (showAdvanced) "Hide advanced" else "Show advanced",
+                            title = if (showAdvanced) stringResource(Res.string.hide_advanced) else stringResource(Res.string.show_advanced),
                             onClick = { showAdvanced = !showAdvanced }
                         )
                         if (showAdvanced) {
                             HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                             SettingsInfoRow(
                                 icon = Icons.Default.Info,
-                                title = "Room version",
-                                value = state.profile?.roomVersion ?: "Unknown"
+                                title = stringResource(Res.string.room_version),
+                                value = state.profile?.roomVersion ?: stringResource(Res.string.unknown)
                             )
                             state.profile?.roomId?.let { roomId ->
                                 HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                                 SettingsCopyRow(
                                     icon = Icons.Default.Tag,
-                                    title = "Room ID",
+                                    title = stringResource(Res.string.room_id),
                                     value = roomId,
                                     onCopy = { clipboard.setText(AnnotatedString(roomId)) }
                                 )
@@ -523,7 +543,7 @@ fun RoomInfoScreen(
                                 HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                                 SettingsCopyRow(
                                     icon = Icons.Default.AlternateEmail,
-                                    title = "Primary address",
+                                    title = stringResource(Res.string.primary_address),
                                     value = alias,
                                     onCopy = { clipboard.setText(AnnotatedString(alias)) }
                                 )
@@ -533,7 +553,7 @@ fun RoomInfoScreen(
                                 HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                                 SettingsInfoRow(
                                     icon = Icons.Default.Link,
-                                    title = "Alternative addresses",
+                                    title = stringResource(Res.string.alternative_addresses),
                                     value = "$altCount"
                                 )
                             }
@@ -546,13 +566,13 @@ fun RoomInfoScreen(
                     SettingsGroup {
                         SettingsDangerRow(
                             icon = Icons.Default.Report,
-                            title = "Report this room",
+                            title = stringResource(Res.string.report_this_room),
                             onClick = { showReportDialog = true }
                         )
                         HorizontalDivider(Modifier.padding(horizontal = Spacing.md))
                         SettingsDangerRow(
                             icon = Icons.AutoMirrored.Filled.ExitToApp,
-                            title = if (state.profile?.isDm == true) "End conversation" else "Leave room",
+                            title = if (state.profile?.isDm == true) stringResource(Res.string.end_conversation) else stringResource(Res.string.leave_room_action),
                             onClick = { showLeaveDialog = true },
                             enabled = !state.isSaving
                         )
@@ -564,9 +584,9 @@ fun RoomInfoScreen(
 
         if (showLeaveDialog) {
             ConfirmationDialog(
-                title = "Leave room?",
-                message = "You will no longer receive messages from this room. You can rejoin if invited again.",
-                confirmText = "Leave",
+                title = stringResource(Res.string.leave_room),
+                message = stringResource(Res.string.you_will_no_longer_receive_messages_from_this_room_you_can_rejoin_if_invited_again),
+                confirmText = stringResource(Res.string.leave),
                 icon = Icons.Default.Warning,
                 isDestructive = true,
                 isLoading = state.isSaving,
@@ -706,7 +726,7 @@ private fun ProfileHeader(state: RoomInfoUiState) {
                 overflow = TextOverflow.Ellipsis
             )
             if (profile.isEncrypted) {
-                Icon(Icons.Default.Lock, "Encrypted", Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Default.Lock, stringResource(Res.string.encrypted), Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
             }
         }
         profile.canonicalAlias?.let {
@@ -749,7 +769,7 @@ private fun QuickActions(
         FilterChip(
             selected = isFavourite,
             onClick = onToggleFavourite,
-            label = { Text("Favourite") },
+            label = { Text(stringResource(Res.string.favourite_room)) },
             leadingIcon = {
                 Icon(
                     if (isFavourite) Icons.Default.Star else Icons.Default.StarBorder,
@@ -761,7 +781,7 @@ private fun QuickActions(
         FilterChip(
             selected = isLowPriority,
             onClick = onToggleLowPriority,
-            label = { Text("Low Priority") },
+            label = { Text(stringResource(Res.string.low_priority)) },
             leadingIcon = {
                 Icon(
                     if (isLowPriority) Icons.Default.ArrowDownward else Icons.Default.Remove,
@@ -954,6 +974,7 @@ private fun SettingsActionRow(
     title: String,
     subtitle: String? = null,
     actionText: String? = null,
+    iconTint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
@@ -969,7 +990,7 @@ private fun SettingsActionRow(
                 .padding(horizontal = Spacing.md, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
+            Icon(icon, null, tint = iconTint, modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(Spacing.md))
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.bodyLarge)
@@ -1031,7 +1052,7 @@ private fun <T> SettingsDropdownRow(
     icon: ImageVector,
     label: String,
     currentValue: T?,
-    displayName: (T) -> String,
+    displayName: @Composable (T) -> String,
     options: List<Pair<T, String>>,
     enabled: Boolean,
     canChange: Boolean,
@@ -1062,7 +1083,7 @@ private fun <T> SettingsDropdownRow(
                 Column(Modifier.weight(1f)) {
                     Text(label, style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        subtitle ?: (currentValue?.let(displayName) ?: "Unknown"),
+                        subtitle ?: (currentValue?.let { displayName(it) } ?: stringResource(Res.string.unknown)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1093,26 +1114,27 @@ private fun <T> SettingsDropdownRow(
 }
 
 
+@Composable
 private fun getRoleName(powerLevel: Long): String = when {
-    powerLevel >= 100 -> "Admin"
-    powerLevel >= 50 -> "Moderator"
-    powerLevel > 0 -> "Custom ($powerLevel)"
+    powerLevel >= 100 -> stringResource(Res.string.admin)
+    powerLevel >= 50 -> stringResource(Res.string.moderator)
+    powerLevel > 0 -> stringResource(Res.string.role_custom_level, powerLevel)
     else -> "User"
 }
 
-private val RoomJoinRule.displayName: String
-    get() = when (this) {
-        RoomJoinRule.Public -> "Public"
-        RoomJoinRule.Invite -> "Invite only"
-        RoomJoinRule.Knock -> "Knock"
-        RoomJoinRule.Restricted -> "Restricted"
-        RoomJoinRule.KnockRestricted -> "Knock + Restricted"
+@Composable
+private fun RoomJoinRule.displayName(): String = when (this) {
+        RoomJoinRule.Public -> stringResource(Res.string.public)
+        RoomJoinRule.Invite -> stringResource(Res.string.invite_only)
+        RoomJoinRule.Knock -> stringResource(Res.string.knock)
+        RoomJoinRule.Restricted -> stringResource(Res.string.restricted)
+        RoomJoinRule.KnockRestricted -> stringResource(Res.string.knock_restricted)
     }
 
-private val RoomHistoryVisibility.displayName: String
-    get() = when (this) {
-        RoomHistoryVisibility.WorldReadable -> "Visible to anyone"
-        RoomHistoryVisibility.Shared -> "Visible to all members"
-        RoomHistoryVisibility.Joined -> "Since joined"
-        RoomHistoryVisibility.Invited -> "Since invited"
+@Composable
+private fun RoomHistoryVisibility.displayName(): String = when (this) {
+        RoomHistoryVisibility.WorldReadable -> stringResource(Res.string.visible_to_anyone)
+        RoomHistoryVisibility.Shared -> stringResource(Res.string.visible_to_all_members)
+        RoomHistoryVisibility.Joined -> stringResource(Res.string.since_joined)
+        RoomHistoryVisibility.Invited -> stringResource(Res.string.since_invited)
     }

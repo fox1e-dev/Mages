@@ -5,6 +5,9 @@ import org.mlm.mages.MessageEvent
 import org.mlm.mages.captionOr
 import org.mlm.mages.ui.components.timeline.TimelineContent
 import org.mlm.mages.ui.util.formatBytes
+import androidx.compose.runtime.Composable
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 private fun MessageEvent.toMediaCaption(): String? = attachment?.captionOr(body)
 
@@ -16,6 +19,7 @@ private fun buildAttachmentSubtitle(mime: String?, sizeBytes: Long?): String? {
     return parts.takeIf { it.isNotEmpty() }?.joinToString(" • ")
 }
 
+@Composable
 private fun MessageEvent.toAttachmentUi(
     resolvedPreviewPath: String?,
     resolvedAudioPath: String?,
@@ -61,7 +65,7 @@ private fun MessageEvent.toAttachmentUi(
             mime = info.mime,
             sizeBytes = info.sizeBytes,
             title = info.fileName?.takeIf { it.isNotBlank() }
-                ?: body.trim().ifBlank { "Audio" },
+                ?: body.trim().ifBlank { stringResource(Res.string.audio) },
             subtitle = buildAttachmentSubtitle(info.mime, info.sizeBytes),
             // MSC3245 voice marker
             isVoice = info.isVoice == true,
@@ -69,6 +73,7 @@ private fun MessageEvent.toAttachmentUi(
     }
 }
 
+@Composable
 internal fun TimelineContent.Bubble.toBubbleModel(
     ctx: MessageBubbleRenderContext
 ): MessageBubbleModel {

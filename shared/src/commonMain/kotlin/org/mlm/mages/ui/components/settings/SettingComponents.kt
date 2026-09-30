@@ -8,6 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 /**
  * A reusable setting row component with icon, title, subtitle, and optional trailing content.
@@ -189,12 +191,12 @@ fun EditableSettingField(
                         modifier = Modifier.size(16.dp),
                     )
                 } else {
-                    Text("Save")
+                    Text(stringResource(Res.string.save))
                 }
             }
         } else {
             Text(
-                text = "Contact a moderator to change this",
+                text = stringResource(Res.string.contact_a_moderator_to_change_this),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 8.dp)

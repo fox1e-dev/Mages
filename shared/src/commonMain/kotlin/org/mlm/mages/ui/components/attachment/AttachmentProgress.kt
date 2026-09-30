@@ -13,6 +13,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.mlm.mages.ui.AttachmentUploadStage
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun AttachmentProgress(
@@ -28,9 +30,9 @@ fun AttachmentProgress(
         label = "attachmentUploadProgress",
     )
     val secondaryText = when (stage) {
-        AttachmentUploadStage.Preparing -> "Preparing upload..."
+        AttachmentUploadStage.Preparing -> stringResource(Res.string.preparing_upload)
         AttachmentUploadStage.Uploading -> "${(animatedProgress.value * 100).toInt()}%"
-        AttachmentUploadStage.Sending -> "Sending..."
+        AttachmentUploadStage.Sending -> stringResource(Res.string.sending)
     }
 
     Card(modifier = modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.sm)) {
@@ -46,7 +48,7 @@ fun AttachmentProgress(
                 Text(fileName, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(secondaryText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            IconButton(onClick = onCancel) { Icon(Icons.Default.Close, "Cancel") }
+            IconButton(onClick = onCancel) { Icon(Icons.Default.Close, stringResource(Res.string.cancel)) }
         }
         when (stage) {
             AttachmentUploadStage.Preparing -> LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())

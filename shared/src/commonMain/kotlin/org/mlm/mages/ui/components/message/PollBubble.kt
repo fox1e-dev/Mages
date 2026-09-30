@@ -22,6 +22,9 @@ import androidx.compose.ui.unit.dp
 import org.mlm.mages.matrix.PollData
 import org.mlm.mages.matrix.PollKind
 import org.mlm.mages.matrix.PollOption
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
+import org.jetbrains.compose.resources.pluralStringResource
 
 @Composable
 fun PollBubble(
@@ -44,7 +47,7 @@ fun PollBubble(
             if (poll.isEnded) {
                 Icon(
                     imageVector = Icons.Default.EmojiEvents,
-                    contentDescription = "Ended",
+                    contentDescription = stringResource(Res.string.ended),
                     tint = winnerColor,
                     modifier = Modifier.size(16.dp)
                 )
@@ -60,14 +63,14 @@ fun PollBubble(
 
         if (poll.isEnded) {
             Text(
-                text = "Poll ended",
+                text = stringResource(Res.string.poll_ended),
                 style = MaterialTheme.typography.labelSmall,
                 color = winnerColor,
                 modifier = Modifier.padding(top = 2.dp)
             )
         } else if (poll.kind == PollKind.Undisclosed) {
             Text(
-                text = "Results hidden until ended",
+                text = stringResource(Res.string.results_hidden_until_ended),
                 style = MaterialTheme.typography.labelSmall,
                 color = contentColor.copy(alpha = 0.6f),
                 modifier = Modifier.padding(top = 2.dp)
@@ -76,7 +79,7 @@ fun PollBubble(
 
         if (poll.maxSelections > 1 && !poll.isEnded) {
             Text(
-                text = "Select up to ${poll.maxSelections}",
+                text = stringResource(Res.string.select_up_to, poll.maxSelections),
                 style = MaterialTheme.typography.labelSmall,
                 color = contentColor.copy(alpha = 0.6f),
                 modifier = Modifier.padding(top = 2.dp)
@@ -107,14 +110,14 @@ fun PollBubble(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "${poll.totalVotes} vote${if (poll.totalVotes != 1L) "s" else ""}",
+                text = pluralStringResource(Res.plurals.poll_vote_count, poll.totalVotes, poll.totalVotes),
                 style = MaterialTheme.typography.labelSmall,
                 color = contentColor.copy(alpha = 0.7f)
             )
 
             if (isMine && !poll.isEnded) {
                 Text(
-                    text = "End Poll",
+                    text = stringResource(Res.string.end_poll),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.error,

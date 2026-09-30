@@ -29,6 +29,8 @@ import org.mlm.mages.ui.components.sheets.SelectedRoomsRow
 import org.mlm.mages.ui.components.sheets.SelectableRoomItem
 import mages.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
+import org.jetbrains.compose.resources.pluralStringResource
 
 @Composable
 fun ForwardPickerScreen(
@@ -59,9 +61,9 @@ fun ForwardPickerScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Forward")
+                        Text(stringResource(Res.string.forward))
                         Text(
-                            text = "${state.eventCount} item${if (state.eventCount == 1) "" else "s"}",
+                            text = pluralStringResource(Res.plurals.forward_item_count, state.eventCount, state.eventCount),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -127,7 +129,7 @@ private fun ForwardActionBar(
             state.progress?.let { progress ->
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = "Forwarding room ${progress.completedRooms + 1} of ${progress.totalRooms}",
+                        text = stringResource(Res.string.forwarding_room_progress, progress.completedRooms + 1, progress.totalRooms),
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -154,12 +156,12 @@ private fun ForwardActionBar(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Forwarding…")
+                    Text(stringResource(Res.string.forwarding))
                 } else {
                     val label = when (state.selectedCount) {
-                        0 -> "Select rooms"
-                        1 -> "Forward to 1 room"
-                        else -> "Forward to ${state.selectedCount} rooms"
+                        0 -> stringResource(Res.string.select_rooms)
+                        1 -> stringResource(Res.string.forward_to_1_room)
+                        else -> stringResource(Res.string.forward_to_n_rooms, state.selectedCount)
                     }
                     Text(label)
                 }
@@ -179,7 +181,7 @@ private fun SelectedRoomsRow(
             .padding(bottom = Spacing.xs)
     ) {
         Text(
-            text = "Selected rooms",
+            text = stringResource(Res.string.selected_rooms),
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.xs)
         )
@@ -199,7 +201,7 @@ private fun SelectedRoomsRow(
                         )
                     },
                     trailingIcon = {
-                        Icon(Icons.Default.Close, contentDescription = "Remove")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(Res.string.remove))
                     }
                 )
             }
@@ -223,19 +225,19 @@ private fun RoomForwardItem(
 
     val supportingText = when {
         status?.stage == RoomForwardStage.Sending ->
-            "Sending ${status.currentMessage}/${status.totalMessages}"
+            stringResource(Res.string.sending_n_of_m, status.currentMessage, status.totalMessages)
 
         status?.stage == RoomForwardStage.Success ->
-            "Sent"
+            stringResource(Res.string.sent)
 
         status?.stage == RoomForwardStage.PartialSuccess ->
-            "Sent ${status.successfulMessages}/${status.totalMessages}"
+            stringResource(Res.string.sent_n_of_m, status.successfulMessages, status.totalMessages)
 
         status?.stage == RoomForwardStage.Failed ->
-            status.errorMessage ?: "Failed"
+            status.errorMessage ?: stringResource(Res.string.failed)
 
         room.isDm ->
-            "Direct message"
+            stringResource(Res.string.direct_message)
 
         else ->
             null
@@ -298,7 +300,7 @@ private fun RoomForwardItem(
                 RoomForwardStage.Success -> {
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Sent",
+                        contentDescription = stringResource(Res.string.sent),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -306,7 +308,7 @@ private fun RoomForwardItem(
                 RoomForwardStage.PartialSuccess -> {
                     Icon(
                         imageVector = Icons.Default.WarningAmber,
-                        contentDescription = "Partial success",
+                        contentDescription = stringResource(Res.string.partial_success),
                         tint = MaterialTheme.colorScheme.tertiary
                     )
                 }
@@ -314,7 +316,7 @@ private fun RoomForwardItem(
                 RoomForwardStage.Failed -> {
                     Icon(
                         imageVector = Icons.Default.ErrorOutline,
-                        contentDescription = "Failed",
+                        contentDescription = stringResource(Res.string.failed),
                         tint = MaterialTheme.colorScheme.error
                     )
                 }

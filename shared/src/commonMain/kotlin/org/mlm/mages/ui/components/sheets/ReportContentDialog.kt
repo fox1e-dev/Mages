@@ -10,6 +10,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -23,9 +25,9 @@ fun ReportContentDialog(
 
     val categories = listOf(
         "spam" to "Spam",
-        "abuse" to "Abuse",
-        "illegal" to "Illegal content",
-        "other" to "Other"
+        "abuse" to stringResource(Res.string.abuse),
+        "illegal" to stringResource(Res.string.illegal_content),
+        "other" to stringResource(Res.string.other)
     )
 
     ModalBottomSheet(
@@ -62,7 +64,7 @@ fun ReportContentDialog(
 
                 Column {
                     Text(
-                        text = "Report Room",
+                        text = stringResource(Res.string.report_room),
                         style = MaterialTheme.typography.titleLarge
                     )
                 }
@@ -71,7 +73,7 @@ fun ReportContentDialog(
             Spacer(Modifier.height(Spacing.sm))
 
             Text(
-                text = "Report this room to the server administrators.",
+                text = stringResource(Res.string.report_this_room_to_the_server_administrators),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -79,7 +81,7 @@ fun ReportContentDialog(
             Spacer(Modifier.height(Spacing.lg))
 
             Text(
-                text = "Category",
+                text = stringResource(Res.string.category),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -114,7 +116,7 @@ fun ReportContentDialog(
             OutlinedTextField(
                 value = reason,
                 onValueChange = { reason = it },
-                label = { Text("Additional details (optional)") },
+                label = { Text(stringResource(Res.string.additional_details_optional)) },
                 minLines = 3,
                 maxLines = 5,
                 modifier = Modifier.fillMaxWidth(),
@@ -128,7 +130,7 @@ fun ReportContentDialog(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.End)
             ) {
                 OutlinedButton(onClick = onDismiss) {
-                    Text("Cancel")
+                    Text(stringResource(Res.string.cancel))
                 }
 
                 Button(
@@ -145,7 +147,7 @@ fun ReportContentDialog(
                         contentColor = MaterialTheme.colorScheme.onError
                     )
                 ) {
-                    Text("Report")
+                    Text(stringResource(Res.string.report))
                 }
             }
         }

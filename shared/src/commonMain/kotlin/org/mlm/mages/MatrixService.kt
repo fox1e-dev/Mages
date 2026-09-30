@@ -10,6 +10,8 @@ import org.mlm.mages.accounts.MatrixClients
 import org.mlm.mages.matrix.*
 import org.mlm.mages.storage.AvatarLoader
 import kotlin.concurrent.Volatile
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 class MatrixService(
     val accountStore: AccountStore,
@@ -98,7 +100,7 @@ class MatrixService(
         return if (ok) {
             Result.success(Unit)
         } else {
-            Result.failure(Exception("Failed to switch account"))
+            Result.failure(Exception(getString(Res.string.failed_to_switch_account)))
         }
     }
 
@@ -158,7 +160,7 @@ class MatrixService(
     suspend fun logout(): Result<Unit> = runCatching {
         supervisedSyncStarted = false
         val ok = port.logout()
-        check(ok) { "Logout failed" }
+        check(ok) { getString(Res.string.logout_failed) }
     }
 
     suspend fun sendAttachmentFromPath(
@@ -175,7 +177,7 @@ class MatrixService(
         onProgress: ((sent: Long, total: Long?) -> Unit)? = null,
     ): Result<Unit> = runCatching {
         val ok = port.sendAttachmentFromPath(roomId, path, mime, filename, caption, formattedCaption, replyToEventId, voiceDurationMs, voiceWaveform, isVoice, onProgress)
-        check(ok) { "Failed to send attachment" }
+        check(ok) { getString(Res.string.failed_to_send_attachment) }
     }
 
     suspend fun sendStickerFromPath(
@@ -187,7 +189,7 @@ class MatrixService(
         onProgress: ((Long, Long?) -> Unit)? = null,
     ): Result<Unit> = runCatching {
         val ok = port.sendStickerFromPath(roomId, path, mime, body, filename, onProgress)
-        check(ok) { "Failed to send sticker" }
+        check(ok) { getString(Res.string.failed_to_send_sticker) }
     }
 
     suspend fun downloadStickerToCache(
@@ -200,7 +202,7 @@ class MatrixService(
 
     suspend fun retryByTxn(roomId: String, txnId: String): Result<Unit> = runCatching {
         val ok = port.retryByTxn(roomId, txnId)
-        check(ok) { "Retry failed" }
+        check(ok) { getString(Res.string.retry_failed) }
     }
 
     suspend fun isSpace(roomId: String): Boolean =
@@ -216,7 +218,7 @@ class MatrixService(
         invitees: List<String>
     ): Result<String> {
         val result = port.createSpace(name, topic, isPublic, invitees)
-        return if (result != null) Result.success(result) else Result.failure(Exception("Failed to create space"))
+        return if (result != null) Result.success(result) else Result.failure(Exception(getString(Res.string.failed_to_create_space)))
     }
 
     suspend fun spaceAddChild(
@@ -237,7 +239,7 @@ class MatrixService(
         suggestedOnly: Boolean = false
     ): Result<SpaceHierarchyPage> {
         val result = port.spaceHierarchy(spaceId, from, limit, maxDepth, suggestedOnly)
-        return if (result != null) Result.success(result) else Result.failure(Exception("Failed to load space contents"))
+        return if (result != null) Result.success(result) else Result.failure(Exception(getString(Res.string.failed_to_load_space_contents)))
     }
 
     suspend fun spaceInviteUser(spaceId: String, userId: String): Result<Unit> =

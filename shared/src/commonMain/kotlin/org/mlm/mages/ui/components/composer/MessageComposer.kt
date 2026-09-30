@@ -33,6 +33,8 @@ import org.mlm.mages.ui.components.toMagesAttachment
 import org.mlm.mages.ui.components.voice.VoiceRecorderBar
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun MessageComposer(
@@ -200,7 +202,7 @@ private fun ComposerInputRow(
             IconButton(onClick = { onAttach?.invoke() }) {
                 Icon(
                     Icons.Default.AttachFile,
-                    "Attach",
+                    stringResource(Res.string.attach),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -287,7 +289,7 @@ private fun ComposerInputRow(
             } else if (canSend) {
                 Icon(Icons.AutoMirrored.Filled.Send, "Send")
             } else {
-                Icon(Icons.Default.Mic, "Record voice")
+                Icon(Icons.Default.Mic, stringResource(Res.string.record_voice))
             }
         }
     }
@@ -297,12 +299,12 @@ private fun ComposerInputRow(
 private fun ComposerPlaceholder(isUploading: Boolean, isOffline: Boolean, editing: MessageEvent?, replyingTo: MessageEvent?) {
     Text(
         text = when {
-            isUploading -> "Uploading..."
-            isOffline -> "Offline - messages queued"
-            editing?.attachment != null -> "Edit caption..."
-            editing != null -> "Edit message..."
-            replyingTo != null -> "Type reply..."
-            else -> "Type a message..."
+            isUploading -> stringResource(Res.string.uploading)
+            isOffline -> stringResource(Res.string.offline_messages_queued)
+            editing?.attachment != null -> stringResource(Res.string.edit_caption)
+            editing != null -> stringResource(Res.string.edit_message)
+            replyingTo != null -> stringResource(Res.string.type_reply)
+            else -> stringResource(Res.string.type_a_message)
         }
     )
 }

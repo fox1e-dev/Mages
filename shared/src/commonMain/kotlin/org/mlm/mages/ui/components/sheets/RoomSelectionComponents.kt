@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.mlm.mages.ui.ForwardableRoom
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun RoomSelectionList(
@@ -38,15 +40,15 @@ fun RoomSelectionList(
             onValueChange = onSearchChange,
             enabled = enabled,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search rooms...") },
-            leadingIcon = { Icon(Icons.Default.Search, "Search") },
+            placeholder = { Text(stringResource(Res.string.search_rooms)) },
+            leadingIcon = { Icon(Icons.Default.Search, stringResource(Res.string.search)) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
                     IconButton(
                         onClick = { onSearchChange("") },
                         enabled = enabled
                     ) {
-                        Icon(Icons.Default.Close, "Clear")
+                        Icon(Icons.Default.Close, stringResource(Res.string.clear))
                     }
                 }
             },
@@ -87,8 +89,8 @@ fun RoomSelectionList(
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            if (searchQuery.isNotBlank()) "No rooms found"
-                            else "No rooms available",
+                            if (searchQuery.isNotBlank()) stringResource(Res.string.no_rooms_found)
+                            else stringResource(Res.string.no_rooms_available),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -158,7 +160,7 @@ fun SelectableRoomItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    if (room.isDm) "Direct message" else "Room",
+                    if (room.isDm) stringResource(Res.string.direct_message) else "Room",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -209,7 +211,7 @@ fun SelectedRoomsRow(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "Selected rooms",
+            text = stringResource(Res.string.selected_rooms),
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.xs)
         )
@@ -229,7 +231,7 @@ fun SelectedRoomsRow(
                         )
                     },
                     trailingIcon = {
-                        Icon(Icons.Default.Close, contentDescription = "Remove")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(Res.string.remove))
                     }
                 )
             }

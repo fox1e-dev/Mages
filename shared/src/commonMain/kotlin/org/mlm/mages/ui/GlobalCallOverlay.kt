@@ -26,6 +26,8 @@ import io.github.mlmgames.settings.core.platform.currentPlatform
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun GlobalCallOverlay(
@@ -136,7 +138,7 @@ fun GlobalCallOverlay(
                     ) {
                         Icon(
                             Icons.Default.Fullscreen,
-                            contentDescription = "Restore",
+                            contentDescription = stringResource(Res.string.restore),
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -147,7 +149,7 @@ fun GlobalCallOverlay(
 //                    ) {
 //                        Icon(
 //                            Icons.Default.CallEnd,
-//                            contentDescription = "End call",
+//                            contentDescription = stringResource(Res.string.end_call),
 //                            tint = MaterialTheme.colorScheme.error,
 //                            modifier = Modifier.size(18.dp)
 //                        )

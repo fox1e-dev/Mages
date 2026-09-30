@@ -58,6 +58,8 @@ import org.mlm.mages.ui.components.location.TimelineLocationItem
 import org.mlm.mages.ui.components.location.parseGeoUri
 import org.mlm.mages.ui.components.message.MessageBubble
 import org.mlm.mages.ui.components.message.MessageStatusLine
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 import org.mlm.mages.ui.components.message.SystemMessageItem
 import org.mlm.mages.ui.components.message.SeenByChip
 import org.mlm.mages.ui.components.core.FloatingTimelineDateChip
@@ -1303,7 +1305,7 @@ private fun RoomTopBar(
                             ) {
                                 Icon(
                                     Icons.Default.Call,
-                                    contentDescription = "Voice call"
+                                    contentDescription = stringResource(Res.string.voice_call)
                                 )
                             }
                         }
@@ -1314,7 +1316,7 @@ private fun RoomTopBar(
                         ) {
                             Icon(
                                 Icons.Default.Videocam,
-                                contentDescription = "Video call"
+                                contentDescription = stringResource(Res.string.video_call)
                             )
                         }
 //                        }
@@ -1440,7 +1442,7 @@ private fun RoomBottomBar(
 
         if (state.isUploadingAttachment) {
             AttachmentProgress(
-                fileName = state.uploadingFileName ?: "Uploading…",
+                fileName = state.uploadingFileName ?: stringResource(Res.string.uploading),
                 progress = state.attachmentProgress,
                 stage = state.attachmentUploadStage ?: AttachmentUploadStage.Preparing,
                 onCancel = onCancelUpload

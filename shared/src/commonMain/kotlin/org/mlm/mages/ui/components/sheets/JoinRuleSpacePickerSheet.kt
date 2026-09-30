@@ -16,6 +16,7 @@ import org.mlm.mages.matrix.SpaceInfo
 import org.mlm.mages.ui.theme.Spacing
 import mages.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun JoinRuleSpacePickerSheet(
@@ -42,15 +43,15 @@ fun JoinRuleSpacePickerSheet(
                 .padding(bottom = Spacing.xxl),
         ) {
             Text(
-                if (asksToKnock) "Ask to join with space members" else "Space members can join",
+                if (asksToKnock) stringResource(Res.string.ask_to_join_with_space_members) else stringResource(Res.string.space_members_can_join),
                 style = MaterialTheme.typography.titleLarge,
             )
             Spacer(Modifier.height(Spacing.sm))
             Text(
                 if (asksToKnock) {
-                    "Members of the selected spaces can ask to join. A room admin approves each request."
+                    stringResource(Res.string.members_of_the_selected_spaces_can_ask_to_join_a_room_admin_approves_each_request)
                 } else {
-                    "Members of the selected spaces can join without an invite."
+                    stringResource(Res.string.members_of_the_selected_spaces_can_join_without_an_invite)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -60,7 +61,7 @@ fun JoinRuleSpacePickerSheet(
 
             if (spaces.isEmpty()) {
                 Text(
-                    "No spaces available. Join or create a space first, then set this access level.",
+                    stringResource(Res.string.no_spaces_available_join_or_create_a_space_first_then_set_this_access_level),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                 )

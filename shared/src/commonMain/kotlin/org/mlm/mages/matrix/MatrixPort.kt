@@ -9,6 +9,8 @@ import org.mlm.mages.EncFile
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.RoomSummary
 import org.mlm.mages.StickerInfo
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 @Serializable
 data class DownloadResult (
@@ -255,7 +257,6 @@ interface VerificationService {
     fun startDeviceVerification(deviceId: String): Flow<VerifEvent>
     fun startUserVerification(userId: String): Flow<VerifEvent>
     fun acceptAndObserveVerification(flowId: String, otherUserId: String): Flow<VerifEvent>
-    suspend fun acceptSas(flowId: String, otherUserId: String): Boolean
     suspend fun confirmSas(flowId: String, otherUserId: String? = null): Boolean
     suspend fun cancelVerification(flowId: String, otherUserId: String? = null): Boolean
 }
@@ -987,6 +988,8 @@ interface MatrixPort {
 
     suspend fun listMyDevices(): List<DeviceSummary>
 
+    suspend fun isUserVerified(userId: String): Boolean
+
     fun enterForeground()
     fun enterBackground()
     fun resumeActiveUi()
@@ -1094,7 +1097,7 @@ interface MatrixPort {
         return if (result.isSuccess) {
             OauthLoginResult.Completed
         } else {
-            OauthLoginResult.Failed(result.exceptionOrNull()?.message ?: "OAuth failed or was cancelled")
+            OauthLoginResult.Failed(result.exceptionOrNull()?.message ?: getString(Res.string.oauth_failed_or_was_cancelled))
         }
     }
 

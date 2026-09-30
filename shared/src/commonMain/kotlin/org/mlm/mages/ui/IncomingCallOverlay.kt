@@ -101,7 +101,7 @@ fun IncomingCallOverlay(
                     )
                     if (moreCount > 0) {
                         Text(
-                            text = "+$moreCount more",
+                            text = stringResource(Res.string.more_reactions, moreCount),
                             style = MaterialTheme.typography.bodySmall,
                             color = scheme.onSurfaceVariant,
                             maxLines = 1,

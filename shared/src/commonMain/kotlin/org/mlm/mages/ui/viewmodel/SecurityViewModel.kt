@@ -26,6 +26,8 @@ import org.mlm.mages.ui.AvatarEdit
 import org.mlm.mages.ui.SecurityUiState
 import org.mlm.mages.verification.VerificationCoordinator
 import kotlin.reflect.KClass
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 class SecurityViewModel(
     private val service: MatrixService,
@@ -208,7 +210,7 @@ class SecurityViewModel(
             val result = runCatching { port.setKeyBackupEnabled(target) }
             updateState { copy(isTogglingKeyStorage = false) }
             if (result.isFailure || result.getOrNull() != true) {
-                _events.send(Event.ShowError(result.exceptionOrNull()?.message ?: "Failed to update key storage"))
+                _events.send(Event.ShowError(result.exceptionOrNull()?.message ?: getString(Res.string.failed_to_update_key_storage)))
             } else {
                 refreshKeyStorageState(forceFetch = true)
             }
@@ -222,7 +224,7 @@ class SecurityViewModel(
             val port = service.portOrNull ?: return@launch
 
             if (isChange) {
-                updateStateIfCurrent(version) { copy(isEnablingRecovery = true, recoveryProgress = "Resetting recovery key...") }
+                updateStateIfCurrent(version) { copy(isEnablingRecovery = true, recoveryProgress = getString(Res.string.resetting_recovery_key)) }
                 val result = runCatching { port.resetRecoveryKey() }.getOrElse { e ->
                     updateStateIfCurrent(version) {
                         copy(
@@ -237,7 +239,7 @@ class SecurityViewModel(
                     onSuccess = { key ->
                         if (key.isBlank()) {
                             updateStateIfCurrent(version) {
-                                copy(isEnablingRecovery = false, recoveryProgress = null, error = "Recovery returned an empty key")
+                                copy(isEnablingRecovery = false, recoveryProgress = null, error = getString(Res.string.recovery_returned_an_empty_key))
                             }
                         } else {
                             updateStateIfCurrent(version) {
@@ -322,7 +324,7 @@ class SecurityViewModel(
         val profile = result.getOrNull()
         if (profile == null && isCurrentAccountData(version)) {
             _events.send(
-                Event.ShowError(result.exceptionOrNull()?.message ?: "Could not load your profile")
+                Event.ShowError(result.exceptionOrNull()?.message ?: getString(Res.string.could_not_load_your_profile))
             )
         }
         val avatarUrl = profile?.avatarUrl ?: return
@@ -341,21 +343,21 @@ class SecurityViewModel(
             val failures = mutableListOf<String>()
             if (displayName.trim() != (current.displayName ?: "").trim()) {
                 port.setDisplayName(displayName)
-                    .onFailure { failures += it.message ?: "Display name was rejected" }
+                    .onFailure { failures += it.message ?: getString(Res.string.display_name_was_rejected) }
             }
             when (avatar) {
                 AvatarEdit.None -> Unit
                 is AvatarEdit.Replace -> port.setAvatarFromPath(avatar.path, avatar.mime)
-                    .onFailure { failures += it.message ?: "Profile picture was rejected" }
+                    .onFailure { failures += it.message ?: getString(Res.string.profile_picture_was_rejected) }
 
                 AvatarEdit.Remove -> port.removeAvatar()
-                    .onFailure { failures += it.message ?: "Profile picture could not be removed" }
+                    .onFailure { failures += it.message ?: getString(Res.string.profile_picture_could_not_be_removed) }
             }
 
             updateStateIfCurrent(version) { copy(isSavingProfile = false) }
             val failure = failures.firstOrNull()
             if (failure != null) _events.send(Event.ShowError(failure))
-            else _events.send(Event.ShowSuccess("Profile updated"))
+            else _events.send(Event.ShowSuccess(getString(Res.string.profile_updated)))
             fetchProfile(version)
         }
     }
@@ -390,7 +392,7 @@ class SecurityViewModel(
                 updateState {
                     copy(
                         isLoadingDevices = false,
-                        error = "Failed to load devices: ${t.message}"
+                        error = getString(Res.string.failed_to_load_devices, t.message)
                     )
                 }
             }
@@ -425,7 +427,7 @@ class SecurityViewModel(
             val port = service.portOrNull
             if (port == null || !service.isLoggedInSuspend()) {
                 if (isCurrentAccountData(version)) {
-                    _events.send(Event.ShowError("Not logged in"))
+                    _events.send(Event.ShowError(getString(Res.string.not_logged_in)))
                 }
                 return@launch
             }
@@ -437,13 +439,13 @@ class SecurityViewModel(
                     copy(isSubmittingRecoveryKey = false, recoverySubmitSuccess = true)
                 }
                 if (isCurrentAccountData(version)) {
-                    _events.send(Event.ShowSuccess("Recovery successful"))
+                    _events.send(Event.ShowSuccess(getString(Res.string.recovery_successful)))
                 }
             } else {
                 updateStateIfCurrent(version) {
                     copy(
                         isSubmittingRecoveryKey = false,
-                        error = result.toUserMessage("Recovery failed")
+                        error = result.toUserMessage(getString(Res.string.recovery_failed))
                     )
                 }
             }
@@ -466,9 +468,9 @@ class SecurityViewModel(
             val result = port.unignoreUser(userId)
             if (result.isSuccess) {
                 refreshIgnored()
-                _events.send(Event.ShowSuccess("User unignored"))
+                _events.send(Event.ShowSuccess(getString(Res.string.user_unignored)))
             } else {
-                _events.send(Event.ShowError(result.toUserMessage("Failed to unignore user")))
+                _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.failed_to_unignore_user))))
             }
         }
     }
@@ -491,7 +493,7 @@ class SecurityViewModel(
         launch {
             val result = service.logout()
             if (result.isSuccess) _events.send(Event.LogoutSuccess)
-            else _events.send(Event.ShowError(result.toUserMessage("Logout failed")))
+            else _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.logout_failed))))
         }
     }
 }

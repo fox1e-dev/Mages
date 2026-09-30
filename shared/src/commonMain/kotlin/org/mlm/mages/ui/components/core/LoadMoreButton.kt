@@ -7,13 +7,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun LoadMoreButton(
     isLoading: Boolean,
     onClick: () -> Unit,
-    text: String = "Load more",
-    loadingText: String = "Loading...",
+    text: String = stringResource(Res.string.load_more),
+    loadingText: String = stringResource(Res.string.loading),
     modifier: Modifier = Modifier
 ) {
     Box(

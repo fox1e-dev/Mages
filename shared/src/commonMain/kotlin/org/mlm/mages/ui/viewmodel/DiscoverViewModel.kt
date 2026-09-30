@@ -9,6 +9,8 @@ import org.mlm.mages.matrix.PublicRoom
 import org.mlm.mages.matrix.RoomJoinRule
 import org.mlm.mages.matrix.RoomPreview
 import org.mlm.mages.matrix.RoomPreviewMembership
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 enum class DirectJoinAction {
     Join,
@@ -181,7 +183,7 @@ class DiscoverViewModel(
             if (rid != null) {
                 _events.send(Event.OpenRoom(rid, u.displayName ?: u.userId))
             } else {
-                _events.send(Event.ShowError("Failed to start conversation"))
+                _events.send(Event.ShowError(getString(Res.string.failed_to_start_conversation)))
             }
         }
     }
@@ -200,7 +202,7 @@ class DiscoverViewModel(
                     )
                 )
             } else {
-                _events.send(Event.ShowError("Failed to join room"))
+                _events.send(Event.ShowError(getString(Res.string.failed_to_join_room)))
             }
         }
     }
@@ -212,9 +214,9 @@ class DiscoverViewModel(
             updateState { copy(isBusy = false) }
 
             if (knockSuccess) {
-                _events.send(Event.ShowSuccess("Knock request sent. Waiting for approval."))
+                _events.send(Event.ShowSuccess(getString(Res.string.knock_request_sent_waiting_for_approval)))
             } else {
-                _events.send(Event.ShowError("Could not knock on the room. Try again."))
+                _events.send(Event.ShowError(getString(Res.string.could_not_knock_on_the_room_try_again)))
             }
         }
     }
@@ -235,7 +237,7 @@ class DiscoverViewModel(
                     _events.send(Event.OpenRoom(rid, idOrAlias))
                 },
                 onFailure = { error ->
-                    _events.send(Event.ShowError(error.message ?: "Failed to join $idOrAlias"))
+                    _events.send(Event.ShowError(error.message ?: getString(Res.string.failed_to_join_named, idOrAlias)))
                 }
             )
         }
@@ -249,9 +251,9 @@ class DiscoverViewModel(
                 DirectJoinPreview(
                     target = idOrAlias,
                     title = idOrAlias,
-                    subtitle = error.message ?: "Room not found",
+                    subtitle = error.message ?: getString(Res.string.room_not_found),
                     action = DirectJoinAction.None,
-                    actionLabel = "Unavailable"
+                    actionLabel = getString(Res.string.unavailable)
                 )
             }
         )
@@ -260,15 +262,15 @@ class DiscoverViewModel(
     private suspend fun knockAndResolve(idOrAlias: String): Result<String> {
         val knockSuccess = runSafe { service.port.knock(idOrAlias) }?.isSuccess ?: false
         return if (knockSuccess) {
-            Result.failure(IllegalStateException("Knock request sent. Waiting for approval."))
+            Result.failure(IllegalStateException(getString(Res.string.knock_request_sent_waiting_for_approval)))
         } else {
-            Result.failure(IllegalStateException("Failed to knock on room"))
+            Result.failure(IllegalStateException(getString(Res.string.failed_to_knock_on_room)))
         }
     }
 
     private suspend fun joinRoom(idOrAlias: String): Result<String> {
         if (!looksLikeRoomIdOrAlias(idOrAlias)) {
-            return Result.failure(IllegalArgumentException("Enter a full room alias like #room:server or room ID like !id:server"))
+            return Result.failure(IllegalArgumentException(getString(Res.string.enter_a_full_room_alias_like_room_server_or_room_id_like_id_server)))
         }
 
         if (idOrAlias.startsWith("!")) {
@@ -291,7 +293,7 @@ class DiscoverViewModel(
 
         val joinResult = service.port.joinByIdOrAlias(idOrAlias)
         if (joinResult.isFailure) {
-            return Result.failure(joinResult.exceptionOrNull() ?: IllegalStateException("Failed to join room"))
+            return Result.failure(joinResult.exceptionOrNull() ?: IllegalStateException(getString(Res.string.failed_to_join_room)))
         }
 
         // After successful join, resolve the room ID
@@ -302,9 +304,9 @@ class DiscoverViewModel(
                 delay(100)
                 val resolved = runSafe { service.port.resolveRoomId(idOrAlias) }
                 if (resolved != null) Result.success(resolved)
-                else Result.failure(IllegalStateException("Joined room, but could not resolve its room ID yet"))
+                else Result.failure(IllegalStateException(getString(Res.string.joined_room_but_could_not_resolve_its_room_id_yet)))
             }
-            else -> Result.failure(IllegalStateException("Joined room, but could not determine room ID"))
+            else -> Result.failure(IllegalStateException(getString(Res.string.joined_room_but_could_not_determine_room_id)))
         }
     }
 

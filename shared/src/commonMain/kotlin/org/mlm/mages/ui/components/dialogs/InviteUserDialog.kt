@@ -9,6 +9,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun InviteUserDialog(
@@ -25,20 +27,20 @@ fun InviteUserDialog(
             Icon(Icons.Default.PersonAdd, null)
         },
         title = {
-            Text("Invite User")
+            Text(stringResource(Res.string.invite_user))
         },
         text = {
             Column {
                 Text(
-                    "Enter the Matrix ID of the user you want to invite",
+                    stringResource(Res.string.enter_the_matrix_id_of_the_user_you_want_to_invite),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(Modifier.height(Spacing.md))
                 OutlinedTextField(
                     value = userId,
                     onValueChange = { userId = it },
-                    label = { Text("User ID") },
-                    placeholder = { Text("@user:server.com") },
+                    label = { Text(stringResource(Res.string.user_id)) },
+                    placeholder = { Text(stringResource(Res.string.user_id_placeholder)) },
                     singleLine = true,
                     isError = error != null,
                     supportingText = error?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
@@ -57,12 +59,12 @@ fun InviteUserDialog(
                     )
                     Spacer(Modifier.width(Spacing.sm))
                 }
-                Text("Invite")
+                Text(stringResource(Res.string.invite))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(Res.string.cancel))
             }
         }
     )

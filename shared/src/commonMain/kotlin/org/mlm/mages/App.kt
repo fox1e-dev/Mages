@@ -58,6 +58,8 @@ import org.mlm.mages.platform.BindNotifications
 import org.mlm.mages.platform.BindScreenSecurity
 import org.mlm.mages.platform.LocalAppLocale
 import org.mlm.mages.platform.createAppLockController
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 import org.mlm.mages.platform.shouldRequestLocalNetworkPermission
 import org.mlm.mages.ui.components.AppLockScreen
 import org.mlm.mages.ui.components.LocalNetworkPermissionDialogHost
@@ -248,7 +250,7 @@ private fun AppContent(
                 previousAppLockEnabled = nowEnabled
                 if (nowEnabled && !wasEnabled) {
                     if (!appLockController.isAvailable) {
-                        snackbarManager.showError("Set a screen lock in system settings first.")
+                        snackbarManager.showError(stringResource(Res.string.set_a_screen_lock_in_system_settings_first))
                         suppressNextDisablePrompt = true
                         settingsRepository.update { it.copy(appLockEnabled = false) }
                     }
@@ -260,7 +262,7 @@ private fun AppContent(
                     appLockController.requestUnlock { success ->
                         if (!success) {
                             scope.launch {
-                                snackbarManager.showError("Authentication required to disable app lock")
+                                snackbarManager.showError(stringResource(Res.string.authentication_required_to_disable_app_lock))
                                 previousAppLockEnabled = true
                                 settingsRepository.update { it.copy(appLockEnabled = true) }
                             }
@@ -293,7 +295,7 @@ private fun AppContent(
 
                 val link = parseMatrixLink(raw)
                 if (link is MatrixLink.Unsupported) {
-                    snackbarManager.showError("Could not open link: $raw")
+                    snackbarManager.showError(stringResource(Res.string.could_not_open_link, raw))
                     return@LaunchedEffect
                 }
 
@@ -303,7 +305,7 @@ private fun AppContent(
                 }
                 val resolved = target
                 if (!opened || resolved == null) {
-                    snackbarManager.showError("Could not open link: $raw")
+                    snackbarManager.showError(stringResource(Res.string.could_not_open_link, raw))
                     return@LaunchedEffect
                 }
                 localDeepLinks.emit(DeepLinkAction(roomId = resolved.first, eventId = resolved.second))
@@ -376,8 +378,8 @@ private fun AppContent(
                 service.port.observeSends().collect { update ->
                     if (update.txnId.isBlank() && update.error?.contains("send queue disabled") == true) {
                         snackbarManager.show(
-                            message = "Sending paused",
-                            actionLabel = "Resume",
+                            message = stringResource(Res.string.sending_paused),
+                            actionLabel = stringResource(Res.string.resume),
                             duration = SnackbarDuration.Indefinite,
                             onAction = { runCatching { service.port.sendQueueSetEnabled(true) } }
                         )
@@ -543,7 +545,7 @@ private fun AppContent(
                                                 backStack.add(Route.Room(roomId, name ?: roomId))
                                             }.onFailure { e ->
                                                 snackbarManager.showError(
-                                                    e.message ?: "Failed to create room"
+                                                    e.message ?: stringResource(Res.string.failed_to_create_room)
                                                 )
                                             }
                                         }
@@ -652,9 +654,9 @@ private fun AppContent(
                                             val result = service.switchAccount(account)
                                             if (result.isSuccess) {
                                                 sessionEpoch++
-                                                snackbarManager.show("Switched to ${account.userId}")
+                                                snackbarManager.show(stringResource(Res.string.switched_to_account, account.userId))
                                             } else {
-                                                snackbarManager.showError(result.exceptionOrNull()?.message ?: "Failed to switch account")
+                                                snackbarManager.showError(result.exceptionOrNull()?.message ?: stringResource(Res.string.failed_to_switch_account))
                                             }
                                         }
                                     },
@@ -960,7 +962,7 @@ private fun AppContent(
                                             }
                                             service.port.downloadAttachmentToCache(att, hint)
                                                 .onSuccess { path -> openExternal(path, att.mime) }
-                                                .onFailure { postError("Download failed") }
+                                                .onFailure { postError(stringResource(Res.string.download_failed)) }
                                         }
                                     }
                                 },
@@ -1026,11 +1028,6 @@ private fun AppContent(
                 val showAcceptRequest =
                     verState.sasIncoming && verState.sasPhase == SasPhase.Requested
 
-                val showContinue = when (verState.sasPhase) {
-                    SasPhase.Ready, SasPhase.Started -> true
-                    else -> false
-                }
-
                 SasDialog(
                     phase = verState.sasPhase,
                     emojis = verState.sasEmojis,
@@ -1038,9 +1035,8 @@ private fun AppContent(
                     otherDevice = verState.sasOtherDevice ?: "",
                     error = verState.sasError,
                     showAcceptRequest = showAcceptRequest,
-                    showContinue = showContinue,
-                    actionInFlight = verState.sasContinuePressed,
-                    onAcceptOrContinue = verification::acceptOrContinue,
+                    actionInFlight = verState.sasActionInFlight,
+                    onAccept = verification::accept,
                     onConfirm = verification::confirm,
                     onCancel = verification::cancel
                 )

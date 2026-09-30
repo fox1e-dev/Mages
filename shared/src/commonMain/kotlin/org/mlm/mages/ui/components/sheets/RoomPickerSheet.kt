@@ -19,6 +19,8 @@ import org.mlm.mages.MessageEvent
 import org.mlm.mages.ui.ForwardableRoom
 import org.mlm.mages.ui.displayPreview
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun RoomPickerSheet(
@@ -45,7 +47,7 @@ fun RoomPickerSheet(
         ) {
             // Header
             Text(
-                "Forward message",
+                stringResource(Res.string.forward_message),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(bottom = Spacing.sm)
@@ -61,8 +63,8 @@ fun RoomPickerSheet(
                 value = searchQuery,
                 onValueChange = onSearchChange,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search rooms...") },
-                leadingIcon = { Icon(Icons.Default.Search, "Search") },
+                placeholder = { Text(stringResource(Res.string.search_rooms)) },
+                leadingIcon = { Icon(Icons.Default.Search, stringResource(Res.string.search)) },
                 singleLine = true,
                 shape = MaterialTheme.shapes.medium,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -92,8 +94,8 @@ fun RoomPickerSheet(
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                if (searchQuery.isNotBlank()) "No rooms match your search"
-                                else "No rooms available",
+                                if (searchQuery.isNotBlank()) stringResource(Res.string.no_rooms_match_your_search)
+                                else stringResource(Res.string.no_rooms_available),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -107,7 +109,7 @@ fun RoomPickerSheet(
                     ) {
                         item {
                             Text(
-                                "Recent",
+                                stringResource(Res.string.recent),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(vertical = Spacing.sm)
@@ -223,7 +225,7 @@ private fun RoomPickerItem(room: ForwardableRoom, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    if (room.isDm) "Direct message" else "Room",
+                    if (room.isDm) stringResource(Res.string.direct_message) else "Room",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

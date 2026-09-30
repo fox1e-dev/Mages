@@ -13,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun RoomAliasesSheet(
@@ -32,7 +34,7 @@ fun RoomAliasesSheet(
                 .padding(Spacing.lg)
         ) {
             Text(
-                "Edit Room Addresses",
+                stringResource(Res.string.edit_room_addresses),
                 style = MaterialTheme.typography.titleLarge
             )
 
@@ -41,7 +43,7 @@ fun RoomAliasesSheet(
             OutlinedTextField(
                 value = canonical,
                 onValueChange = { canonical = it },
-                label = { Text("Primary address (optional)") },
+                label = { Text(stringResource(Res.string.primary_address_optional)) },
                 placeholder = { Text("#room:server.org") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -50,7 +52,7 @@ fun RoomAliasesSheet(
             Spacer(Modifier.height(Spacing.md))
 
             Text(
-                "Alternative addresses",
+                stringResource(Res.string.alternative_addresses),
                 style = MaterialTheme.typography.titleSmall
             )
 
@@ -63,7 +65,7 @@ fun RoomAliasesSheet(
                 OutlinedTextField(
                     value = newAlias,
                     onValueChange = { newAlias = it },
-                    label = { Text("Add alias") },
+                    label = { Text(stringResource(Res.string.add_alias)) },
                     placeholder = { Text("#alias:server.org") },
                     singleLine = true,
                     modifier = Modifier.weight(1f)
@@ -77,7 +79,7 @@ fun RoomAliasesSheet(
                     },
                     enabled = newAlias.isNotBlank()
                 ) {
-                    Icon(Icons.Default.Add, "Add alias")
+                    Icon(Icons.Default.Add, stringResource(Res.string.add_alias))
                 }
             }
 
@@ -105,7 +107,7 @@ fun RoomAliasesSheet(
                                     aliases = aliases.filter { it != alias }.toMutableList()
                                 }
                             ) {
-                                Icon(Icons.Default.Delete, "Remove alias")
+                                Icon(Icons.Default.Delete, stringResource(Res.string.remove_alias))
                             }
                         }
                     }
@@ -119,7 +121,7 @@ fun RoomAliasesSheet(
                 horizontalArrangement = Arrangement.End
             ) {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancel")
+                    Text(stringResource(Res.string.cancel))
                 }
                 Spacer(Modifier.width(Spacing.sm))
                 Button(
@@ -128,7 +130,7 @@ fun RoomAliasesSheet(
                         onUpdate(finalCanonical, aliases)
                     }
                 ) {
-                    Text("Save")
+                    Text(stringResource(Res.string.save))
                 }
             }
 

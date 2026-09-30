@@ -6,6 +6,8 @@ import kotlin.math.max
 import org.mlm.mages.MatrixService
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.ui.ForwardableRoom
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 enum class RoomForwardStage {
     Idle,
@@ -184,7 +186,7 @@ class ForwardPickerViewModel(
             if (missingCount > 0) {
                 _events.send(
                     Event.ShowError(
-                        "Could not load $missingCount selected message(s). Please reopen the room and try again."
+                        getString(Res.string.could_not_load_n_selected, missingCount)
                     )
                 )
             }
@@ -214,7 +216,7 @@ class ForwardPickerViewModel(
 
         if (eventsToForward.isEmpty()) {
             launch {
-                _events.send(Event.ShowError("No messages available to forward"))
+                _events.send(Event.ShowError(getString(Res.string.no_messages_available_to_forward)))
             }
             return
         }
@@ -222,7 +224,7 @@ class ForwardPickerViewModel(
         launch {
             val selectedRooms = currentState.rooms.filter { it.roomId in currentState.selectedRoomIds }
             if (selectedRooms.isEmpty()) {
-                _events.send(Event.ShowError("Select at least one room"))
+                _events.send(Event.ShowError(getString(Res.string.select_at_least_one_room)))
                 return@launch
             }
 
@@ -289,7 +291,7 @@ class ForwardPickerViewModel(
                     if (success) {
                         successCount++
                     } else if (firstError == null) {
-                        firstError = "Some messages could not be forwarded"
+                        firstError = getString(Res.string.some_messages_could_not_be_forwarded)
                     }
                 }
 
@@ -367,12 +369,12 @@ class ForwardPickerViewModel(
             val sent = result.getOrNull()?.sent
             val ok = result.isSuccess && sent != null && targetRoomId in sent
             if (!ok) {
-                val message = result.toUserMessage("Could not forward the message. Try again.")
+                val message = result.toUserMessage(getString(Res.string.could_not_forward_the_message_try_again))
                 _events.send(Event.ShowError(message))
             }
             ok
         } catch (e: Exception) {
-            _events.send(Event.ShowError("Could not forward the message. Try again."))
+            _events.send(Event.ShowError(getString(Res.string.could_not_forward_the_message_try_again)))
             false
         }
     }

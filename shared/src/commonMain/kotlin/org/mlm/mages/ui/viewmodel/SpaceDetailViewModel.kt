@@ -8,6 +8,8 @@ import org.mlm.mages.matrix.RoomListMembership
 import org.mlm.mages.matrix.SpaceChildInfo
 import org.mlm.mages.matrix.SpaceInfo
 import org.mlm.mages.ui.SpaceDetailUiState
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 private fun List<SpaceChildInfo>.withoutSpace(spaceId: String): List<SpaceChildInfo> =
     filter { it.roomId != spaceId }
@@ -84,12 +86,12 @@ class SpaceDetailViewModel(
             }
 
             if (result.isFailure) {
-                _events.send(Event.ShowError("Could not join $displayName"))
+                _events.send(Event.ShowError(getString(Res.string.could_not_join_named, displayName)))
                 return@launch
             }
 
             if (joinRule == RoomJoinRule.Knock || joinRule == RoomJoinRule.KnockRestricted) {
-                _events.send(Event.ShowMessage("Knocked on $displayName"))
+                _events.send(Event.ShowMessage(getString(Res.string.knocked_on_named, displayName)))
             } else {
                 _events.send(Event.OpenRoom(child.roomId, displayName))
             }
@@ -132,7 +134,7 @@ class SpaceDetailViewModel(
                     copy(
                         isLoading = false,
                         isLoadingMore = false,
-                        error = t.message ?: "Failed to load hierarchy"
+                        error = t.message ?: getString(Res.string.failed_to_load_hierarchy)
                     ) 
                 }
             }
@@ -193,7 +195,7 @@ class SpaceDetailViewModel(
                     copy(
                         isLoading = false,
                         isLoadingMore = false,
-                        error = result.toUserMessage("Failed to load space contents")
+                        error = result.toUserMessage(getString(Res.string.failed_to_load_space_contents))
                     ) 
                 }
             }

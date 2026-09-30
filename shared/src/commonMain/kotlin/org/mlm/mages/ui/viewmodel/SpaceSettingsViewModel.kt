@@ -8,6 +8,9 @@ import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.matrix.RoomJoinRule
 import org.mlm.mages.matrix.SpaceChildInfo
 import org.mlm.mages.ui.SpaceSettingsUiState
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
+import org.jetbrains.compose.resources.StringResource
 
 private fun List<SpaceChildInfo>.withoutSpace(spaceId: String): List<SpaceChildInfo> =
     filter { it.roomId != spaceId }
@@ -62,16 +65,16 @@ class SpaceSettingsViewModel(
     }
 
     private fun runSavingBooleanAction(
-        successMessage: String,
-        errorMessage: String,
-        onErrorMessage: String = errorMessage,
+        successMessage: StringResource,
+        errorMessage: StringResource,
+        onErrorMessage: StringResource = errorMessage,
         onSuccess: (() -> Unit)? = null,
         block: suspend () -> Boolean,
     ) {
         launch(
             onError = { t ->
                 updateState { copy(isSaving = false) }
-                launch { _events.send(Event.ShowError(t.message ?: onErrorMessage)) }
+                launch { _events.send(Event.ShowError(t.message ?: getString(onErrorMessage))) }
             }
         ) {
             updateState { copy(isSaving = true) }
@@ -80,24 +83,24 @@ class SpaceSettingsViewModel(
             if (ok) {
                 updateState { copy(isSaving = false) }
                 onSuccess?.invoke()
-                _events.send(Event.ShowSuccess(successMessage))
+                _events.send(Event.ShowSuccess(getString(successMessage)))
             } else {
                 updateState { copy(isSaving = false) }
-                _events.send(Event.ShowError(errorMessage))
+                _events.send(Event.ShowError(getString(errorMessage)))
             }
         }
     }
 
     private fun runSavingResultAction(
-        errorMessage: String,
-        onErrorMessage: String = errorMessage,
+        errorMessage: StringResource,
+        onErrorMessage: StringResource = errorMessage,
         onSuccess: (suspend () -> Unit)? = null,
         block: suspend () -> Result<Unit>?,
     ) {
         launch(
             onError = { t ->
                 updateState { copy(isSaving = false) }
-                launch { _events.send(Event.ShowError(t.message ?: onErrorMessage)) }
+                launch { _events.send(Event.ShowError(t.message ?: getString(onErrorMessage))) }
             }
         ) {
             updateState { copy(isSaving = true) }
@@ -107,15 +110,15 @@ class SpaceSettingsViewModel(
             if (result?.isSuccess == true) {
                 onSuccess?.invoke()
             } else {
-                _events.send(Event.ShowError(result.toUserMessage(errorMessage)))
+                _events.send(Event.ShowError(result.toUserMessage(getString(errorMessage))))
             }
         }
     }
 
     fun addChild(roomId: String, suggested: Boolean = false) {
         runSavingBooleanAction(
-            successMessage = "Room added to space",
-            errorMessage = "Failed to add room",
+            successMessage = Res.string.room_added_to_space,
+            errorMessage = Res.string.failed_to_add_room,
             onSuccess = {
                 updateState { copy(showAddRoom = false) }
                 loadChildren()
@@ -133,8 +136,8 @@ class SpaceSettingsViewModel(
 
     fun removeChild(childRoomId: String) {
         runSavingBooleanAction(
-            successMessage = "Room removed from space",
-            errorMessage = "Failed to remove room",
+            successMessage = Res.string.room_removed_from_space,
+            errorMessage = Res.string.failed_to_remove_room,
             onSuccess = {
                 loadChildren()
                 loadAvailableRooms()
@@ -158,13 +161,13 @@ class SpaceSettingsViewModel(
     fun inviteUser() {
         val userId = currentState.inviteUserId.trim()
         if (userId.isBlank() || !userId.startsWith("@") || ":" !in userId) {
-            launch { _events.send(Event.ShowError("Invalid user ID")) }
+            launch { _events.send(Event.ShowError(getString(Res.string.invalid_user_id))) }
             return
         }
 
         runSavingBooleanAction(
-            successMessage = "Invitation sent",
-            errorMessage = "Failed to invite user",
+            successMessage = getString(Res.string.invitation_sent),
+            errorMessage = getString(Res.string.failed_to_invite_user),
             onSuccess = {
                 updateState { copy(showInviteUser = false, inviteUserId = "") }
             }
@@ -185,7 +188,7 @@ class SpaceSettingsViewModel(
 
     fun leaveSpace() {
         runSavingResultAction(
-            errorMessage = "Failed to leave space",
+            errorMessage = Res.string.failed_to_leave_space,
             onSuccess = { _events.send(Event.LeaveSuccess) }
         ) {
             updateState { copy(showLeaveConfirm = false) }
@@ -197,7 +200,7 @@ class SpaceSettingsViewModel(
 
     fun showEditDetailsDialog() {
         if (!currentState.canEditDetails) {
-            launch { _events.send(Event.ShowError("You don't have permission to edit this space")) }
+            launch { _events.send(Event.ShowError(getString(Res.string.you_don_t_have_permission_to_edit_this_space))) }
             return
         }
         val space = currentState.space
@@ -221,8 +224,8 @@ class SpaceSettingsViewModel(
         val topic = currentState.editTopic.trim()
         val alias = currentState.editAlias.trim().ifBlank { null }
         runSavingBooleanAction(
-            successMessage = "Space details updated",
-            errorMessage = "Could not update the space. Try again.",
+            successMessage = Res.string.space_details_updated,
+            errorMessage = Res.string.could_not_update_the_space_try_again,
             onSuccess = {
                 updateState { copy(showEditDetails = false) }
                 loadSpaceInfo()
@@ -248,35 +251,35 @@ class SpaceSettingsViewModel(
 
     fun kickMember(userId: String, reason: String?) {
         runSavingResultAction(
-            errorMessage = "Could not remove this member. Try again.",
+            errorMessage = Res.string.could_not_remove_this_member_try_again,
             onSuccess = { clearSelectedMember(); loadMembers() }
         ) { service.port.kickUser(currentState.spaceId, userId, reason) }
     }
 
     fun banMember(userId: String, reason: String?) {
         runSavingResultAction(
-            errorMessage = "Could not ban this member. Try again.",
+            errorMessage = Res.string.could_not_ban_this_member_try_again,
             onSuccess = { clearSelectedMember(); loadMembers() }
         ) { service.port.banUser(currentState.spaceId, userId, reason) }
     }
 
     fun unbanMember(userId: String, reason: String?) {
         runSavingResultAction(
-            errorMessage = "Could not unban this member. Try again.",
+            errorMessage = Res.string.could_not_unban_this_member_try_again,
             onSuccess = { clearSelectedMember(); loadMembers() }
         ) { service.port.unbanUser(currentState.spaceId, userId, reason) }
     }
 
     fun ignoreMember(userId: String) {
         runSavingResultAction(
-            errorMessage = "Could not ignore this user. Try again.",
+            errorMessage = Res.string.could_not_ignore_this_user_try_again,
             onSuccess = { clearSelectedMember() }
         ) { service.port.ignoreUser(userId) }
     }
 
     fun updateMemberRole(userId: String, powerLevel: Long) {
         runSavingResultAction(
-            errorMessage = "Could not change the role. Try again.",
+            errorMessage = Res.string.could_not_change_the_role_try_again,
             onSuccess = { loadPermissions() }
         ) {
             service.port.updatePowerLevelForUser(currentState.spaceId, userId, powerLevel)
@@ -287,7 +290,7 @@ class SpaceSettingsViewModel(
 
     fun requestJoinRule(rule: RoomJoinRule) {
         if (!currentState.canManageSettings) {
-            launch { _events.send(Event.ShowError("You don't have permission to change who can join")) }
+            launch { _events.send(Event.ShowError(getString(Res.string.you_don_t_have_permission_to_change_who_can_join))) }
             return
         }
         if (rule == RoomJoinRule.Restricted || rule == RoomJoinRule.KnockRestricted) {
@@ -312,11 +315,11 @@ class SpaceSettingsViewModel(
 
     fun setJoinRule(rule: RoomJoinRule, allowedSpaceIds: List<String>) {
         if (!currentState.canManageSettings) {
-            launch { _events.send(Event.ShowError("You don't have permission to change who can join")) }
+            launch { _events.send(Event.ShowError(getString(Res.string.you_don_t_have_permission_to_change_who_can_join))) }
             return
         }
         runSavingResultAction(
-            errorMessage = "Could not update who can join. Try again.",
+            errorMessage = getString(Res.string.could_not_update_who_can_join_try_again),
             onSuccess = {
                 updateState {
                     copy(
@@ -344,7 +347,7 @@ class SpaceSettingsViewModel(
     fun createRoomInSpace() {
         val name = currentState.newRoomName.trim()
         if (name.isBlank()) {
-            launch { _events.send(Event.ShowError("Give the room a name")) }
+            launch { _events.send(Event.ShowError(getString(Res.string.give_the_room_a_name))) }
             return
         }
         val topic = currentState.newRoomTopic.trim().ifBlank { null }
@@ -352,10 +355,10 @@ class SpaceSettingsViewModel(
         val isPublic = currentState.newRoomIsPublic
         var createdRoomId: String? = null
         runSavingResultAction(
-            errorMessage = "Could not create the room. Try again.",
+            errorMessage = getString(Res.string.could_not_create_the_room_try_again),
             onSuccess = {
                 updateState { copy(showCreateRoom = false) }
-                _events.send(Event.ShowSuccess("Room added to space"))
+                _events.send(Event.ShowSuccess(getString(Res.string.room_added_to_space)))
                 createdRoomId?.let { reloadChildrenUntilPresent(it) }
             }
         ) {
@@ -372,7 +375,7 @@ class SpaceSettingsViewModel(
             service.spaceAddChild(spaceId, roomId, order = null, suggested = false)
                 .recoverCatching {
                     throw IllegalStateException(
-                        "Room was created but could not be added to the space.",
+                        getString(Res.string.room_was_created_but_could_not_be_added_to_the_space),
                         it
                     )
                 }
@@ -408,7 +411,7 @@ class SpaceSettingsViewModel(
     fun leaveSpaceWithChildren() {
         val childIds = currentState.selectedChildIds.toList()
         runSavingResultAction(
-            errorMessage = "Could not leave. Try again.",
+            errorMessage = Res.string.could_not_leave_try_again,
             onSuccess = { _events.send(Event.LeaveSuccess) }
         ) {
             var allOk = true
@@ -470,7 +473,7 @@ class SpaceSettingsViewModel(
     private fun loadChildren() {
         launch(
             onError = { t ->
-                updateState { copy(isLoading = false, error = t.message ?: "Failed to load children") }
+                updateState { copy(isLoading = false, error = t.message ?: getString(Res.string.failed_to_load_children)) }
             }
         ) {
             loadChildrenNow()
@@ -509,7 +512,7 @@ class SpaceSettingsViewModel(
 
             updateState { copy(children = children, isLoading = false) }
         } else {
-            updateState { copy(isLoading = false, error = result.toUserMessage("Failed to load children")) }
+            updateState { copy(isLoading = false, error = result.toUserMessage(getString(Res.string.failed_to_load_children))) }
         }
     }
 

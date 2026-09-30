@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun RoomActionsSheet(
@@ -36,21 +38,21 @@ fun RoomActionsSheet(
             HorizontalDivider(Modifier.padding(horizontal = Spacing.lg))
             Spacer(Modifier.height(Spacing.sm))
 
-            ActionItem(Icons.Default.Bookmark, "Mark read") {
+            ActionItem(Icons.Default.Bookmark, stringResource(Res.string.mark_read)) {
                 onMarkRead()
                 onDismiss()
             }
 
             // ActionItem(
             //     Icons.Default.Notifications,
-            //     "Mute"
+            //     stringResource(Res.string.mute)
             // ) {
             //     onDismiss()
             // }
 
             ActionItem(
                 if (isFavourite) Icons.Filled.Star else Icons.Default.Star,
-                if (isFavourite) "Remove from favorites" else "Add to favorites"
+                if (isFavourite) stringResource(Res.string.remove_from_favorites) else stringResource(Res.string.add_to_favorites)
             ) {
                 onToggleFavourite()
                 onDismiss()
@@ -58,7 +60,7 @@ fun RoomActionsSheet(
 
             ActionItem(
                 if (isLowPriority) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                if (isLowPriority) "Remove from low priority" else "Low priority"
+                if (isLowPriority) stringResource(Res.string.remove_from_low_priority) else stringResource(Res.string.low_priority)
             ) {
                 onToggleLowPriority()
                 onDismiss()

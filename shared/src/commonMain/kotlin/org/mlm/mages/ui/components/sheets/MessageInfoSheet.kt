@@ -121,7 +121,7 @@ fun MessageInfoSheet(
                     )
                     InfoRow(
                         label = stringResource(Res.string.send_status),
-                        value = readableEnumName(event.sendState?.name ?: "Sent"),
+                        value = event.sendState?.name?.let(readableEnumName) ?: stringResource(Res.string.sent),
                     )
                     InfoRow(
                         label = stringResource(Res.string.edited),
@@ -291,7 +291,7 @@ private fun AttachmentSection(
         AttachmentKind.Image -> stringResource(Res.string.image)
         AttachmentKind.Video -> stringResource(Res.string.video)
         AttachmentKind.File -> stringResource(Res.string.file)
-        AttachmentKind.Audio -> "Audio"
+        AttachmentKind.Audio -> stringResource(Res.string.audio)
     }
 
     SectionCard(title = stringResource(Res.string.attachment_details)) {

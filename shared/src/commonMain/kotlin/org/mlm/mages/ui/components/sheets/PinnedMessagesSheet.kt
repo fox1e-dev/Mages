@@ -22,6 +22,8 @@ import org.mlm.mages.ui.isForwardable
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.util.formatPinnedTimestamp
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun PinnedMessagesSheet(
@@ -57,7 +59,7 @@ fun PinnedMessagesSheet(
                 )
                 Spacer(Modifier.width(Spacing.sm))
                 Text(
-                    text = "Pinned messages",
+                    text = stringResource(Res.string.pinned_messages),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -77,7 +79,7 @@ fun PinnedMessagesSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No pinned messages",
+                        text = stringResource(Res.string.no_pinned_messages),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -119,7 +121,7 @@ fun PinnedMessagesSheet(
                             Column(modifier = Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = pinned.senderLabel ?: "Pinned message",
+                                        text = pinned.senderLabel ?: stringResource(Res.string.pinned_message),
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.primary,
                                         maxLines = 1,
@@ -136,7 +138,7 @@ fun PinnedMessagesSheet(
                                     }
                                 }
                                 Text(
-                                    text = pinned.previewText,
+                                    text = pinned.previewText(),
                                     style = MaterialTheme.typography.bodyMedium,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
@@ -144,7 +146,7 @@ fun PinnedMessagesSheet(
                                 val event = pinned.event
                                 when {
                                     event == null -> Text(
-                                        text = "Tap to jump to the message in the timeline",
+                                        text = stringResource(Res.string.tap_to_jump_to_the_message_in_the_timeline),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -163,7 +165,7 @@ fun PinnedMessagesSheet(
                                 IconButton(onClick = { onForward(pinned.eventId) }) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.Forward,
-                                        contentDescription = "Forward"
+                                        contentDescription = stringResource(Res.string.forward)
                                     )
                                 }
                             }
@@ -172,7 +174,7 @@ fun PinnedMessagesSheet(
                                 IconButton(onClick = { onUnpin(pinned.eventId) }) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
-                                        contentDescription = "Unpin"
+                                        contentDescription = stringResource(Res.string.unpin)
                                     )
                                 }
                             }

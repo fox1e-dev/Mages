@@ -30,6 +30,7 @@ import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.viewmodel.SpaceDetailViewModel
 import mages.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun SpaceDetailScreen(
@@ -64,10 +65,10 @@ fun SpaceDetailScreen(
                 },
                 actions = {
                     IconButton(onClick = viewModel::refresh, enabled = !state.isLoading) {
-                        Icon(Icons.Default.Refresh, "Refresh")
+                        Icon(Icons.Default.Refresh, stringResource(Res.string.refresh))
                     }
                     IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Default.Settings, "Settings")
+                        Icon(Icons.Default.Settings, stringResource(Res.string.settings))
                     }
                 }
             )
@@ -100,8 +101,8 @@ fun SpaceDetailScreen(
                 state.hierarchy.isEmpty() -> {
                     EmptyState(
                         icon = Icons.Default.FolderOpen,
-                        title = "This space is empty",
-                        subtitle = "Add rooms or subspaces to organize your conversations"
+                        title = stringResource(Res.string.this_space_is_empty),
+                        subtitle = stringResource(Res.string.add_rooms_or_subspaces_to_organize_your_conversations)
                     )
                 }
 
@@ -113,7 +114,7 @@ fun SpaceDetailScreen(
                         if (state.subspaces.isNotEmpty()) {
                             item(key = "header_subspaces") {
                                 SectionHeader(
-                                    title = "Spaces",
+                                    title = stringResource(Res.string.spaces),
                                     count = state.subspaces.size
                                 )
                             }
@@ -129,7 +130,7 @@ fun SpaceDetailScreen(
                         if (state.rooms.isNotEmpty()) {
                             item(key = "header_rooms") {
                                 SectionHeader(
-                                    title = "Rooms",
+                                    title = stringResource(Res.string.rooms),
                                     count = state.rooms.size
                                 )
                             }
@@ -191,7 +192,7 @@ private fun SpaceHeaderCard(space: SpaceInfo, avatarPath: String?) {
                                 shape = MaterialTheme.shapes.small
                             ) {
                                 Text(
-                                    "Public",
+                                    stringResource(Res.string.public),
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(
                                         horizontal = Spacing.sm,
@@ -202,7 +203,7 @@ private fun SpaceHeaderCard(space: SpaceInfo, avatarPath: String?) {
                         }
                     }
                     Text(
-                        "${space.memberCount} members",
+                        stringResource(Res.string.n_members, space.memberCount),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

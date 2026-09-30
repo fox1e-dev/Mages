@@ -32,6 +32,9 @@ import org.mlm.mages.matrix.SpaceChildInfo
 import org.mlm.mages.matrix.SpaceInfo
 import org.mlm.mages.ui.components.AttachmentData
 import org.mlm.mages.ui.util.nowMs
+import androidx.compose.runtime.Composable
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 
 data class LoginUiState(
@@ -129,42 +132,44 @@ fun MessageEvent.isForwardable(): Boolean = when (eventType) {
     else -> false
 }
 
+@Composable
 fun MessageEvent.displayPreview(): String {
-    if (isRedacted) return "Message deleted"
-    if (utd != null) return "Unable to decrypt this message"
+    if (isRedacted) return stringResource(Res.string.message_deleted)
+    if (utd != null) return stringResource(Res.string.unable_to_decrypt_this_message)
     mediaCaption()?.let { return it }
     if (eventType == EventType.CallInvite) return "Call"
     if (eventType == EventType.CallNotification) {
         return when {
-            body.contains("video", ignoreCase = true) -> "Video call"
-            body.contains("audio", ignoreCase = true) || body.contains("voice", ignoreCase = true) -> "Voice call"
+            body.contains("video", ignoreCase = true) -> stringResource(Res.string.video_call)
+            body.contains("audio", ignoreCase = true) || body.contains("voice", ignoreCase = true) -> stringResource(Res.string.voice_call)
             else -> "Call"
         }
     }
-    if (sticker != null) return "Sticker"
+    if (sticker != null) return stringResource(Res.string.picker_sticker)
     pollData?.let { return it.question }
     val attachment = attachment ?: return body
     return when (attachment.kind) {
-        AttachmentKind.Image -> "Image"
-        AttachmentKind.Video -> "Video"
+        AttachmentKind.Image -> stringResource(Res.string.image)
+        AttachmentKind.Video -> stringResource(Res.string.video)
         AttachmentKind.Audio -> if (attachment.isVoice == true) {
-            "Voice message"
-        } else attachment.fileName?.takeIf { it.isNotBlank() } ?: "Audio"
+            stringResource(Res.string.voice_message)
+        } else attachment.fileName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.audio)
         AttachmentKind.File -> attachment.fileName?.takeIf { it.isNotBlank() } ?: "File"
     }
 }
 
+@Composable
 fun MessageEvent.toReplyPreview(): ReplyPreview {
     if (isRedacted) {
         return ReplyPreview(
             kind = ReplyPreviewKind.Redacted,
-            text = "Message deleted",
+            text = stringResource(Res.string.message_deleted),
         )
     }
     if (utd != null) {
         return ReplyPreview(
             kind = ReplyPreviewKind.Encrypted,
-            text = "Unable to decrypt this message",
+            text = stringResource(Res.string.unable_to_decrypt_this_message),
         )
     }
     if (sticker != null) {
@@ -188,13 +193,13 @@ fun MessageEvent.toReplyPreview(): ReplyPreview {
             AttachmentKind.File -> ReplyPreviewKind.File
         }
         val label = when (kind) {
-            ReplyPreviewKind.Image -> "Image"
-            ReplyPreviewKind.Video -> "Video"
-            ReplyPreviewKind.Audio -> "Audio"
+            ReplyPreviewKind.Image -> stringResource(Res.string.image)
+            ReplyPreviewKind.Video -> stringResource(Res.string.video)
+            ReplyPreviewKind.Audio -> stringResource(Res.string.audio)
             else -> "File"
         }
         val text = when (kind) {
-            ReplyPreviewKind.Voice -> "Voice message"
+            ReplyPreviewKind.Voice -> stringResource(Res.string.voice_message)
             // A filename is only useful as the identifier for a file attachment;
             // for media it is the caption-less body, not something worth showing.
             ReplyPreviewKind.Image, ReplyPreviewKind.Video, ReplyPreviewKind.Audio ->
@@ -219,13 +224,13 @@ fun MessageEvent.toReplyPreview(): ReplyPreview {
         },
         text = when {
             eventType == org.mlm.mages.matrix.EventType.CallNotification &&
-                body.contains("video", ignoreCase = true) -> "Video call"
+                body.contains("video", ignoreCase = true) -> stringResource(Res.string.video_call)
             eventType == org.mlm.mages.matrix.EventType.CallNotification &&
-                (body.contains("audio", ignoreCase = true) || body.contains("voice", ignoreCase = true)) -> "Voice call"
+                (body.contains("audio", ignoreCase = true) || body.contains("voice", ignoreCase = true)) -> stringResource(Res.string.voice_call)
             eventType == org.mlm.mages.matrix.EventType.CallInvite ||
                 eventType == org.mlm.mages.matrix.EventType.CallNotification -> "Call"
-            eventType == org.mlm.mages.matrix.EventType.Location -> "Shared location"
-            eventType == org.mlm.mages.matrix.EventType.LiveLocation -> "Shared live location"
+            eventType == org.mlm.mages.matrix.EventType.Location -> stringResource(Res.string.shared_location)
+            eventType == org.mlm.mages.matrix.EventType.LiveLocation -> stringResource(Res.string.shared_live_location)
             else -> body.takeIf { it.isNotBlank() }
         },
     )
@@ -245,9 +250,13 @@ data class PinnedMessageUi(
 ) {
     val isResolved: Boolean get() = event != null
     val senderLabel: String? get() = event?.senderDisplayName ?: event?.sender
-    val previewText: String get() = event?.displayPreview()?.ifBlank { "Pinned message" } ?: "Pinned message"
     val timestampMs: Long? get() = event?.timestampMs
 }
+
+@Composable
+fun PinnedMessageUi.previewText(): String =
+    event?.displayPreview()?.ifBlank { stringResource(Res.string.pinned_message) }
+        ?: stringResource(Res.string.pinned_message)
 
 data class MessageActionStateUi(
     val edit: ActionAvailabilityUi = ActionAvailabilityUi(),

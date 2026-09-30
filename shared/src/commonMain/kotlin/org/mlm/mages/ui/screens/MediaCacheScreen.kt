@@ -147,7 +147,7 @@ fun MediaCacheScreen(
 
                 Spacer(Modifier.padding(6.dp))
 
-                Row(Modifier.fillMaxWidth(), Arrangement.Center) { Text("Room listings will be added later") }
+                Row(Modifier.fillMaxWidth(), Arrangement.Center) { Text(stringResource(Res.string.room_listings_will_be_added_later)) }
 
                 state.error?.let {
                     Text(

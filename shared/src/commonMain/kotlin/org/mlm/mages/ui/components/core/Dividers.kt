@@ -7,6 +7,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun DayDivider(text: String) {
@@ -41,7 +43,7 @@ fun UnreadDivider() {
             modifier = Modifier.padding(horizontal = Spacing.md)
         ) {
             Text(
-                text = "Unread messages",
+                text = stringResource(Res.string.unread_messages),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)

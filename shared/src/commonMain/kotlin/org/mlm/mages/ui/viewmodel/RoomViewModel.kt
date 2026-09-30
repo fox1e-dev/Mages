@@ -55,6 +55,8 @@ import org.mlm.mages.ui.util.mimeToExtension
 import org.mlm.mages.ui.util.nowMs
 import org.mlm.mages.ui.viewmodel.RoomViewModel.Event.*
 import kotlin.collections.map
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 class RoomViewModel(
     private val service: MatrixService,
@@ -505,7 +507,7 @@ class RoomViewModel(
         launch {
             val result = service.port.setImagePackEnabled(pack.sourceRoom, pack.stateKey, enabled)
             if (result.isFailure) {
-                _events.send(Event.ShowError("Failed to update sticker pack"))
+                _events.send(Event.ShowError(getString(Res.string.failed_to_update_sticker_pack)))
             }
             loadImagePacks()
             updateState {
@@ -585,7 +587,7 @@ class RoomViewModel(
                 threadRootEventId
             )
             if (!sent) {
-                _events.send(Event.ShowError("Failed to send sticker"))
+                _events.send(Event.ShowError(getString(Res.string.failed_to_send_sticker)))
             }
         }
     }
@@ -615,10 +617,10 @@ class RoomViewModel(
             val geoUri = "geo:$lat,$lon"
             val result = service.port.sendStaticLocation(currentState.roomId, geoUri)
             if (result.isSuccess) {
-                _events.send(Event.ShowSuccess("Location shared"))
+                _events.send(Event.ShowSuccess(getString(Res.string.location_shared)))
                 updateState { copy(showShareLocation = false, isSendingShareLocation = false) }
             } else {
-                val msg = result.exceptionOrNull()?.message ?: "Failed to share location"
+                val msg = result.exceptionOrNull()?.message ?: getString(Res.string.failed_to_share_location)
                 _events.send(Event.ShowError(msg))
                 updateState { copy(isSendingShareLocation = false) }
             }
@@ -715,7 +717,7 @@ class RoomViewModel(
                 if (result?.isSuccess != true) {
                     updateState { copy(input = originalInput) }
                     launch { saveDraft(s.roomId, originalInput) }
-                    _events.send(Event.ShowError(result.toUserMessage(if (replyTo != null) "Reply failed" else "Send failed")))
+                    _events.send(Event.ShowError(result.toUserMessage(if (replyTo != null) getString(Res.string.reply_failed) else getString(Res.string.send_failed))))
                 }
                 updateState { copy(replyingTo = null, seenByEntries = emptyList(), lastOutgoingRead = false) }
             }
@@ -739,7 +741,7 @@ class RoomViewModel(
                 if (result?.isSuccess != true) {
                     updateState { copy(input = originalInput) }
                     launch { saveDraft(s.roomId, originalInput) }
-                    _events.send(Event.ShowError(result.toUserMessage(if (replyTo != null) "Reply failed" else "Send failed")))
+                    _events.send(Event.ShowError(result.toUserMessage(if (replyTo != null) getString(Res.string.reply_failed) else getString(Res.string.send_failed))))
                 }
                 updateState { copy(replyingTo = null, seenByEntries = emptyList(), lastOutgoingRead = false) }
             }
@@ -843,9 +845,9 @@ class RoomViewModel(
                         )
                     }
                 }
-                _events.send(Event.ShowSuccess(if (isCaptionEdit) "Caption saved" else "Message edited"))
+                _events.send(Event.ShowSuccess(if (isCaptionEdit) getString(Res.string.caption_saved) else getString(Res.string.message_edited)))
             } else {
-                _events.send(Event.ShowError(result.toUserMessage("Could not save the edit. Try again.")))
+                _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.could_not_save_the_edit_try_again))))
             }
         }
     }
@@ -936,7 +938,7 @@ class RoomViewModel(
         launch {
             val result = service.redact(currentState.roomId, event.eventId, null)
             if (result?.isSuccess != true) {
-                _events.send(Event.ShowError(result.toUserMessage("Delete failed")))
+                _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.delete_failed))))
             }
         }
     }
@@ -944,14 +946,14 @@ class RoomViewModel(
     fun retry(event: MessageEvent) {
         val txnId = event.txnId
         if (txnId.isNullOrBlank()) {
-            launch { _events.send(Event.ShowError("This message cannot be retried")) }
+            launch { _events.send(Event.ShowError(getString(Res.string.this_message_cannot_be_retried))) }
             return
         }
 
         launch {
             val result = service.retryByTxn(currentState.roomId, txnId)
             if (result.isFailure) {
-                _events.send(Event.ShowError(result.toUserMessage("Retry failed")))
+                _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.retry_failed))))
             }
         }
     }
@@ -1019,7 +1021,7 @@ class RoomViewModel(
 
     fun pinEvent(event: MessageEvent) {
         if (!currentState.pinAction.isEnabled) {
-            launch { _events.send(Event.ShowError("You don't have permission to pin messages")) }
+            launch { _events.send(Event.ShowError(getString(Res.string.no_permission_pin))) }
             return
         }
         if (event.eventId.isBlank()) return
@@ -1030,9 +1032,9 @@ class RoomViewModel(
                 val ok = runSafe { service.port.setPinnedEvents(currentState.roomId, currentPinned) }?.isSuccess ?: false
                 if (ok) {
                     onPinnedEventsChanged(currentPinned)
-                    _events.send(Event.ShowSuccess("Message pinned"))
+                    _events.send(Event.ShowSuccess(getString(Res.string.message_pinned)))
                 } else {
-                    _events.send(Event.ShowError("Failed to pin message"))
+                    _events.send(Event.ShowError(getString(Res.string.failed_to_pin)))
                 }
             }
         }
@@ -1045,7 +1047,7 @@ class RoomViewModel(
         val unpinAllowed = perEvent?.unpin ?: currentState.pinAction
         if (!unpinAllowed.isEnabled) {
             launch {
-                _events.send(Event.ShowError(unpinAllowed.reason ?: "You don't have permission to unpin messages"))
+                _events.send(Event.ShowError(unpinAllowed.reason ?: getString(Res.string.you_don_t_have_permission_to_unpin_messages)))
             }
             return
         }
@@ -1060,9 +1062,9 @@ class RoomViewModel(
 
                 if (ok) {
                     onPinnedEventsChanged(currentPinned)
-                    _events.send(Event.ShowSuccess("Message unpinned"))
+                    _events.send(Event.ShowSuccess(getString(Res.string.message_unpinned)))
                 } else {
-                    _events.send(Event.ShowError("Failed to unpin message"))
+                    _events.send(Event.ShowError(getString(Res.string.failed_to_unpin)))
                 }
             }
         }
@@ -1072,9 +1074,9 @@ class RoomViewModel(
         launch {
             val result = runSafe { service.port.kickUser(currentState.roomId, userId, reason) }
             if (result?.isSuccess == true) {
-                _events.send(Event.ShowSuccess("User kicked"))
+                _events.send(Event.ShowSuccess(getString(Res.string.user_kicked)))
             } else {
-                _events.send(Event.ShowError(result?.exceptionOrNull()?.message ?: "Failed to kick user"))
+                _events.send(Event.ShowError(result?.exceptionOrNull()?.message ?: getString(Res.string.failed_to_kick_user)))
             }
         }
     }
@@ -1083,9 +1085,9 @@ class RoomViewModel(
         launch {
             val result = runSafe { service.port.banUser(currentState.roomId, userId, reason) }
             if (result?.isSuccess == true) {
-                _events.send(Event.ShowSuccess("User banned"))
+                _events.send(Event.ShowSuccess(getString(Res.string.user_banned)))
             } else {
-                _events.send(Event.ShowError(result?.exceptionOrNull()?.message ?: "Failed to ban user"))
+                _events.send(Event.ShowError(result?.exceptionOrNull()?.message ?: getString(Res.string.failed_to_ban_user)))
             }
         }
     }
@@ -1094,9 +1096,9 @@ class RoomViewModel(
         launch {
             val result = runSafe { service.port.unbanUser(currentState.roomId, userId, reason) }
             if (result?.isSuccess == true) {
-                _events.send(Event.ShowSuccess("User unbanned"))
+                _events.send(Event.ShowSuccess(getString(Res.string.user_unbanned)))
             } else {
-                _events.send(Event.ShowError(result?.exceptionOrNull()?.message ?: "Failed to unban user"))
+                _events.send(Event.ShowError(result?.exceptionOrNull()?.message ?: getString(Res.string.failed_to_unban_user)))
             }
         }
     }
@@ -1154,7 +1156,7 @@ class RoomViewModel(
                     updateState {
                         copy(
                             isLoadingMessageInfo = false,
-                            messageInfoError = error.message ?: "Failed to load read receipts",
+                            messageInfoError = error.message ?: getString(Res.string.failed_to_load_read_receipts),
                             messageInfoEntries = emptyList(),
                             messageInfoReadersTruncated = false,
                         )
@@ -1189,7 +1191,7 @@ class RoomViewModel(
                     selectedMemberForAction = member,
                     selectedMemberDmAction = ActionAvailabilityUi(
                         presentation = ActionPresentationUi.Disabled,
-                        reason = "Checking whether you can start a conversation…",
+                        reason = getString(Res.string.checking_whether_you_can_start_a_conversation),
                     ),
                 )
             }
@@ -1214,9 +1216,9 @@ class RoomViewModel(
                         selectedMemberDmAction = ActionAvailabilityUi(),
                     )
                 }
-                _events.send(Event.ShowSuccess("User ignored"))
+                _events.send(Event.ShowSuccess(getString(Res.string.user_ignored)))
             } else {
-                _events.send(Event.ShowError(result.toUserMessage("Failed to ignore user")))
+                _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.failed_to_ignore_user))))
             }
         }
     }
@@ -1228,7 +1230,7 @@ class RoomViewModel(
             }
 
             if (actionState == null) {
-                _events.send(Event.ShowError("Failed to check whether a conversation can be started"))
+                _events.send(Event.ShowError(getString(Res.string.failed_to_check_whether_a_conversation_can_be_started)))
                 return@launch
             }
 
@@ -1236,7 +1238,7 @@ class RoomViewModel(
                 _events.send(
                     Event.ShowError(
                         actionState.directMessage.reason
-                            ?: "You cannot start a conversation with this user"
+                            ?: getString(Res.string.you_cannot_start_a_conversation_with_this_user)
                     )
                 )
                 return@launch
@@ -1256,7 +1258,7 @@ class RoomViewModel(
                 val profile = runSafe { service.port.roomProfile(dmRoomId) }
                 _events.send(Event.NavigateToRoom(dmRoomId, profile?.name ?: userId))
             } else {
-                _events.send(Event.ShowError("Failed to start conversation"))
+                _events.send(Event.ShowError(getString(Res.string.failed_to_start_conversation)))
             }
         }
     }
@@ -1269,10 +1271,10 @@ class RoomViewModel(
                 if (blockUser) {
                     runSafe { service.port.ignoreUser(event.sender) }
                 }
-                _events.send(Event.ShowError("Report submitted"))
+                _events.send(Event.ShowError(getString(Res.string.report_submitted)))
                 hideReportDialog()
             } else {
-                _events.send(Event.ShowError(result.toUserMessage("Failed to submit report")))
+                _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.failed_to_submit_report))))
             }
         }
     }
@@ -1456,7 +1458,7 @@ class RoomViewModel(
                             attachments = remaining
                         )
                     }
-                    _events.send(Event.ShowError(result.toUserMessage("Upload failed: ${data.fileName}")))
+                    _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.upload_failed_named, data.fileName))))
                     return@launch
                 }
             }
@@ -1506,7 +1508,7 @@ class RoomViewModel(
                         .onSuccess { path ->
                             if (path.isBlank()) {
                                 _events.send(
-                                    Event.ShowError("Downloaded file is missing or empty: $path")
+                                    Event.ShowError(getString(Res.string.downloaded_file_missing, path))
                                 )
                                 return@onSuccess
                             }
@@ -1514,7 +1516,7 @@ class RoomViewModel(
                         }
                         .onFailure { t ->
                             _events.send(
-                                Event.ShowError(t.message ?: "Download failed")
+                                Event.ShowError(t.message ?: getString(Res.string.download_failed))
                             )
                         }
                 }
@@ -1535,7 +1537,7 @@ class RoomViewModel(
                         .onSuccess { path ->
                             if (path.isBlank()) {
                                 _events.send(
-                                    Event.ShowError("Downloaded sticker is missing or empty: $path")
+                                    Event.ShowError(getString(Res.string.downloaded_sticker_missing, path))
                                 )
                                 return@onSuccess
                             }
@@ -1543,7 +1545,7 @@ class RoomViewModel(
                         }
                         .onFailure { t ->
                             _events.send(
-                                Event.ShowError(t.message ?: "Download failed")
+                                Event.ShowError(t.message ?: getString(Res.string.download_failed))
                             )
                         }
                 }
@@ -1588,7 +1590,7 @@ class RoomViewModel(
                     }
                     .onFailure { t ->
                         _events.send(
-                            Event.ShowError(t.message ?: "Failed to prepare share")
+                            Event.ShowError(t.message ?: getString(Res.string.failed_to_prepare_share))
                         )
                     }
             } else if (sticker != null) {
@@ -1615,7 +1617,7 @@ class RoomViewModel(
                     }
                     .onFailure { t ->
                         _events.send(
-                            Event.ShowError(t.message ?: "Failed to prepare share")
+                            Event.ShowError(t.message ?: getString(Res.string.failed_to_prepare_share))
                         )
                     }
             }
@@ -1661,7 +1663,7 @@ class RoomViewModel(
             ) { _, _ -> }
 
             if (result.isFailure) {
-                _events.send(Event.ShowError(result.toUserMessage("Voice message upload failed")))
+                _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.voice_message_upload_failed))))
             }
         }
     }
@@ -1766,7 +1768,7 @@ class RoomViewModel(
 
             for (ev in selected) {
                 i++
-                _events.send(Event.ShowProgress(i, total, "Preparing share…"))
+                _events.send(Event.ShowProgress(i, total, getString(Res.string.preparing_share)))
 
                 val att = ev.attachment
                 val sticker = ev.sticker
@@ -1800,7 +1802,7 @@ class RoomViewModel(
             }
 
             if (files.isEmpty() && texts.isEmpty()) {
-                _events.send(Event.ShowError("Nothing to share"))
+                _events.send(Event.ShowError(getString(Res.string.nothing_to_share)))
                 return@launch
             }
 
@@ -1809,7 +1811,7 @@ class RoomViewModel(
             _events.send(
                 Event.ShareContentEvent(
                     ShareContent(
-                        subject = "Mages",
+                        subject = getString(Res.string.mages),
                         text = textBlock,
                         filePaths = files,
                         mimeTypes = mimes
@@ -1832,15 +1834,15 @@ class RoomViewModel(
             var ok = 0
 
             selected.forEachIndexed { idx, ev ->
-                _events.send(Event.ShowProgress(idx + 1, total, "Deleting…"))
+                _events.send(Event.ShowProgress(idx + 1, total, getString(Res.string.deleting)))
                 val success = runSafe { service.port.redact(currentState.roomId, ev.eventId, null) }?.isSuccess ?: false
                 if (success) ok++
             }
 
             clearSelection()
 
-            if (ok == total) _events.send(Event.ShowSuccess("Deleted $ok messages"))
-            else _events.send(Event.ShowError("Deleted $ok of $total messages"))
+            if (ok == total) _events.send(Event.ShowSuccess(getString(Res.string.deleted_n_messages, ok)))
+            else _events.send(Event.ShowError(getString(Res.string.deleted_n_of_m_messages, ok, total)))
         }
     }
 
@@ -1884,7 +1886,7 @@ class RoomViewModel(
                     }
                 }
             } else {
-                val message = result.exceptionOrNull()?.message ?: "Failed to start location sharing"
+                val message = result.exceptionOrNull()?.message ?: getString(Res.string.failed_to_start_location_sharing)
                 updateState {
                     copy(isLiveLocationLoading = false, liveLocationError = message)
                 }
@@ -1905,9 +1907,9 @@ class RoomViewModel(
                 copy(showLiveLocation = false, isLiveLocationLoading = false, liveLocationError = null)
             }
             if (result.isSuccess) {
-                _events.send(Event.ShowSuccess("Location sharing stopped"))
+                _events.send(Event.ShowSuccess(getString(Res.string.location_sharing_stopped)))
             } else {
-                val message = result.exceptionOrNull()?.message ?: "Failed to stop location sharing"
+                val message = result.exceptionOrNull()?.message ?: getString(Res.string.failed_to_stop_location_sharing)
                 _events.send(Event.ShowError(message))
             }
         }
@@ -1939,12 +1941,12 @@ class RoomViewModel(
             }
             if (result.isSuccess) {
                 updateState { copy(showPollCreator = false, editingPoll = null, editing = null) }
-                if (editingPoll != null) _events.send(Event.ShowSuccess("Poll edited"))
+                if (editingPoll != null) _events.send(Event.ShowSuccess(getString(Res.string.poll_edited)))
             } else {
                 _events.send(
                     Event.ShowError(
-                        if (editingPoll != null) "Could not save the poll. Try again."
-                        else "Could not create the poll. Try again."
+                        if (editingPoll != null) getString(Res.string.could_not_save_the_poll_try_again)
+                        else getString(Res.string.could_not_create_the_poll_try_again)
                     )
                 )
             }
@@ -1958,9 +1960,9 @@ class RoomViewModel(
             val result = service.port.setRoomNotificationMode(currentState.roomId, mode)
             if (result.isSuccess) {
                 updateState { copy(notificationMode = mode, showNotificationSettings = false) }
-                _events.send(Event.ShowSuccess("Notification settings updated"))
+                _events.send(Event.ShowSuccess(getString(Res.string.notification_updated)))
             } else {
-                _events.send(Event.ShowError(result.toUserMessage("Failed to update notifications")))
+                _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.failed_to_update_notifications))))
             }
         }
     }
@@ -1991,14 +1993,14 @@ class RoomViewModel(
     fun navigateToUpgradedRoom() {
         val successor = currentState.successor ?: return
         launch {
-            _events.send(Event.NavigateToRoom(successor.roomId, "Upgraded Room"))
+            _events.send(Event.NavigateToRoom(successor.roomId, getString(Res.string.upgraded_room)))
         }
     }
 
     fun navigateToPredecessorRoom() {
         val predecessor = currentState.predecessor ?: return
         launch {
-            _events.send(Event.NavigateToRoom(predecessor.roomId, "Previous Room"))
+            _events.send(Event.NavigateToRoom(predecessor.roomId, getString(Res.string.previous_room)))
         }
     }
 
@@ -2011,7 +2013,7 @@ class RoomViewModel(
                 if (currentSelections.contains(optionId)) {
                     currentSelections - optionId
                 } else if (currentSelections.size >= poll.maxSelections) {
-                    _events.send(Event.ShowError("You can select up to ${poll.maxSelections} options"))
+                    _events.send(Event.ShowError(getString(Res.string.max_selections_options, poll.maxSelections)))
                     return@launch
                 } else {
                     currentSelections + optionId
@@ -2020,7 +2022,7 @@ class RoomViewModel(
 
             val ok = service.port.sendPollResponse(currentState.roomId, pollEventId, newSelections).isSuccess
             if (!ok) {
-                _events.send(Event.ShowError("Failed to submit vote"))
+                _events.send(Event.ShowError(getString(Res.string.failed_to_submit_vote)))
             }
         }
     }
@@ -2029,9 +2031,9 @@ class RoomViewModel(
         launch {
             val ok = service.port.sendPollEnd(currentState.roomId, pollEventId).isSuccess
             if (!ok) {
-                _events.send(Event.ShowError("Failed to end poll"))
+                _events.send(Event.ShowError(getString(Res.string.failed_to_end_poll)))
             } else {
-                _events.send(Event.ShowSuccess("Poll ended"))
+                _events.send(Event.ShowSuccess(getString(Res.string.poll_ended)))
             }
         }
     }
@@ -2211,7 +2213,7 @@ class RoomViewModel(
                 JumpTargetResolution.NotFound -> {
                     clearJumpHighlight()
                     _state.update { it.copy(seekingEventId = null) }
-                    _events.send(Event.ShowError("Message not found"))
+                    _events.send(Event.ShowError(getString(Res.string.message_not_found)))
                     _events.send(Event.JumpSeekEnded)
                 }
                 null -> {
@@ -2273,12 +2275,12 @@ class RoomViewModel(
             val success = forwardMessage(event, targetRoomId)
 
             if (success) {
-                _events.send(Event.ShowSuccess("Message forwarded"))
+                _events.send(Event.ShowSuccess(getString(Res.string.message_forwarded)))
                 val targetName = currentState.forwardableRooms
                     .find { it.roomId == targetRoomId }?.name ?: "Room"
                 _events.send(Event.NavigateToRoom(targetRoomId, targetName))
             } else {
-                _events.send(Event.ShowError("Failed to forward message"))
+                _events.send(Event.ShowError(getString(Res.string.failed_to_forward_message)))
             }
 
             updateState { copy(forwardingEvent = null, forwardableRooms = emptyList()) }
@@ -2472,7 +2474,7 @@ class RoomViewModel(
                 languageTag = languageTag,
                 theme = theme
             )
-            if (!ok) _events.send(Event.ShowError("Failed to start call"))
+            if (!ok) _events.send(Event.ShowError(getString(Res.string.failed_to_start_call)))
         }
     }
 
@@ -2520,7 +2522,7 @@ class RoomViewModel(
                 }
                 sticker != null -> {
                     val path = service.downloadStickerToCache(sticker).getOrNull() ?: return false
-                    val body = event.body.takeIf { it.isNotBlank() } ?: "Sticker"
+                    val body = event.body.takeIf { it.isNotBlank() } ?: getString(Res.string.picker_sticker)
                     service.port.sendStickerFromPath(
                         roomId = targetRoomId,
                         path = path,
@@ -2538,9 +2540,9 @@ class RoomViewModel(
             }
             if (!ok) {
                 val message = if (result is Result<*>) {
-                    result.toUserMessage("Send failed")
+                    result.toUserMessage(getString(Res.string.send_failed))
                 } else {
-                    "Send failed"
+                    getString(Res.string.send_failed)
                 }
                 _events.send(Event.ShowError(message))
             }
@@ -2577,7 +2579,7 @@ class RoomViewModel(
 
     fun openThread(event: MessageEvent) {
         if (event.eventId.isBlank()) {
-            launch { _events.send(Event.ShowError("Cannot open thread for unsent message")) }
+            launch { _events.send(Event.ShowError(getString(Res.string.cannot_open_thread_for_unsent_message))) }
             return
         }
         launch {

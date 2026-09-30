@@ -38,6 +38,7 @@ import org.mlm.mages.ui.components.LocalNetworkPermissionDialogHost
 import org.mlm.mages.ui.components.rememberLocalNetworkPermissionGate
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.viewmodel.LoginViewModel
+import mages.shared.generated.resources.Res
 
 @Composable
 fun LoginScreen(
@@ -67,8 +68,8 @@ fun LoginScreen(
 
     val identifierLabel = when (state.passwordLoginKind) {
         PasswordLoginKind.Username -> stringResource(Res.string.username)
-        PasswordLoginKind.Email -> "Email"
-        PasswordLoginKind.Phone -> "Phone number"
+        PasswordLoginKind.Email -> stringResource(Res.string.email)
+        PasswordLoginKind.Phone -> stringResource(Res.string.phone_number)
     }
 
     val identifierPlaceholder = when (state.passwordLoginKind) {
@@ -208,7 +209,7 @@ fun LoginScreen(
                                 )
                             } else if (serverKnown && !passwordAvailable && !oauthAvailable && !ssoAvailable) {
                                 Icon(
-                                    Icons.Default.Warning, "Homeserver has no login methods or might not exist",
+                                    Icons.Default.Warning, stringResource(Res.string.homeserver_has_no_login_methods_or_might_not_exist),
                                     tint = MaterialTheme.colorScheme.error
                                 )
                             }
@@ -374,9 +375,9 @@ fun LoginScreen(
                                             ) {
                                                 Text(
                                                     when (mode) {
-                                                        PasswordLoginKind.Username -> "Username"
-                                                        PasswordLoginKind.Email -> "Email"
-                                                        PasswordLoginKind.Phone -> "Phone"
+                                                        PasswordLoginKind.Username -> stringResource(Res.string.username)
+                                                        PasswordLoginKind.Email -> stringResource(Res.string.email)
+                                                        PasswordLoginKind.Phone -> stringResource(Res.string.phone)
                                                     }
                                                 )
                                             }
@@ -387,7 +388,7 @@ fun LoginScreen(
                                         OutlinedTextField(
                                             value = state.phoneCountry,
                                             onValueChange = viewModel::setPhoneCountry,
-                                            label = { Text("Country code") },
+                                            label = { Text(stringResource(Res.string.country_code)) },
                                             placeholder = { Text("US") },
                                             leadingIcon = { Icon(Icons.Default.Flag, null) },
                                             modifier = Modifier.fillMaxWidth(),
@@ -409,7 +410,7 @@ fun LoginScreen(
 
                                     if (state.passwordLoginKind != PasswordLoginKind.Username) {
                                         Text(
-                                            text = "Not normally configured, available for special cases.",
+                                            text = stringResource(Res.string.not_normally_configured_available_for_special_cases),
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )

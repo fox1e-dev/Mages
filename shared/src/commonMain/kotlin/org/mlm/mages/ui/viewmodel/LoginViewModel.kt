@@ -20,6 +20,8 @@ import org.mlm.mages.ui.LoginUiState
 import kotlin.random.Random
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 class LoginViewModel(
     private val settingsRepository: SettingsRepository<AppSettings>,
@@ -160,7 +162,7 @@ class LoginViewModel(
         }
 
         launch(onError = { t ->
-            updateState { copy(isBusy = false, error = t.message ?: "Login failed") }
+            updateState { copy(isBusy = false, error = t.message ?: getString(Res.string.login_failed)) }
         }) {
             updateState { copy(isBusy = true, error = null) }
 
@@ -188,7 +190,7 @@ class LoginViewModel(
                             updateState {
                                 copy(
                                     isBusy = false,
-                                    error = "Enter a 2-letter country code, e.g. US or DE"
+                                    error = getString(Res.string.enter_a_2_letter_country_code_e_g_us_or_de)
                                 )
                             }
                             return@launch
@@ -200,14 +202,14 @@ class LoginViewModel(
 
                 if (!port.isLoggedInSuspend()) {
                     port.close()
-                    updateState { copy(isBusy = false, error = "Login failed") }
+                    updateState { copy(isBusy = false, error = getString(Res.string.login_failed)) }
                     return@launch
                 }
 
                 val userId = port.whoami()
                 if (userId.isNullOrBlank()) {
                     port.close()
-                    updateState { copy(isBusy = false, error = "Login failed. The server did not return a user ID. Try again.") }
+                    updateState { copy(isBusy = false, error = getString(Res.string.login_failed_the_server_did_not_return_a_user_id_try_again)) }
                     return@launch
                 }
 
@@ -236,7 +238,7 @@ class LoginViewModel(
                 _events.send(Event.LoginSuccess)
             } catch (e: Exception) {
                 runCatching { port.close() }
-                updateState { copy(isBusy = false, error = e.message ?: "Login failed") }
+                updateState { copy(isBusy = false, error = e.message ?: getString(Res.string.login_failed)) }
             }
         }
     }
@@ -256,7 +258,7 @@ class LoginViewModel(
 
         ssoJob = launch(onError = { t ->
             if (t !is CancellationException) {
-                updateState { copy(isBusy = false, ssoInProgress = false, error = t.message ?: "SSO failed") }
+                updateState { copy(isBusy = false, ssoInProgress = false, error = t.message ?: getString(Res.string.sso_failed)) }
             }
         }) {
             updateState { copy(isBusy = true, ssoInProgress = true, error = null) }
@@ -276,7 +278,7 @@ class LoginViewModel(
                         copy(
                             isBusy = false,
                             ssoInProgress = false,
-                            error = ssoResult.exceptionOrNull()?.message ?: "SSO failed or was cancelled"
+                            error = ssoResult.exceptionOrNull()?.message ?: getString(Res.string.sso_failed_or_was_cancelled)
                         )
                     }
                     return@launch
@@ -285,7 +287,7 @@ class LoginViewModel(
                 val userId = port.whoami()
                 if (userId.isNullOrBlank()) {
                     port.close()
-                    updateState { copy(isBusy = false, ssoInProgress = false, error = "SSO failed. The server did not return a user ID. Try again.") }
+                    updateState { copy(isBusy = false, ssoInProgress = false, error = getString(Res.string.sso_failed_the_server_did_not_return_a_user_id_try_again)) }
                     return@launch
                 }
 
@@ -317,7 +319,7 @@ class LoginViewModel(
                 throw e
             } catch (e: Exception) {
                 runCatching { port.close() }
-                updateState { copy(isBusy = false, ssoInProgress = false, error = e.message ?: "SSO failed") }
+                updateState { copy(isBusy = false, ssoInProgress = false, error = e.message ?: getString(Res.string.sso_failed)) }
             }
         }
     }
@@ -343,7 +345,7 @@ class LoginViewModel(
 
         oauthJob = launch(onError = { t ->
             if (t !is CancellationException) {
-                updateState { copy(isBusy = false, oauthInProgress = false, error = t.message ?: "OAuth failed") }
+                updateState { copy(isBusy = false, oauthInProgress = false, error = t.message ?: getString(Res.string.oauth_failed)) }
             }
         }) {
             updateState { copy(isBusy = true, oauthInProgress = true, error = null) }
@@ -368,7 +370,7 @@ class LoginViewModel(
                             copy(
                                 isBusy = false,
                                 oauthInProgress = false,
-                                error = result.message ?: "OAuth failed"
+                                error = result.message ?: getString(Res.string.oauth_failed)
                             )
                         }
                         return@launch
@@ -382,7 +384,7 @@ class LoginViewModel(
                 val userId = port.whoami()
                 if (userId.isNullOrBlank()) {
                     port.close()
-                    updateState { copy(isBusy = false, oauthInProgress = false, error = "OAuth failed. The server did not return a user ID. Try again.") }
+                    updateState { copy(isBusy = false, oauthInProgress = false, error = getString(Res.string.oauth_failed_the_server_did_not_return_a_user_id_try_again)) }
                     return@launch
                 }
 
@@ -414,7 +416,7 @@ class LoginViewModel(
                 throw e
             } catch (e: Exception) {
                 runCatching { port.close() }
-                updateState { copy(isBusy = false, oauthInProgress = false, error = e.message ?: "OAuth failed") }
+                updateState { copy(isBusy = false, oauthInProgress = false, error = e.message ?: getString(Res.string.oauth_failed)) }
             }
         }
     }

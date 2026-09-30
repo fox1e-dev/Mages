@@ -15,6 +15,8 @@ import androidx.compose.ui.unit.dp
 import org.mlm.mages.ui.components.AttachmentData
 import org.mlm.mages.ui.components.OutgoingMediaMode
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun ComposerAttachmentTray(
@@ -47,7 +49,7 @@ fun ComposerAttachmentTray(
                 trailingIcon = {
                     Icon(
                         Icons.Default.Close,
-                        contentDescription = "Remove attachment",
+                        contentDescription = stringResource(Res.string.remove_attachment),
                         modifier = Modifier.clickable { onRemoveAttachment?.invoke(index) }
                     )
                 },

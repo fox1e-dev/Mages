@@ -13,6 +13,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.mlm.mages.ui.PinnedMessageUi
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 
 @Composable
@@ -67,14 +69,14 @@ fun PinnedMessageBanner(
                 )
             }
             Text(
-                text = primary.senderLabel ?: "Pinned message",
+                text = primary.senderLabel ?: stringResource(Res.string.pinned_message),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = primary.previewText,
+                text = primary.previewText(),
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -85,7 +87,7 @@ fun PinnedMessageBanner(
 
         TextButton(onClick = onViewAll) {
             Text(
-                text = "View all",
+                text = stringResource(Res.string.view_all),
                 style = MaterialTheme.typography.labelMedium
             )
         }

@@ -6,13 +6,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun ConfirmationDialog(
     title: String,
     message: String,
-    confirmText: String = "Confirm",
-    cancelText: String = "Cancel",
+    confirmText: String = stringResource(Res.string.confirm),
+    cancelText: String = stringResource(Res.string.cancel),
     icon: ImageVector? = null,
     isDestructive: Boolean = false,
     isLoading: Boolean = false,

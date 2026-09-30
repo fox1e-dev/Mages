@@ -52,6 +52,7 @@ import org.mlm.mages.ui.viewmodel.SecurityViewModel
 import org.jetbrains.compose.resources.stringResource
 import mages.shared.generated.resources.*
 import kotlin.reflect.KClass
+import mages.shared.generated.resources.Res
 
 private sealed interface SecuritySheet {
     data class SetupRecovery(val isChange: Boolean) : SecuritySheet
@@ -633,10 +634,10 @@ private fun DevicesTab(
         item {
             HorizontalDivider()
             ListItem(
-                headlineContent = { Text("Share history on invite") },
+                headlineContent = { Text(stringResource(Res.string.share_history_on_invite)) },
                 supportingContent = {
                     Text(
-                        "Share encrypted history with invited users. Requires app restart.",
+                        stringResource(Res.string.share_encrypted_history_with_invited_users_requires_app_restart),
                         style = MaterialTheme.typography.bodySmall
                     )
                 },
@@ -822,7 +823,7 @@ private fun DeviceCard(
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
-                            "This device",
+                            stringResource(Res.string.this_device),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
@@ -838,7 +839,7 @@ private fun DeviceCard(
             } else {
                 Icon(
                     Icons.Default.CheckCircle,
-                    "Verified",
+                    stringResource(Res.string.verified),
                     tint = Color(0xFF4CAF50)
                 )
             }

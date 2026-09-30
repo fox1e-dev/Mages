@@ -17,6 +17,8 @@ import org.mlm.mages.matrix.BackPaginationStatus
 import org.mlm.mages.matrix.TimelineDiff
 import org.mlm.mages.matrix.TimelineListReducer
 import org.mlm.mages.settings.AppSettings
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.Res
 
 data class MediaGalleryUiState(
     val isLoading: Boolean = true,
@@ -291,7 +293,7 @@ class MediaGalleryViewModel(
                 ))
                 clearSelection()
             } else {
-                _events.send(Event.ShowError("Failed to prepare files for sharing"))
+                _events.send(Event.ShowError(getString(Res.string.failed_to_prepare_files_for_sharing)))
             }
         }
     }
@@ -319,7 +321,7 @@ class MediaGalleryViewModel(
                 service.port.downloadAttachmentToCache(att, hint)
                     .onSuccess { successCount++ }
             }
-            _events.send(Event.ShowSuccess("Downloaded $successCount files"))
+            _events.send(Event.ShowSuccess(getString(Res.string.downloaded_n_files, successCount)))
             clearSelection()
         }
     }

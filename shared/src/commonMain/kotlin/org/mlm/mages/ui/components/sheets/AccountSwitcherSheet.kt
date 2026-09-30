@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.mlm.mages.accounts.MatrixAccount
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun AccountSwitcherSheet(
@@ -33,7 +35,7 @@ fun AccountSwitcherSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                "Accounts",
+                stringResource(Res.string.accounts),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
             )
@@ -53,7 +55,7 @@ fun AccountSwitcherSheet(
 
                 item {
                     ListItem(
-                        headlineContent = { Text("Add account") },
+                        headlineContent = { Text(stringResource(Res.string.add_account)) },
                         leadingContent = {
                             Icon(Icons.Default.Add, contentDescription = null)
                         },
@@ -119,14 +121,14 @@ private fun AccountRow(
                 if (isActive) {
                     Icon(
                         Icons.Default.Check,
-                        contentDescription = "Active",
+                        contentDescription = stringResource(Res.string.active),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
                 IconButton(onClick = { showRemoveDialog = true }) {
                     Icon(
                         Icons.AutoMirrored.Filled.Logout,
-                        contentDescription = "LogOut",
+                        contentDescription = stringResource(Res.string.logout),
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
@@ -138,8 +140,8 @@ private fun AccountRow(
     if (showRemoveDialog) {
         AlertDialog(
             onDismissRequest = { showRemoveDialog = false },
-            title = { Text("Remove account?") },
-            text = { Text("This will log out ${account.userId} from this device.") },
+            title = { Text(stringResource(Res.string.remove_account)) },
+            text = { Text(stringResource(Res.string.log_out_from_device, account.userId)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -150,12 +152,12 @@ private fun AccountRow(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("Remove")
+                    Text(stringResource(Res.string.remove))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRemoveDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(Res.string.cancel))
                 }
             }
         )

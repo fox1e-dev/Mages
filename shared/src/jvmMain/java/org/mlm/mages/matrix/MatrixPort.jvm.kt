@@ -731,9 +731,9 @@ class RustMatrixPort : MatrixPort, VerificationService {
         awaitClose { }
     }
 
-    override suspend fun acceptSas(flowId: String, otherUserId: String): Boolean =
+    override suspend fun isUserVerified(userId: String): Boolean =
         withContext(matrixDispatcher) {
-            client?.acceptSas(flowId, otherUserId.ifEmpty { null }) ?: false
+            client?.isUserVerified(userId) ?: false
         }
 
     override suspend fun confirmSas(flowId: String, otherUserId: String?): Boolean =

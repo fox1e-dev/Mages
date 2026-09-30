@@ -54,6 +54,8 @@ import mages.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import io.github.mlmgames.settings.core.SettingsRepository
 import org.mlm.mages.settings.AppSettings
+import mages.shared.generated.resources.Res
+import org.jetbrains.compose.resources.pluralStringResource
 
 @Composable
 fun ThreadRoute(
@@ -77,7 +79,7 @@ fun ThreadRoute(
         onBack = onBack,
         onLoadMore = viewModel::loadMore,
         onClearFocus = viewModel::clearFocusedEvent,
-        onFocusMissing = { postError("Message not found") },
+        onFocusMissing = { postError(stringResource(Res.string.message_not_found)) },
         onSend = {
             scope.launch {
                 if (state.editingEvent != null) {
@@ -241,9 +243,9 @@ fun ThreadScreen(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer
                 ) {
-                    Icon(Icons.Default.KeyboardArrowDown, "Scroll to bottom")
+                    Icon(Icons.Default.KeyboardArrowDown, stringResource(Res.string.scroll_to_bottom))
                     Spacer(Modifier.width(Spacing.sm))
-                    Text("Latest")
+                    Text(stringResource(Res.string.latest))
                 }
             }
         }
@@ -273,7 +275,7 @@ fun ThreadScreen(
                             LoadingIndicator()
                             Spacer(Modifier.height(Spacing.lg))
                             Text(
-                                "Loading thread...",
+                                stringResource(Res.string.loading_thread),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -402,7 +404,7 @@ fun ThreadScreen(
                                 LoadMoreButton(
                                     isLoading = state.isLoading,
                                     onClick = onLoadMore,
-                                    text = "Load earlier messages"
+                                    text = stringResource(Res.string.load_earlier_messages)
                                 )
                             }
                         }
@@ -474,7 +476,7 @@ private fun ThreadTopBar(
                     Spacer(Modifier.width(Spacing.md))
                     Column {
                         Text(
-                            "Thread",
+                            stringResource(Res.string.thread),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -539,7 +541,7 @@ private fun ThreadRootMessage(
                 ) {}
                 Spacer(Modifier.width(Spacing.sm))
                 Text(
-                    "Thread started",
+                    stringResource(Res.string.thread_started),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium
@@ -628,7 +630,7 @@ private fun ThreadRootMessage(
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        "Reply",
+                        stringResource(Res.string.reply_action),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -656,7 +658,7 @@ private fun ThreadDivider(replyCount: Int) {
             modifier = Modifier.padding(horizontal = Spacing.md)
         ) {
             Text(
-                "$replyCount ${if (replyCount == 1) "reply" else "replies"}",
+                pluralStringResource(Res.plurals.reply_count, replyCount, replyCount),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -769,14 +771,14 @@ private fun EmptyThreadView() {
             }
             Spacer(Modifier.height(Spacing.xl))
             Text(
-                "Thread not found",
+                stringResource(Res.string.thread_not_found),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(Spacing.sm))
             Text(
-                "The thread may have been deleted or is still loading",
+                stringResource(Res.string.the_thread_may_have_been_deleted_or_is_still_loading),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center

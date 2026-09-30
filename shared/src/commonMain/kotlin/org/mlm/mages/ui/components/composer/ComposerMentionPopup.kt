@@ -15,6 +15,8 @@ import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.stringResource
+import mages.shared.generated.resources.Res
 
 @Composable
 fun ComposerMentionPopup(
@@ -87,7 +89,7 @@ private fun MentionSuggestionItem(
                 shape = RoundedCornerShape(999.dp)
             ) {
                 Text(
-                    text = "you",
+                    text = stringResource(Res.string.you),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
