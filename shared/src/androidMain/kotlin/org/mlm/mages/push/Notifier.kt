@@ -141,28 +141,46 @@ object AndroidNotificationHelper : KoinComponent {
         CallTelecomBridge.sendCallDismissed(ctx, roomId, eventId, silent)
     }
 
-    fun cancelRoomNotification(ctx: Context, roomId: String, force: Boolean = false) {
+    fun cancelRoomNotification(ctx: Context, roomId: String) {
         if (BubbleActivityTracker.isBubbleOpen(roomId)) return
         val mgr = ctx.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (!force && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val notif = mgr.activeNotifications.find { it.id == roomId.hashCode() }
-            if (notif != null && hasBubbleMetadata(notif.notification)) return
+        val id = roomId.hashCode()
+        val keptAsBubble = BubbleEligibilityEvaluator.canBubble(ctx, roomId) &&
+            suppressBubbledNotification(ctx, mgr, id)
+        if (!keptAsBubble) {
+            mgr.cancel(id)
         }
-        mgr.cancel(roomId.hashCode())
         Notifier.updateSummaryNotification(ctx)
     }
 
-    private fun hasBubbleMetadata(notification: Notification): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return notification.bubbleMetadata != null
+    private fun suppressBubbledNotification(
+        ctx: Context,
+        mgr: NotificationManager,
+        id: Int,
+    ): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return false
+        val existing = mgr.activeNotifications.find { it.id == id }?.notification ?: return false
+        val meta = existing.bubbleMetadata ?: return false
+        if (meta.isNotificationSuppressed) return true
+        val intent = meta.intent ?: return false
+        val icon = meta.icon ?: return false
+        val bubble = Notification.BubbleMetadata.Builder(intent, icon)
+            .setSuppressNotification(true)
+        if (meta.desiredHeightResId != 0) {
+            bubble.setDesiredHeightResId(meta.desiredHeightResId)
+        } else if (meta.desiredHeight > 0) {
+            bubble.setDesiredHeight(meta.desiredHeight)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            return runCatching {
-                val method = Notification::class.java.getMethod("getBubbleMetadata")
-                method.invoke(notification)
-            }.getOrNull() != null
-        }
-        return false
+        meta.deleteIntent?.let { bubble.setDeleteIntent(it) }
+        if (meta.autoExpandBubble) bubble.setAutoExpandBubble(true)
+        val updated = runCatching {
+            Notification.Builder.recoverBuilder(ctx, existing)
+                .setBubbleMetadata(bubble.build())
+                .setOnlyAlertOnce(true)
+                .build()
+        }.getOrNull() ?: return false
+        mgr.notify(id, updated)
+        return true
     }
 
     fun showInviteNotification(
@@ -656,6 +674,11 @@ object Notifier {
         updateSummaryNotification(context)
     }
 
+    private fun isSuppressedBubble(notification: Notification): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return false
+        return notification.bubbleMetadata?.isNotificationSuppressed == true
+    }
+
     fun updateSummaryNotification(context: Context) {
         val nm = NotificationManagerCompat.from(context)
         val activeNotifications = nm.activeNotifications
@@ -666,7 +689,8 @@ object Notifier {
                 (it.notification.channelId == AppNotificationChannels.CHANNEL_MESSAGES ||
                  it.notification.channelId == AppNotificationChannels.CHANNEL_MESSAGES_SILENT ||
                  it.notification.channelId == AppNotificationChannels.CHANNEL_CALLS ||
-                 it.notification.channelId == AppNotificationChannels.CHANNEL_CALLS_SILENT)
+                 it.notification.channelId == AppNotificationChannels.CHANNEL_CALLS_SILENT) &&
+                !isSuppressedBubble(it.notification)
             }
             .map { it.id }
             .distinct()

@@ -54,13 +54,13 @@ class NotificationReconcileWorker(
         val hasCounts = inputData.getBoolean(KEY_HAS_COUNTS, false)
         if (hasCounts && unread <= 0 && mentions <= 0) {
             if (targetRoomId != null) {
-                AndroidNotificationHelper.cancelRoomNotification(ctx, targetRoomId, force = true)
+                AndroidNotificationHelper.cancelRoomNotification(ctx, targetRoomId)
             } else {
                 for (notif in mgr.activeNotifications) {
                     val roomId = notif.notification.extras
                         .getString(EXTRA_MATRIX_ROOM_ID)
                         ?: continue
-                    AndroidNotificationHelper.cancelRoomNotification(ctx, roomId, force = true)
+                    AndroidNotificationHelper.cancelRoomNotification(ctx, roomId)
                 }
             }
             return Result.success()
@@ -86,7 +86,7 @@ class NotificationReconcileWorker(
             val stats = runCatching { port.roomUnreadStats(roomId) }.getOrNull() ?: continue
 
             if (stats.notifications == 0L && stats.mentions == 0L) {
-                AndroidNotificationHelper.cancelRoomNotification(ctx, roomId, force = true)
+                AndroidNotificationHelper.cancelRoomNotification(ctx, roomId)
             }
 
             if (targetRoomId != null) break
