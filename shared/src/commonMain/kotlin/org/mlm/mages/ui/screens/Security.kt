@@ -12,7 +12,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +44,7 @@ import org.mlm.mages.ui.components.snackbar.SnackbarManager
 import org.mlm.mages.ui.components.snackbar.snackbarHost
 import org.mlm.mages.ui.components.snackbar.rememberErrorPoster
 import org.mlm.mages.nav.Route
+import org.mlm.mages.ui.theme.AppColors
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
 import org.mlm.mages.ui.util.popBack
@@ -794,7 +794,7 @@ private fun DeviceCard(
             Icon(
                 if (device.verified) Icons.Default.VerifiedUser else Icons.Default.Smartphone,
                 null,
-                tint = if (device.verified) Color(0xFF4CAF50)
+                tint = if (device.verified) AppColors.Verified
                 else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(40.dp)
             )
@@ -840,7 +840,7 @@ private fun DeviceCard(
                 Icon(
                     Icons.Default.CheckCircle,
                     stringResource(Res.string.verified),
-                    tint = Color(0xFF4CAF50)
+                    tint = AppColors.Verified
                 )
             }
         }

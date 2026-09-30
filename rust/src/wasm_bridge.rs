@@ -3427,6 +3427,21 @@ impl WasmClient {
         }
     }
 
+    #[wasm_bindgen(js_name = isUserVerified)]
+    pub async fn is_user_verified(&self, user_id: String) -> bool {
+        let Ok(uid) = user_id.parse::<OwnedUserId>() else {
+            return false;
+        };
+        let Some(state) = self.state() else {
+            return false;
+        };
+
+        match state.client().encryption().get_user_identity(&uid).await {
+            Ok(Some(identity)) => identity.is_verified(),
+            _ => false,
+        }
+    }
+
     #[wasm_bindgen(js_name = acceptVerificationRequest)]
     pub async fn accept_verification_request(
         &self,

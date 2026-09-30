@@ -18,6 +18,7 @@ import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.ui.ActionAvailabilityUi
 import org.mlm.mages.ui.ActionPresentationUi
 import org.mlm.mages.ui.components.core.Avatar
+import org.mlm.mages.ui.theme.AppColors
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
 import org.jetbrains.compose.resources.stringResource
@@ -33,6 +34,7 @@ fun MemberActionsSheet(
     onUnban: (reason: String?) -> Unit,
     onIgnore: () -> Unit,
     onVerify: (() -> Unit)? = null,
+    verified: Boolean = false,
     dmAction: ActionAvailabilityUi = ActionAvailabilityUi.Enabled,
     kickAction: ActionAvailabilityUi = ActionAvailabilityUi.Enabled,
     banAction: ActionAvailabilityUi = ActionAvailabilityUi.Enabled,
@@ -103,6 +105,11 @@ fun MemberActionsSheet(
                     title = stringResource(Res.string.verify_user),
                     subtitle = stringResource(Res.string.start_an_emoji_verification_with_them),
                     onClick = { onVerify(); onDismiss() }
+                )
+            } else if (verified) {
+                ListItem(
+                    headlineContent = { Text(stringResource(Res.string.verified), color = AppColors.Verified) },
+                    leadingContent = { Icon(Icons.Default.VerifiedUser, null, tint = AppColors.Verified) }
                 )
             }
 

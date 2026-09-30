@@ -81,8 +81,13 @@ pub async fn drive_verification_request(
 
         yield VerifEvent::SasStarted;
 
-        // Outgoing side initiated SAS, no need to accept it ourselves.
+        // No-op when we sent `start` ourselves, sends the accept when their `start`
+        // won the race and we are the receiving side.
         let mut sas_changes = sas.changes();
+        if let Err(e) = sas.accept().await {
+            yield VerifEvent::Error { message: format!("SAS accept failed: {e}") };
+            return;
+        }
         while let Some(state) = sas_changes.next().await {
             match state {
                 SdkSasState::KeysExchanged { emojis, .. } => {
@@ -145,11 +150,11 @@ pub async fn drive_incoming_verification(
         yield VerifEvent::SasStarted;
         let mut sas_changes = sas.changes();
 
+        // We received their `start`, so we are the side that has to send the accept.
         if let Err(e) = sas.accept().await {
             yield VerifEvent::Error { message: format!("SAS accept failed: {e}") };
             return;
         }
-
         while let Some(state) = sas_changes.next().await {
             match state {
                 SdkSasState::KeysExchanged { emojis, .. } => {

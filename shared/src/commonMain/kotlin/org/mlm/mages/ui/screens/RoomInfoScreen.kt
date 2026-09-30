@@ -36,6 +36,7 @@ import org.mlm.mages.ui.components.sheets.RoomAliasesSheet
 import org.mlm.mages.ui.components.sheets.RoomNotificationSheet
 import org.mlm.mages.ui.components.settings.*
 import org.mlm.mages.ui.components.core.Avatar
+import org.mlm.mages.ui.theme.AppColors
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
 import org.koin.compose.koinInject
@@ -674,11 +675,12 @@ fun RoomInfoScreen(
                 onBan = { reason -> onBanUser(member.userId, reason) },
                 onUnban = { reason -> onUnbanUser(member.userId, reason) },
                 onIgnore = { onIgnoreUser(member.userId) },
-                onVerify = if (dmPartner?.userId == member.userId && state.profile?.isEncrypted == true) {
+                onVerify = if (!state.dmPartnerVerified && dmPartner?.userId == member.userId && state.profile?.isEncrypted == true) {
                     { onVerifyUser(member.userId) }
                 } else {
                     null
                 },
+                verified = state.dmPartnerVerified && dmPartner?.userId == member.userId,
                 dmAction = state.selectedMemberDmAction,
                 kickAction = state.selectedMemberKickAction,
                 banAction = state.selectedMemberBanAction,
