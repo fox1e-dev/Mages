@@ -18,6 +18,8 @@ import org.mlm.mages.push.NotificationMediaPolicy
 import org.mlm.mages.push.NotificationPresentation
 import org.mlm.mages.settings.AppSettings
 import org.mlm.mages.settings.appLanguageTagOrDefault
+import mages.shared.generated.resources.*
+import org.jetbrains.compose.resources.getString
 import java.util.Locale
 
 class LinuxPushHandler(
@@ -112,8 +114,8 @@ class LinuxPushHandler(
                 } else {
                     NotifierImpl.notify(
                         app = "Mages",
-                        title = "Room Invite",
-                        body = "${n.sender} invited you to ${n.roomName}",
+                        title = getString(Res.string.room_invite),
+                        body = getString(Res.string.notif_invited_you, n.sender, n.roomName),
                         desktopEntry = "org.mlm.mages"
                     )
                 }
@@ -131,7 +133,7 @@ class LinuxPushHandler(
             val presentation = NotificationPresentation.of(
                 notification = n,
                 showPreview = settings.notificationShowPreview,
-                redactedBody = "New message"
+                redactedBody = getString(Res.string.notif_new_message)
             )
             val mediaPath = presentation.media
                 ?.takeIf { NotificationMediaPolicy.allowed(settings) }

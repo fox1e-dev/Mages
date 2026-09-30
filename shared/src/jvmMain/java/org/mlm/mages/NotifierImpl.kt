@@ -12,6 +12,8 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import mages.shared.generated.resources.*
+import org.jetbrains.compose.resources.getString
 
 object NotifierImpl {
     private val lock = Any()
@@ -164,7 +166,7 @@ object NotifierImpl {
         }
     }
 
-    fun notifyMatrixEvent(
+    suspend fun notifyMatrixEvent(
         title: String,
         body: String,
         roomId: String,
@@ -178,16 +180,17 @@ object NotifierImpl {
         val persistent = hasMention && capabilities.contains("persistence")
         val actions: Array<String> =
             if (actionsSupported && roomId.isNotBlank() && eventId.isNotBlank()) {
+                val reply = getString(Res.string.notif_reply_action)
                 buildList {
-                    add("default"); add("Open")
+                    add("default"); add(getString(Res.string.notif_open))
 
                     if (inlineReplySupported) {
-                        add("inline-reply"); add("Reply…")
+                        add("inline-reply"); add(reply)
                     } else {
-                        add("reply"); add("Reply…")
+                        add("reply"); add(reply)
                     }
 
-                    add("mark_read"); add("Mark read")
+                    add("mark_read"); add(getString(Res.string.mark_read))
                 }.toTypedArray()
             } else emptyArray()
 
@@ -227,7 +230,7 @@ object NotifierImpl {
         }
     }
 
-    fun notifyIncomingCall(
+    suspend fun notifyIncomingCall(
         callerName: String,
         roomName: String,
         roomId: String,
@@ -236,18 +239,21 @@ object NotifierImpl {
         iconPath: String? = null
     ) {
         val body = if (roomName.isNotBlank() && roomName != callerName) {
-            "$callerName in $roomName"
+            getString(Res.string.notif_caller_in_room, callerName, roomName)
         } else {
-            "From $callerName"
+            getString(Res.string.notif_from_caller, callerName)
         }
 
         val actions: Array<String> =
             if (actionsSupported && roomId.isNotBlank() && eventId.isNotBlank()) {
-                arrayOf("answer", "Answer", "decline", "Decline")
+                arrayOf(
+                    "answer", getString(Res.string.answer),
+                    "decline", getString(Res.string.decline)
+                )
             } else emptyArray()
 
         val id = postNotify(
-            summary = "Incoming call",
+            summary = getString(Res.string.incoming_call),
             body = body,
             roomId = roomId,
             eventId = eventId,

@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.koin.mp.KoinPlatform
+import org.mlm.mages.shared.R
 
 private fun Context.findActivity(): FragmentActivity? {
     var ctx: Context? = this
@@ -143,8 +144,8 @@ class AndroidAppLockController(
         }
         val prompt = BiometricPrompt(activity, executor, callback)
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Unlock Mages")
-            .setSubtitle("Confirm it's you")
+            .setTitle(activity.getString(R.string.unlock_mages))
+            .setSubtitle(activity.getString(R.string.confirm_its_you))
             .apply {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     setAllowedAuthenticators(

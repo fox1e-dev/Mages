@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.mp.KoinPlatform
+import org.mlm.mages.shared.R
 import kotlin.coroutines.resume
 
 actual class LiveLocationProvider actual constructor() : LocationSource {
@@ -61,7 +62,7 @@ actual class LiveLocationProvider actual constructor() : LocationSource {
         return if (fresh != null) {
             LocationResult.Success(fresh.toLocationData())
         } else {
-            LocationResult.Error("Timed out waiting for a GPS fix")
+            LocationResult.Error(context.getString(R.string.location_timed_out_gps))
         }
     }
 

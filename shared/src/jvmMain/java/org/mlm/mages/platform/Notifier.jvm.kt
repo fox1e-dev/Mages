@@ -26,6 +26,8 @@ import org.mlm.mages.push.LinuxPushHandler
 import org.mlm.mages.push.NotificationMediaPolicy
 import org.mlm.mages.push.NotificationPresentation
 import org.mlm.mages.settings.AppSettings
+import mages.shared.generated.resources.*
+import org.jetbrains.compose.resources.getString
 import kotlin.system.exitProcess
 
 actual object Notifier {
@@ -163,8 +165,8 @@ actual fun BindNotifications(
                     } else {
                         NotifierImpl.notify(
                             app = "Mages",
-                            title = "Room Invite",
-                            body = "${n.sender} invited you to ${n.roomName}",
+                            title = getString(Res.string.room_invite),
+                            body = getString(Res.string.notif_invited_you, n.sender, n.roomName),
                             desktopEntry = "org.mlm.mages"
                         )
                     }
@@ -215,7 +217,7 @@ actual fun BindNotifications(
                 val presentation = NotificationPresentation.of(
                     notification = n,
                     showPreview = settings.notificationShowPreview,
-                    redactedBody = "New message"
+                    redactedBody = getString(Res.string.notif_new_message)
                 )
 
                 val playSound = Notifier.shouldPlaySound(

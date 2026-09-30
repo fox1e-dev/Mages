@@ -5,6 +5,8 @@ import androidx.compose.ui.Modifier
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mages.shared.generated.resources.*
+import org.jetbrains.compose.resources.getString
 import org.cef.CefApp
 import org.cef.CefClient
 import org.cef.CefSettings
@@ -124,14 +126,16 @@ private class JcefCallWebViewController(
         var infoDialog: JDialog? = null
 
         if (needsDownload) {
+            val downloading = getString(Res.string.call_downloading_webview)
+            val note = getString(Res.string.call_downloading_webview_note)
             SwingUtilities.invokeLater {
                 val dialog = JDialog(null as Frame?, "Mages", Dialog.ModalityType.MODELESS)
                 dialog.defaultCloseOperation = JDialog.DO_NOTHING_ON_CLOSE
                 dialog.isResizable = false
 
                 val label = JLabel("<html><div style='text-align: center; padding: 20px;'>" +
-                        "Downloading webview for calls (first time only)... <br>" +
-                        "<span style='font-size: 10px; color: gray;'>This may take a minute</span>" +
+                        "$downloading <br>" +
+                        "<span style='font-size: 10px; color: gray;'>$note</span>" +
                         "</div></html>")
                 dialog.add(label)
                 dialog.pack()

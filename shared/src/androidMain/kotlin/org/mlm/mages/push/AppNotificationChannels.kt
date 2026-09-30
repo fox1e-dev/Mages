@@ -7,6 +7,7 @@ import android.media.AudioAttributes
 import android.media.AudioManager
 import android.os.Build
 import android.provider.Settings
+import org.mlm.mages.shared.R
 
 /**
  * SOT for Android notification channels.
@@ -41,125 +42,78 @@ object AppNotificationChannels {
             }
         }
 
-        // Messages (normal)
-        if (mgr.getNotificationChannel(CHANNEL_MESSAGES) == null) {
-            mgr.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_MESSAGES,
-                    "Messages",
-                    NotificationManager.IMPORTANCE_DEFAULT
-                ).apply {
-                    description = "Message notifications"
-                    enableVibration(true)
-                }
-            )
+        channel(context, mgr, CHANNEL_MESSAGES, R.string.notif_channel_messages,
+            R.string.notif_channel_messages_desc, NotificationManager.IMPORTANCE_DEFAULT) {
+            enableVibration(true)
         }
-
-        // Messages (silent)
-        if (mgr.getNotificationChannel(CHANNEL_MESSAGES_SILENT) == null) {
-            mgr.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_MESSAGES_SILENT,
-                    "Messages (Silent)",
-                    NotificationManager.IMPORTANCE_LOW
-                ).apply {
-                    description = "Message notifications (no sound)"
-                    setSound(null, null)
-                    enableVibration(false)
-                }
-            )
+        channel(context, mgr, CHANNEL_MESSAGES_SILENT, R.string.notif_channel_messages_silent,
+            R.string.notif_channel_messages_silent_desc, NotificationManager.IMPORTANCE_LOW) {
+            setSound(null, null)
+            enableVibration(false)
         }
-
-        // Calls
-        if (mgr.getNotificationChannel(CHANNEL_CALLS) == null) {
-            mgr.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_CALLS,
-                    "Calls",
-                    NotificationManager.IMPORTANCE_MAX
-                ).apply {
-                    description = "Incoming calls"
-                    setSound(
-                        Settings.System.DEFAULT_RINGTONE_URI,
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                            .setLegacyStreamType(AudioManager.STREAM_RING)
-                            .build()
-                    )
-                    enableVibration(true)
-                }
+        channel(context, mgr, CHANNEL_CALLS, R.string.notif_channel_calls,
+            R.string.notif_channel_calls_desc, NotificationManager.IMPORTANCE_MAX) {
+            setSound(
+                Settings.System.DEFAULT_RINGTONE_URI,
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setLegacyStreamType(AudioManager.STREAM_RING)
+                    .build()
             )
+            enableVibration(true)
         }
-
-        // Calls (silent)
-        if (mgr.getNotificationChannel(CHANNEL_CALLS_SILENT) == null) {
-            mgr.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_CALLS_SILENT,
-                    "Calls (Silent)",
-                    NotificationManager.IMPORTANCE_HIGH
-                ).apply {
-                    description = "Incoming calls (no sound)"
-                    setSound(null, null)
-                    enableVibration(true)
-                }
-            )
+        channel(context, mgr, CHANNEL_CALLS_SILENT, R.string.notif_channel_calls_silent,
+            R.string.notif_channel_calls_silent_desc, NotificationManager.IMPORTANCE_HIGH) {
+            setSound(null, null)
+            enableVibration(true)
         }
-
-        if (mgr.getNotificationChannel(CHANNEL_INVITES) == null) {
-            mgr.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_INVITES,
-                    "Room Invites",
-                    NotificationManager.IMPORTANCE_HIGH
-                ).apply {
-                    description = "Room invitation notifications"
-                    enableVibration(true)
-                }
-            )
+        channel(context, mgr, CHANNEL_INVITES, R.string.notif_channel_invites,
+            R.string.notif_channel_invites_desc, NotificationManager.IMPORTANCE_HIGH) {
+            enableVibration(true)
         }
-
-        if (mgr.getNotificationChannel(CHANNEL_CALL_ONGOING) == null) {
-            mgr.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_CALL_ONGOING,
-                    "Ongoing call",
-                    NotificationManager.IMPORTANCE_LOW
-                ).apply {
-                    description = "Notification for ongoing calls"
-                    setSound(null, null)
-                    enableVibration(false)
-                }
-            )
+        channel(context, mgr, CHANNEL_CALL_ONGOING, R.string.notif_channel_ongoing,
+            R.string.notif_channel_ongoing_desc, NotificationManager.IMPORTANCE_LOW) {
+            setSound(null, null)
+            enableVibration(false)
         }
-
-        if (mgr.getNotificationChannel(CHANNEL_LIVE_LOCATION) == null) {
-            mgr.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_LIVE_LOCATION,
-                    "Live location",
-                    NotificationManager.IMPORTANCE_LOW
-                ).apply {
-                    description = "Notification while sharing live location"
-                    setSound(null, null)
-                    enableVibration(false)
-                }
-            )
+        channel(context, mgr, CHANNEL_LIVE_LOCATION, R.string.notif_channel_live_location,
+            R.string.notif_channel_live_location_desc, NotificationManager.IMPORTANCE_LOW) {
+            setSound(null, null)
+            enableVibration(false)
         }
+        channel(context, mgr, CHANNEL_FETCH_PUSH, R.string.notif_channel_fetch,
+            R.string.notif_channel_fetch_desc, NotificationManager.IMPORTANCE_LOW) {
+            setSound(null, null)
+            enableVibration(false)
+        }
+    }
 
-        if (mgr.getNotificationChannel(CHANNEL_FETCH_PUSH) == null) {
+    // Name and description are the only fields Android lets you change after creation, so
+    // re-registering keeps them in sync with the language the app is currently running in.
+    private fun channel(
+        context: Context,
+        mgr: NotificationManager,
+        id: String,
+        nameRes: Int,
+        descRes: Int,
+        importance: Int,
+        configure: NotificationChannel.() -> Unit,
+    ) {
+        val name = context.getString(nameRes)
+        val description = context.getString(descRes)
+        val existing = mgr.getNotificationChannel(id)
+        if (existing == null) {
             mgr.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_FETCH_PUSH,
-                    "Syncing notifications",
-                    NotificationManager.IMPORTANCE_LOW
-                ).apply {
-                    description = "Shows while notifications are being fetched"
-                    setSound(null, null)
-                    enableVibration(false)
+                NotificationChannel(id, name, importance).apply {
+                    this.description = description
+                    configure()
                 }
             )
+        } else if (existing.name != name || existing.description != description) {
+            existing.name = name
+            existing.description = description
+            mgr.createNotificationChannel(existing)
         }
     }
 

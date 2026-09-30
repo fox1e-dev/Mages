@@ -34,7 +34,7 @@ class FetchPushForegroundService : Service() {
 
         val notification = NotificationCompat.Builder(this, AppNotificationChannels.CHANNEL_FETCH_PUSH)
             .setSmallIcon(R.drawable.ic_notif_status_bar)
-            .setContentTitle("Syncing notifications…")
+            .setContentTitle(getString(R.string.notif_syncing))
             .setProgress(0, 0, true)
             .build()
 

@@ -25,6 +25,8 @@ import org.mlm.mages.push.NotificationPresentation
 import org.mlm.mages.settings.AppSettings
 import org.mlm.mages.ui.util.nowMs
 import org.w3c.dom.events.Event
+import mages.shared.generated.resources.*
+import org.jetbrains.compose.resources.getString
 
 actual object Notifier {
     private var currentRoomId: String? = null
@@ -189,9 +191,9 @@ actual fun BindNotifications(
                     val callBody = if (notification.roomName.isNotBlank() &&
                         notification.roomName != notification.sender
                     ) {
-                        "Incoming call for ${notification.roomName}"
+                        getString(Res.string.notif_incoming_call_for, notification.roomName)
                     } else {
-                        "Incoming call"
+                        getString(Res.string.incoming_call)
                     }
                     if (createBrowserNotification(
                             notification.sender,
@@ -209,7 +211,7 @@ actual fun BindNotifications(
                 val presentation = NotificationPresentation.of(
                     notification = notification,
                     showPreview = settings.notificationShowPreview,
-                    redactedBody = "New message"
+                    redactedBody = getString(Res.string.notif_new_message)
                 )
 
                 val avatarUrl = if (notification.isDm) {

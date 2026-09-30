@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import co.touchlab.kermit.Logger
 import androidx.appcompat.app.AppCompatActivity
+import org.mlm.mages.R
 import org.mlm.mages.push.PREF_INSTANCE
 import org.unifiedpush.android.connector.UnifiedPush
 
@@ -20,9 +21,9 @@ class DistributorPickerActivity : AppCompatActivity() {
         when {
             distributors.isEmpty() -> {
                 AlertDialog.Builder(this)
-                    .setTitle("No push distributor")
-                    .setMessage("No push distributor available.")
-                    .setPositiveButton("OK") { _, _ -> finish() }
+                    .setTitle(R.string.distributor_none_title)
+                    .setMessage(R.string.distributor_none_msg)
+                    .setPositiveButton(R.string.dialog_ok) { _, _ -> finish() }
                     .show()
             }
             distributors.size == 1 -> {
@@ -30,19 +31,19 @@ class DistributorPickerActivity : AppCompatActivity() {
                 UnifiedPush.saveDistributor(this, dist)
                 UnifiedPush.register(this, PREF_INSTANCE)
 
-                val name = if (dist.contains(packageName)) "Built-in FCM (embedded)" else dist
+                val name = if (dist.contains(packageName)) getString(R.string.distributor_fcm) else dist
                 AlertDialog.Builder(this)
-                    .setTitle("Push service")
-                    .setMessage("Using: $name\n\nYou can install ntfy or another distributor later to switch.")
-                    .setPositiveButton("OK") { _, _ -> finish() }
+                    .setTitle(R.string.distributor_title)
+                    .setMessage(getString(R.string.distributor_using, name))
+                    .setPositiveButton(R.string.dialog_ok) { _, _ -> finish() }
                     .show()
             }
             else -> {
                 AlertDialog.Builder(this)
-                    .setTitle("Select push service")
-                    .setMessage("Choose which app will deliver your push notifications.")
-                    .setPositiveButton("Continue") { _, _ -> launchPicker() }
-                    .setNegativeButton("Cancel") { _, _ -> finish() }
+                    .setTitle(R.string.distributor_select_title)
+                    .setMessage(R.string.distributor_select_msg)
+                    .setPositiveButton(R.string.dialog_continue) { _, _ -> launchPicker() }
+                    .setNegativeButton(R.string.dialog_cancel) { _, _ -> finish() }
                     .show()
             }
         }

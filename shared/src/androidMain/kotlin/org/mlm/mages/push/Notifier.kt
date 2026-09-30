@@ -177,17 +177,17 @@ object AndroidNotificationHelper : KoinComponent {
 
         val notification = NotificationCompat.Builder(ctx, AppNotificationChannels.CHANNEL_INVITES)
             .setSmallIcon(R.drawable.ic_notif_status_bar)
-            .setContentTitle("Room Invite")
-            .setContentText("$inviterName invited you to $roomName")
+            .setContentTitle(ctx.getString(R.string.notif_invite_title))
+            .setContentText(ctx.getString(R.string.notif_invite_body, inviterName, roomName))
             .setStyle(NotificationCompat.BigTextStyle()
-                .bigText("$inviterName invited you to $roomName"))
+                .bigText(ctx.getString(R.string.notif_invite_body, inviterName, roomName)))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .setContentIntent(createOpenIntent(ctx, roomId, eventId, notifId))
-            .addAction(R.drawable.ic_notif_status_bar, "Decline",
+            .addAction(R.drawable.ic_notif_status_bar, ctx.getString(R.string.notif_decline),
                 createDeclineInviteIntent(ctx, roomId, notifId))
-            .addAction(R.drawable.ic_notif_status_bar, "Accept",
+            .addAction(R.drawable.ic_notif_status_bar, ctx.getString(R.string.notif_accept),
                 createAcceptInviteIntent(ctx, roomId, notifId))
             .build()
 
@@ -360,12 +360,13 @@ object AndroidNotificationHelper : KoinComponent {
         val mgr = ctx.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         val notifId = ("missed_call_$roomId").hashCode()
 
-        val callType = if (isVoiceOnly) "voice call" else "call"
-        val title = "Missed $callType"
+        val title = ctx.getString(
+            if (isVoiceOnly) R.string.notif_missed_voice else R.string.notif_missed_call
+        )
         val body = if (callerName == roomName) {
-            "From $callerName"
+            ctx.getString(R.string.notif_from_caller, callerName)
         } else {
-            "From $callerName in $roomName"
+            ctx.getString(R.string.notif_from_caller_in_room, callerName, roomName)
         }
 
         val notification = NotificationCompat.Builder(ctx, AppNotificationChannels.CHANNEL_CALLS_SILENT)
@@ -434,7 +435,7 @@ object AndroidNotificationHelper : KoinComponent {
             putExtra(NotificationActionReceiver.EXTRA_NOTIF_ID, notifId)
         }
         return NotificationCompat.Action.Builder(
-            R.drawable.ic_notif_status_bar, "Mark read",
+            R.drawable.ic_notif_status_bar, ctx.getString(R.string.notif_mark_read),
             PendingIntent.getBroadcast(
                 ctx, notifId + 1, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -459,12 +460,12 @@ object AndroidNotificationHelper : KoinComponent {
                 if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0
 
         return NotificationCompat.Action.Builder(
-            R.drawable.ic_notif_status_bar, "Reply",
+            R.drawable.ic_notif_status_bar, ctx.getString(R.string.notif_reply),
             PendingIntent.getBroadcast(ctx, notifId + 2, intent, flags)
         )
             .addRemoteInput(
                 RemoteInput.Builder(NotificationActionReceiver.KEY_TEXT_REPLY)
-                    .setLabel("Reply")
+                    .setLabel(ctx.getString(R.string.notif_reply))
                     .build()
             )
             .setAllowGeneratedReplies(true)
@@ -604,7 +605,7 @@ object Notifier {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val markReadAction = NotificationCompat.Action.Builder(
-            R.drawable.ic_notif_status_bar, "Mark read", markReadIntent
+            R.drawable.ic_notif_status_bar, context.getString(R.string.notif_mark_read), markReadIntent
         ).build()
 
         val builder = NotificationCompat.Builder(context, channelId)
@@ -674,10 +675,14 @@ object Notifier {
             return
         }
 
+        val summaryCount = roomNotifIds.size
+        val summaryText = context.resources.getQuantityString(
+            R.plurals.notif_conversations, summaryCount, summaryCount
+        )
         val summary = NotificationCompat.Builder(context, AppNotificationChannels.CHANNEL_MESSAGES_SILENT)
             .setSmallIcon(R.drawable.ic_notif_status_bar)
-            .setContentTitle("${roomNotifIds.size} conversation(s)")
-            .setContentText("${roomNotifIds.size} conversation(s)")
+            .setContentTitle(summaryText)
+            .setContentText(summaryText)
             .setGroup(groupKey(context))
             .setGroupSummary(true)
             .setAutoCancel(true)
@@ -767,7 +772,7 @@ object Notifier {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val markReadAction = NotificationCompat.Action.Builder(
-            R.drawable.ic_notif_status_bar, "Mark read", markReadIntent
+            R.drawable.ic_notif_status_bar, context.getString(R.string.notif_mark_read), markReadIntent
         ).build()
 
         val builder = NotificationCompat.Builder(context, channelId)

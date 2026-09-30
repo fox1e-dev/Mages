@@ -28,7 +28,7 @@ actual object RoomPlatformShortcuts : KoinComponent {
         roomName: String?,
     ): Result<Unit> = runCatching {
         check(ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
-            "Home screen shortcuts are not supported on this launcher"
+            context.getString(R.string.shortcuts_unsupported)
         }
 
         val shortcutId = buildPinnedShortcutId(roomId)

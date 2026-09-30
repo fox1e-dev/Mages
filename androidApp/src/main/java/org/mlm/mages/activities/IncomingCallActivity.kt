@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -618,7 +619,7 @@ private fun TopBanner(isVoiceOnly: Boolean = false) {
     ) {
         AssistChip(
             onClick = {},
-            label = { Text(if (isVoiceOnly) "Incoming voice call" else "Incoming call", fontWeight = FontWeight.SemiBold) },
+            label = { Text(stringResource(if (isVoiceOnly) R.string.incoming_voice_call else R.string.incoming_call_title), fontWeight = FontWeight.SemiBold) },
             leadingIcon = {
                 Icon(
                     painter = painterResource(
@@ -632,7 +633,7 @@ private fun TopBanner(isVoiceOnly: Boolean = false) {
 
         Spacer(Modifier.height(6.dp))
         Text(
-            text = "Ringing for $timerText",
+            text = stringResource(R.string.ringing_for, timerText),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -804,7 +805,7 @@ private fun BigButtonsRow(
                 contentDescription = null
             )
             Spacer(Modifier.size(10.dp))
-            Text("Decline", fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.action_decline), fontWeight = FontWeight.SemiBold)
         }
 
         Button(
@@ -824,10 +825,10 @@ private fun BigButtonsRow(
                     if (isVoiceOnly) R.drawable.outline_phone_callback_24
                     else R.drawable.outline_video_call_24
                 ),
-                contentDescription = "Pick call"// stringResource(Res.string.start_call)
+                contentDescription = stringResource(R.string.pick_call)
             )
             Spacer(Modifier.size(10.dp))
-            Text("Answer", fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.action_answer), fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -849,7 +850,7 @@ private fun ConnectingOverlay() {
             CircularWavyProgressIndicator(modifier = Modifier.size(22.dp))
             Spacer(Modifier.size(12.dp))
             Text(
-                "Connecting…",
+                stringResource(R.string.connecting),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -971,6 +972,9 @@ private fun SwipeToAnswerOrDecline(
 
     val trackCornerPx = with(density) { 30.dp.toPx() }
     val trailColor = if (isAnswerDirection) answerColor else declineColor
+    val answerLabel = stringResource(R.string.action_answer)
+    val declineLabel = stringResource(R.string.action_decline)
+    val sliderDescription = stringResource(R.string.call_slider_for, callerName)
 
     ElevatedCard(
         modifier = modifier
@@ -1000,10 +1004,10 @@ private fun SwipeToAnswerOrDecline(
                 )
             )
             .semantics(mergeDescendants = true) {
-                contentDescription = "Incoming call slider for $callerName"
+                contentDescription = sliderDescription
                 customActions = listOf(
-                    CustomAccessibilityAction("Answer") { onAnswer(); true },
-                    CustomAccessibilityAction("Decline") { onDecline(); true }
+                    CustomAccessibilityAction(answerLabel) { onAnswer(); true },
+                    CustomAccessibilityAction(declineLabel) { onDecline(); true }
                 )
             },
         shape = RoundedCornerShape(30.dp),
@@ -1054,14 +1058,14 @@ private fun SwipeToAnswerOrDecline(
                     )
                     Spacer(Modifier.size(4.dp))
                     Text(
-                        "Decline",
+                        declineLabel,
                         color = scheme.onSurfaceVariant,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "Answer",
+                        answerLabel,
                         color = scheme.onSurfaceVariant,
                         fontWeight = FontWeight.SemiBold
                     )

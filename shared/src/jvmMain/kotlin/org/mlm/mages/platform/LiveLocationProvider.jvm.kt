@@ -19,6 +19,8 @@ import mages.DesktopLocationObserver
 import mages.DesktopLocationSource
 import mages.DesktopLocationUpdate
 import mages.FfiException
+import mages.shared.generated.resources.*
+import org.jetbrains.compose.resources.getString
 import javax.swing.SwingUtilities
 
 private class DesktopLocationRuntime {
@@ -79,7 +81,7 @@ private class DesktopLocationRuntime {
         } catch (permissionDenied: FfiException.LocationPermissionDenied) {
             LocationResult.PermissionDenied
         } catch (error: Throwable) {
-            LocationResult.Error(error.message ?: "Could not start location updates")
+            LocationResult.Error(error.message ?: getString(Res.string.location_start_failed))
         }
     }
 
@@ -130,8 +132,8 @@ actual class LiveLocationProvider actual constructor() : LocationSource {
         runtime.stop()
         return result?.fold(
             onSuccess = { LocationResult.Success(it) },
-            onFailure = { LocationResult.Error(it.message ?: "Could not get location") },
-        ) ?: LocationResult.Error("Timed out waiting for a location fix")
+            onFailure = { LocationResult.Error(it.message ?: getString(Res.string.could_not_get_location)) },
+        ) ?: LocationResult.Error(getString(Res.string.location_timed_out))
     }
 
     actual override suspend fun startLocationUpdates(): LocationResult =

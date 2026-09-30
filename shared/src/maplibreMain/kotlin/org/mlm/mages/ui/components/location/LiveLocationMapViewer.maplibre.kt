@@ -70,6 +70,9 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 import org.koin.compose.koinInject
+import mages.shared.generated.resources.*
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 import org.maplibre.compose.camera.CameraAnimation
 import org.maplibre.compose.camera.CameraMoveReason
 import org.maplibre.compose.camera.CameraPosition
@@ -150,11 +153,11 @@ private fun List<Position>.sphericalCenterOrNull(): Position? {
     )
 }
 
-private fun locationErrorMessage(result: LocationResult): String = when (result) {
+private suspend fun locationErrorMessage(result: LocationResult): String = when (result) {
     LocationResult.Started -> ""
-    is LocationResult.PermissionDenied -> "Location permission denied"
-    LocationResult.NotSupported -> "Location is not supported on this device"
-    is LocationResult.Error -> result.message.ifBlank { "Could not get location" }
+    is LocationResult.PermissionDenied -> getString(Res.string.location_permission_denied)
+    LocationResult.NotSupported -> getString(Res.string.location_not_supported)
+    is LocationResult.Error -> result.message.ifBlank { getString(Res.string.could_not_get_location) }
     is LocationResult.Success -> ""
 }
 
@@ -397,11 +400,11 @@ actual fun LiveLocationMapViewer(
                                     )
                                 }.fold(
                                     onSuccess = { null },
-                                    onFailure = { "Could not move map" },
+                                    onFailure = { getString(Res.string.could_not_move_map) },
                                 )
                             } else locationErrorMessage(result)
                         },
-                        onFailure = { it.message?.ifBlank { "Could not get location" } ?: "Could not get location" },
+                        onFailure = { it.message?.ifBlank { getString(Res.string.could_not_get_location) } ?: getString(Res.string.could_not_get_location) },
                     )
                     isCentering = false
                     if (message != null) snackbarHostState.showSnackbar(message)
@@ -491,13 +494,13 @@ actual fun LiveLocationMapViewer(
                     if (isCentering) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     } else {
-                        Icon(Icons.Default.MyLocation, contentDescription = "Center on my location")
+                        Icon(Icons.Default.MyLocation, contentDescription = stringResource(Res.string.map_center_my_location))
                     }
                 }
 
                 Icon(
                     Icons.Default.LocationOn,
-                    contentDescription = "Picked location",
+                    contentDescription = stringResource(Res.string.map_picked_location),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .size(48.dp)
@@ -523,11 +526,11 @@ actual fun LiveLocationMapViewer(
                     if (isSending) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         Spacer(Modifier.width(8.dp))
-                        Text("Sending…")
+                        Text(stringResource(Res.string.sending))
                     } else {
                         Icon(Icons.Default.LocationOn, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Send this location")
+                        Text(stringResource(Res.string.map_send_location))
                     }
                 }
 
@@ -550,7 +553,7 @@ actual fun LiveLocationMapViewer(
                         .align(Alignment.TopEnd)
                         .padding(16.dp),
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Close map")
+                    Icon(Icons.Default.Close, contentDescription = stringResource(Res.string.map_close))
                 }
 
                 FilledIconButton(
@@ -563,7 +566,7 @@ actual fun LiveLocationMapViewer(
                     if (isCentering) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     } else {
-                        Icon(Icons.Default.MyLocation, contentDescription = "Center on my location")
+                        Icon(Icons.Default.MyLocation, contentDescription = stringResource(Res.string.map_center_my_location))
                     }
                 }
 
@@ -578,7 +581,7 @@ actual fun LiveLocationMapViewer(
                     ) {
                         Icon(
                             Icons.Default.Fullscreen,
-                            contentDescription = "Fit all locations",
+                            contentDescription = stringResource(Res.string.map_fit_all),
                             modifier = Modifier.size(24.dp),
                         )
                     }
@@ -592,7 +595,7 @@ actual fun LiveLocationMapViewer(
                         onClick = {
                             clipboardManager.setText(AnnotatedString("$staticLat, $staticLon"))
                             scope.launch {
-                                snackbarHostState.showSnackbar("Coordinates copied")
+                                snackbarHostState.showSnackbar(getString(Res.string.map_coordinates_copied))
                             }
                         },
                         modifier = Modifier
@@ -603,7 +606,7 @@ actual fun LiveLocationMapViewer(
                     ) {
                         Icon(
                             Icons.Default.ContentCopy,
-                            contentDescription = "Copy coordinates",
+                            contentDescription = stringResource(Res.string.map_copy_coordinates),
                             modifier = Modifier.size(24.dp),
                         )
                     }
@@ -619,7 +622,7 @@ actual fun LiveLocationMapViewer(
                         Box {
                             Icon(
                                 Icons.AutoMirrored.Filled.List,
-                                contentDescription = "View all locations"
+                                contentDescription = stringResource(Res.string.map_view_all)
                             )
                             if (activeShares.size > 1) {
                                 Box(
@@ -659,7 +662,7 @@ actual fun LiveLocationMapViewer(
                             ) {
                                 Icon(Icons.Default.Stop, contentDescription = null)
                                 Spacer(Modifier.width(Spacing.sm))
-                                Text("Stop sharing")
+                                Text(stringResource(Res.string.stop_sharing))
                             }
                         }
                     }
@@ -716,7 +719,7 @@ private fun LiveLocationBottomSheetContent(
             .padding(bottom = Spacing.xxl),
     ) {
         Text(
-            text = "Live Locations",
+            text = stringResource(Res.string.live_locations_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
         )
@@ -777,7 +780,7 @@ private fun LiveLocationBottomSheetContent(
             TextButton(onClick = onStopSharing) {
                 Icon(Icons.Default.Stop, contentDescription = null)
                 Spacer(Modifier.width(Spacing.sm))
-                Text("Stop sharing")
+                Text(stringResource(Res.string.stop_sharing))
             }
         }
     }

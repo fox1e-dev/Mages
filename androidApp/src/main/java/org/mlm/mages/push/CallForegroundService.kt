@@ -47,7 +47,7 @@ class CallForegroundService : Service() {
             return START_NOT_STICKY
         }
 
-        val roomName = intent?.getStringExtra(EXTRA_ROOM_NAME) ?: "Ongoing call"
+        val roomName = intent?.getStringExtra(EXTRA_ROOM_NAME) ?: getString(R.string.notif_ongoing_call)
         val roomId = intent?.getStringExtra(EXTRA_ROOM_ID).orEmpty()
         val notification = buildNotification(roomName, roomId)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -97,12 +97,12 @@ class CallForegroundService : Service() {
 
         return NotificationCompat.Builder(this, AppNotificationChannels.CHANNEL_CALL_ONGOING)
             .setSmallIcon(R.drawable.ic_notif_status_bar)
-            .setContentTitle("Ongoing call")
+            .setContentTitle(getString(R.string.notif_ongoing_call))
             .setContentText(roomName)
             .setOngoing(true)
             .setContentIntent(openPendingIntent)
             .addAction(
-                R.drawable.ic_notif_status_bar, "End",
+                R.drawable.ic_notif_status_bar, getString(R.string.notif_end_call),
                 endPendingIntent
             )
             .build()

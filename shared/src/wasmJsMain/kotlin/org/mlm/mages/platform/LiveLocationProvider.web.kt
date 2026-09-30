@@ -20,8 +20,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
-
-private const val WEB_FOREGROUND_MESSAGE = "Keep Mages open to continue sharing"
+import mages.shared.generated.resources.*
+import org.jetbrains.compose.resources.getString
 
 private object WebLocationVisibility {
     val isVisible: MutableStateFlow<Boolean> = MutableStateFlow(
@@ -85,12 +85,12 @@ actual class LiveLocationProvider actual constructor() : LocationSource {
                             nativeTracking = false
                             liveGeolocator.stopTracking()
                         } else if (result == LocationResult.NotSupported) {
-                            errors.emit("Location is not supported on this device")
+                            errors.emit(getString(Res.string.location_not_supported))
                             shouldTrack = false
                             nativeTracking = false
                             liveGeolocator.stopTracking()
                         } else if (result == LocationResult.PermissionDenied) {
-                            errors.emit("Location permission denied")
+                            errors.emit(getString(Res.string.location_permission_denied))
                             shouldTrack = false
                             nativeTracking = false
                             liveGeolocator.stopTracking()
@@ -116,7 +116,7 @@ actual class LiveLocationProvider actual constructor() : LocationSource {
                     interval = 5_000L,
                 )
             )
-        } ?: return LocationResult.Error("Timed out waiting for a location fix")
+        } ?: return LocationResult.Error(getString(Res.string.location_timed_out))
         return result.toLocationResult()
     }
 
@@ -158,7 +158,7 @@ actual class LiveLocationProvider actual constructor() : LocationSource {
         }
         if (status == null) {
             liveGeolocator.stopTracking()
-            return LocationResult.Error("Timed out waiting for a location fix")
+            return LocationResult.Error(getString(Res.string.location_timed_out))
         }
 
         return when (status) {
@@ -178,16 +178,16 @@ actual class LiveLocationProvider actual constructor() : LocationSource {
         }
     }
 
-    private fun foregroundOnlyResult(): LocationResult = LocationResult.Error(
-        WEB_FOREGROUND_MESSAGE,
+    private suspend fun foregroundOnlyResult(): LocationResult = LocationResult.Error(
+        getString(Res.string.live_location_keep_open),
     )
 }
 
-private fun GeolocatorResult.toLocationResult(): LocationResult = when (this) {
+private suspend fun GeolocatorResult.toLocationResult(): LocationResult = when (this) {
     is GeolocatorResult.Success -> LocationResult.Success(data.toLocationData())
     is GeolocatorResult.PermissionDenied -> LocationResult.PermissionDenied
     GeolocatorResult.NotSupported -> LocationResult.NotSupported
-    GeolocatorResult.NotFound -> LocationResult.Error("No location found")
+    GeolocatorResult.NotFound -> LocationResult.Error(getString(Res.string.location_no_fix))
     is GeolocatorResult.GeolocationFailed -> LocationResult.Error(message)
     is GeolocatorResult.Error -> LocationResult.Error(message)
 }

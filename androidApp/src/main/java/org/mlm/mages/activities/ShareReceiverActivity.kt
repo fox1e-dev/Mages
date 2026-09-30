@@ -9,6 +9,8 @@ import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import org.mlm.mages.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -119,7 +121,7 @@ class ShareReceiverActivity : ComponentActivity() {
                         onCompleted = { summary ->
                             Toast.makeText(
                                 applicationContext,
-                                summary.toastMessage(),
+                                summary.toastMessage(this@ShareReceiverActivity),
                                 if (summary.failureCount > 0) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
                             ).show()
 
@@ -270,20 +272,20 @@ private data class ShareBatchSummary(
     val successCount: Int get() = results.count { it.success }
     val failureCount: Int get() = totalCount - successCount
 
-    fun toastMessage(): String {
+    fun toastMessage(context: Context): String {
         return when {
-            totalCount == 0 -> "Nothing was sent"
+            totalCount == 0 -> context.getString(R.string.share_nothing_sent)
             successCount == totalCount && totalCount == 1 ->
-                "Sent to ${results.first().roomName}"
+                context.getString(R.string.share_sent_to_room, results.first().roomName)
 
             successCount == totalCount ->
-                "Sent to $successCount rooms"
+                context.getString(R.string.share_sent_to_rooms, successCount)
 
             successCount > 0 ->
-                "Sent to $successCount/$totalCount rooms"
+                context.getString(R.string.share_sent_partial, successCount, totalCount)
 
             else ->
-                "Failed to send"
+                context.getString(R.string.share_failed)
         }
     }
 }
@@ -350,13 +352,13 @@ private fun ShareReceiverScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Share to...") },
+                title = { Text(stringResource(R.string.share_title)) },
                 navigationIcon = {
                     IconButton(
                         onClick = onDismiss,
                         enabled = !isSending
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.share_cancel))
                     }
                 }
             )
@@ -380,7 +382,7 @@ private fun ShareReceiverScreen(
 
                         if (prepared == null) {
                             isSending = false
-                            transientMessage = "Could not read shared content"
+                            transientMessage = context.getString(R.string.share_could_not_read)
                             return@launch
                         }
 
@@ -477,7 +479,10 @@ private fun ShareActionBar(
             progress?.let {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = "Sending to ${it.currentRoomName} (${it.currentRoomIndex}/${it.totalRooms})",
+                        text = stringResource(
+                            R.string.share_sending_to,
+                            it.currentRoomName, it.currentRoomIndex, it.totalRooms
+                        ),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     LinearWavyProgressIndicator(
@@ -498,13 +503,13 @@ private fun ShareActionBar(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Sending…")
+                    Text(stringResource(R.string.share_sending))
                 } else {
                     Text(
                         when (selectedCount) {
-                            0 -> "Select rooms"
-                            1 -> "Send to 1 room"
-                            else -> "Send to $selectedCount rooms"
+                            0 -> stringResource(R.string.share_select_rooms)
+                            1 -> stringResource(R.string.share_send_one)
+                            else -> stringResource(R.string.share_send_n, selectedCount)
                         }
                     )
                 }
@@ -525,7 +530,7 @@ private fun SelectedRoomsRow(
             .padding(bottom = Spacing.xs)
     ) {
         Text(
-            text = "Selected rooms",
+            text = stringResource(R.string.share_selected_rooms),
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.xs)
         )
@@ -592,7 +597,7 @@ private fun SharePreview(
                 when (content) {
                     is SharedContent.Text -> {
                         Text(
-                            text = "Text message",
+                            text = stringResource(R.string.share_text_message),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -629,7 +634,7 @@ private fun SharePreview(
 
                     is SharedContent.MultipleFiles -> {
                         Text(
-                            text = "${content.files.size} files",
+                            text = stringResource(R.string.share_n_files, content.files.size),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium
                         )

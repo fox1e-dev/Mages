@@ -108,7 +108,7 @@ actual fun LiveLocationMapViewer(
                         )
                     ) {
                         Icon(Icons.Default.Stop, contentDescription = null)
-                        Text("Stop sharing")
+                        Text(stringResource(Res.string.stop_sharing))
                     }
                 }
             }
@@ -120,7 +120,7 @@ actual fun LiveLocationMapViewer(
                 .align(Alignment.TopEnd)
                 .padding(Spacing.lg),
         ) {
-            Icon(Icons.Default.Close, contentDescription = "Close live location viewer")
+            Icon(Icons.Default.Close, contentDescription = stringResource(Res.string.close_live_location_viewer))
         }
     }
 }

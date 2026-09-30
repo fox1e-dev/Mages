@@ -94,7 +94,7 @@ class MagesApp : Application() {
         ActionRegistry.register(CopyUnifiedPushEndpointAction::class) {
             val ep = getEndpoint(this, PREF_INSTANCE) ?: "<none>"
             val cm = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("UnifiedPush endpoint", ep))
+            cm.setPrimaryClip(ClipData.newPlainText(getString(R.string.unifiedpush_endpoint_label), ep))
         }
 
         ActionRegistry.register(OpenBubbleSettingsAction::class) {

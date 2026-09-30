@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
             pendingCallAction?.invoke()
         } else {
             val snackbarManager: SnackbarManager by inject()
-            snackbarManager.showError("Microphone permission is required for calls")
+            snackbarManager.showError(getString(R.string.mic_permission_required))
         }
         pendingCallAction = null
     }
@@ -318,7 +318,7 @@ class MainActivity : AppCompatActivity() {
             val link = parseMatrixLink(uri.toString())
             if (link !is MatrixLink.Unsupported) {
                 if (!service.isLoggedIn() || service.portOrNull == null) {
-                    snackbarManager.showError("Logged out currently.")
+                    snackbarManager.showError(getString(R.string.logged_out))
                     return@withLock
                 }
 

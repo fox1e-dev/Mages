@@ -10,4 +10,33 @@
     <string name="notif_live_location_plural">%1$d salas</string>
 
     <string name="app_name">Mages</string>
+    <string name="dialog_cancel">Cancelar</string>
+    <string name="dialog_continue">Continuar</string>
+    <string name="dialog_ok">Aceptar</string>
+    <string name="distributor_fcm">FCM integrado (incrustado)</string>
+    <string name="distributor_none_msg">No hay ningún distribuidor de push disponible.</string>
+    <string name="distributor_none_title">Sin distribuidor de push</string>
+    <string name="distributor_select_msg">Elige qué aplicación entregará tus notificaciones push.</string>
+    <string name="distributor_select_title">Seleccionar servicio push</string>
+    <string name="distributor_title">Servicio push</string>
+    <string name="distributor_using">Usando: %1$s\n\nPuedes instalar ntfy u otro distribuidor más tarde para cambiar.</string>
+    <string name="logged_out">Sesión cerrada en este momento.</string>
+    <string name="mic_permission_required">Se requiere permiso de micrófono para las llamadas</string>
+    <string name="share_cancel">Cancelar</string>
+    <string name="share_could_not_read">No se pudo leer el contenido compartido</string>
+    <string name="share_failed">Error al enviar</string>
+    <string name="share_n_files">%1$d archivos</string>
+    <string name="share_nothing_sent">No se envió nada</string>
+    <string name="share_select_rooms">Seleccionar salas</string>
+    <string name="share_selected_rooms">Salas seleccionadas</string>
+    <string name="share_send_n">Enviar a %1$d salas</string>
+    <string name="share_send_one">Enviar a 1 sala</string>
+    <string name="share_sending">Enviando…</string>
+    <string name="share_sending_to">Enviando a %1$s (%2$d/%3$d)</string>
+    <string name="share_sent_partial">Enviado a %1$d de %2$d salas</string>
+    <string name="share_sent_to_room">Enviado a %1$s</string>
+    <string name="share_sent_to_rooms">Enviado a %1$d salas</string>
+    <string name="share_text_message">Mensaje de texto</string>
+    <string name="share_title">Compartir con...</string>
+    <string name="unifiedpush_endpoint_label">Endpoint de UnifiedPush</string>
 </resources>
