@@ -171,9 +171,6 @@ private suspend fun Promise<JsAny?>.awaitAny(): JsAny? =
 }""")
 private external fun base64ToUint8Array(base64: String): JsAny
 
-@JsFun("(msg) => console.log(msg)")
-private external fun consoleLog(msg: String)
-
 @JsFun("(ms) => ms == null ? undefined : BigInt(Math.trunc(ms))")
 private external fun voiceDurationMsToJs(ms: Double?): JsAny?
 
@@ -337,7 +334,6 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
 
     private inline fun <reified T> decodeValueOrNull(value: JsAny?, label: String = "decode"): T? =
         runCatching {
-            Logger.w("$label raw = ${value.toJsonString()}")
             decodeValue<T>(value)
         }.onFailure {
             Logger.w("$label failed: ${it.message}")
@@ -421,7 +417,6 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
     override suspend fun recent(roomId: String, limit: Int): List<MessageEvent> {
         val raw = requireClient().recentEvents(roomId, limit.toDouble()).await<JsAny?>()
         return runCatching {
-        //    Logger.w("recent raw = ${raw.toJsonString()}")
             wasmJson.decodeFromJsonElement<List<MessageEvent>>(raw.toJsonArray())
         }.onFailure {
             Logger.w("recent failed: ${it.message}")
@@ -437,7 +432,6 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
             roomId,
             jsCallback1 { diffValue: JsAny? ->
                 runCatching {
-                    Logger.w("timeline diff raw = ${diffValue.toJsonString()}")
                     decodeTimelineDiff(diffValue)
                 }.onFailure {
                     Logger.w("timeline diff decode failed: ${it.message}")
