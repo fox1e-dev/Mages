@@ -142,6 +142,7 @@ object AndroidNotificationHelper : KoinComponent {
     }
 
     fun cancelRoomNotification(ctx: Context, roomId: String, force: Boolean = false) {
+        if (BubbleActivityTracker.isBubbleOpen(roomId)) return
         val mgr = ctx.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (!force && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val notif = mgr.activeNotifications.find { it.id == roomId.hashCode() }

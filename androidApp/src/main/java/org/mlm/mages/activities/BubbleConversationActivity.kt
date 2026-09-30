@@ -25,7 +25,9 @@ import org.koin.core.parameter.parametersOf
 import org.mlm.mages.MatrixService
 import org.mlm.mages.platform.BindLifecycle
 import org.mlm.mages.platform.SessionBootstrapper
+import org.mlm.mages.push.BubbleActivityTracker
 import org.mlm.mages.push.ConversationShortcutPublisher
+import org.mlm.mages.push.enqueueNotificationReconciliation
 import org.mlm.mages.settings.AppSettings
 import org.mlm.mages.settings.ThemeMode
 import org.mlm.mages.ui.screens.RoomScreen
@@ -50,11 +52,18 @@ class BubbleConversationActivity : ComponentActivity() {
 
         lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
+                BubbleActivityTracker.onBubbleOpened(roomId)
                 lifecycleScope.launch {
                     SessionBootstrapper.ensureReadyAndSyncing(service)
                     service.portOrNull?.resumeActiveUi()
                 }
             }
+
+            override fun onStop(owner: LifecycleOwner) {
+                BubbleActivityTracker.onBubbleClosed(roomId)
+                enqueueNotificationReconciliation(this@BubbleConversationActivity)
+            }
+
             override fun onResume(owner: LifecycleOwner) {
                 lifecycleScope.launch {
                     service.portOrNull?.resumeActiveUi()
