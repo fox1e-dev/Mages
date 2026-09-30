@@ -1,15 +1,19 @@
 package org.mlm.mages.accounts
 
 import co.touchlab.kermit.Logger
+import io.github.mlmgames.settings.core.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.mlm.mages.matrix.MatrixPort
 import org.mlm.mages.matrix.createMatrixPort
 import org.mlm.mages.platform.MagesPaths
 import org.mlm.mages.platform.deleteDirectory
+import org.mlm.mages.settings.AppSettings
+import org.mlm.mages.toPresence
 import kotlin.concurrent.Volatile
 
 internal fun Throwable.isTlsUnavailable(): Boolean {
@@ -22,7 +26,8 @@ internal fun Throwable.isTlsUnavailable(): Boolean {
 }
 
 class MatrixClients(
-    private val accountStore: AccountStore
+    private val accountStore: AccountStore,
+    private val settingsRepository: SettingsRepository<AppSettings>
 ) {
     private val mutex = Mutex()
 
@@ -98,6 +103,7 @@ class MatrixClients(
 
         _activePort = port
         _activeAccount.value = account
+        applyStoredPresence(port)
         _isReady.value = true
     }
 
@@ -170,6 +176,7 @@ class MatrixClients(
 
         return try {
             port.init(account.homeserver, account.id, effectiveProxy, account.enableShareHistoryOnInvite)
+            applyStoredPresence(port)
 
             val loggedIn = try {
                 port.isLoggedInSuspend()
@@ -201,6 +208,10 @@ class MatrixClients(
             _isReady.value = true
             false
         }
+    }
+
+    private suspend fun applyStoredPresence(port: MatrixPort) {
+        runCatching { port.applySyncPresence(settingsRepository.flow.first().presence.toPresence()) }
     }
 
     private fun accountStoreDir(accountId: String): String {

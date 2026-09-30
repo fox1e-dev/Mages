@@ -26,7 +26,7 @@ val coreModule = module {
 
 val accountModule = module {
     single { AccountStore(get(), get()) }
-    single { MatrixClients(get()) }
+    single { MatrixClients(get(), get()) }
     single { MatrixService(get(), get()) }
     single { VerificationCoordinator(get()) }
     single { RecentEmojiStore { get<MatrixClients>().portOrNull ?: error("no active account") } }

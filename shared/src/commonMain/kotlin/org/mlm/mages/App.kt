@@ -1169,7 +1169,7 @@ private fun AppContent(
 
 private const val STATUS_MESSAGE_MAX_BYTES = 255
 
-private fun PresenceMode.toPresence(): Presence = when (this) {
+internal fun PresenceMode.toPresence(): Presence = when (this) {
     PresenceMode.Online -> Presence.Online
     PresenceMode.Offline -> Presence.Offline
     PresenceMode.Unavailable -> Presence.Unavailable
