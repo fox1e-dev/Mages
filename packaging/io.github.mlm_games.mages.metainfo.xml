@@ -46,6 +46,29 @@
     <content_attribute id="social-audio">intense</content_attribute>
   </content_rating>
   <releases>
+    <release version="5.0.2" date="2026-09-30" type="stable">
+      <description>
+        <ul>
+          <li>banned members now show up in members list now</li>
+          <li>wire long press menu for location events</li>
+          <li>add an option to hide spaces' rooms in room list</li>
+          <li>feat: Add issue template forms</li>
+          <li>add image packs emotes and reactions</li>
+          <li>fix: pass the property name to addValueTransform</li>
+          <li>desktop deeplinks</li>
+          <li>Add an option to how space avatars in rooms next to their name</li>
+          <li>fix new room creation in spaces</li>
+          <li>Make the RoomScreen's top title bar clickable (#130)</li>
+          <li>fix(ci): exclude scoped conventional commits</li>
+          <li>poll and create sheet</li>
+          <li>better reply previews</li>
+          <li>fix non-text (like polls) notifications falling back to "New Event"</li>
+          <li>wire attachment retry</li>
+          <li>hide edit action for stickers</li>
+          <li>Add translations</li>
+        </ul>
+      </description>
+    </release>
     <release version="5.0.1" date="2026-09-29" type="stable">
       <description>
         <ul>
