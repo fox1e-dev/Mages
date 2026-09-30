@@ -131,6 +131,7 @@ data class MessageBubbleModel(
     val isSticker: Boolean = false,
     val isEdited: Boolean = false,
     val isPinned: Boolean = false,
+    val isRedacted: Boolean = false,
     val poll: PollData? = null,
     val thread: MessageThreadUi? = null,
     val variant: MessageBubbleVariant = MessageBubbleVariant.Timeline,

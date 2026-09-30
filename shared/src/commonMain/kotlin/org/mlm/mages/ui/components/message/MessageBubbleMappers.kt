@@ -3,6 +3,7 @@ package org.mlm.mages.ui.components.message
 import mages.shared.generated.resources.*
 import org.mlm.mages.AttachmentKind
 import org.mlm.mages.MessageEvent
+import org.mlm.mages.ReplyPreviewKind
 import org.mlm.mages.captionOr
 import org.mlm.mages.ui.components.timeline.TimelineContent
 import org.mlm.mages.ui.util.formatBytes
@@ -91,11 +92,19 @@ internal fun TimelineContent.Bubble.toBubbleModel(
             mime = it.mime,
         )
     }
+    val toRedactedEvent = event.replyPreview?.kind == ReplyPreviewKind.Redacted
+    val deletedLabel = stringResource(Res.string.message_deleted)
     return MessageBubbleModel(
         eventId = event.eventId,
         isMine = ctx.isMine,
-        body = if (stickerData != null) "" else event.body,
-        formattedBody = event.formattedBody,
+        // The core renders redactions with an English placeholder; the bubble
+        // shows the localized label instead.
+        body = when {
+            event.isRedacted -> deletedLabel
+            stickerData != null -> ""
+            else -> event.body
+        },
+        formattedBody = if (event.isRedacted) null else event.formattedBody,
         sender = if (ctx.senderVisible) MessageSenderUi(
             id = event.sender,
             displayName = event.senderDisplayName,
@@ -116,8 +125,12 @@ internal fun TimelineContent.Bubble.toBubbleModel(
         reactionShortcodes = ctx.reactionShortcodes,
         reply = MessageReplyUi(
             sender = event.replyToSenderDisplayName,
-            body = event.replyToBody,
-            preview = event.replyPreview,
+            // `replyToBody` carries the core's English placeholder, so the
+            // localized label has to win over it.
+            body = if (toRedactedEvent) deletedLabel else event.replyToBody,
+            preview = event.replyPreview?.let { preview ->
+                if (toRedactedEvent) preview.copy(text = deletedLabel) else preview
+            },
             previewPath = ctx.resolvedReplyPreviewPath,
         ),
         sendState = event.sendState,
@@ -130,6 +143,7 @@ internal fun TimelineContent.Bubble.toBubbleModel(
         isSticker = stickerData != null,
         isEdited = event.isEdited,
         isPinned = ctx.isPinned,
+        isRedacted = event.isRedacted,
         poll = event.pollData,
         thread = ctx.threadCount?.let { count -> MessageThreadUi(count) },
         variant = ctx.variant,

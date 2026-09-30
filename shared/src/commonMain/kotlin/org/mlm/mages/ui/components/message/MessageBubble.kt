@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.EmojiEmotions
 import androidx.compose.material.icons.filled.AudioFile
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
@@ -30,6 +31,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -107,13 +109,17 @@ fun MessageBubble(
             )
     val showSenderAvatar = showSenderInfo && showMessageAvatars && !model.sender.id.isNullOrBlank()
 
-    val bubbleContainerColor = if (isMine) {
+    val isRedacted = model.isRedacted
+
+    val bubbleContainerColor = if (isRedacted) {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+    } else if (isMine) {
         MaterialTheme.colorScheme.primaryContainer
     } else {
         MaterialTheme.colorScheme.secondaryContainer
     }
 
-    val bubbleTextColor = if (isMine) {
+    val bubbleTextColor = if (!isRedacted && isMine) {
         MaterialTheme.colorScheme.onPrimaryContainer
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
@@ -170,7 +176,7 @@ fun MessageBubble(
             Surface(
                 color = bubbleContainerColor,
                 shape = bubbleShape(isMine, grouping.groupedWithPrev, grouping.groupedWithNext),
-                tonalElevation = if (isMine) 3.dp else 1.dp,
+                tonalElevation = if (isRedacted) 0.dp else if (isMine) 3.dp else 1.dp,
                 modifier = Modifier
                     .combinedClickable(onClick = {}, onLongClick = onLongPress)
             ) {
@@ -304,6 +310,16 @@ fun MessageBubble(
                                     isMine = isMine,
                                     modifier = Modifier.align(horizontalAlignment)
                                 )
+                            } else if (isRedacted) {
+                                TimestampLayout(
+                                    position = TimestampPosition.Aligned,
+                                    timestamp = timestampContent,
+                                ) {
+                                    RedactedBody(
+                                        text = model.body,
+                                        color = bubbleTextColor.copy(alpha = 0.6f),
+                                    )
+                                }
                             } else if (model.attachment == null && model.body.isNotBlank()) {
                                 TimestampLayout(
                                     position = TimestampPosition.Aligned,
@@ -483,7 +499,8 @@ private fun ReplyPreviewVisual(preview: ReplyPreview, resolvedPath: String?) {
         ReplyPreviewKind.VideoCall -> Icons.Default.Videocam
         ReplyPreviewKind.Location, ReplyPreviewKind.LiveLocation -> Icons.Default.LocationOn
         ReplyPreviewKind.Encrypted -> Icons.Default.Lock
-        ReplyPreviewKind.Redacted, ReplyPreviewKind.Unsupported -> Icons.Default.Info
+        ReplyPreviewKind.Redacted -> Icons.Default.Delete
+        ReplyPreviewKind.Unsupported -> Icons.Default.Info
         ReplyPreviewKind.Text -> null
     }
 
@@ -1055,6 +1072,28 @@ fun MessageTimeAndStatus(
                 color = textColor.copy(alpha = 0.6f)
             )
         }
+    }
+}
+
+@Composable
+private fun RedactedBody(
+    text: String,
+    color: Color,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = Icons.Default.Delete,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(14.dp)
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            fontStyle = FontStyle.Italic,
+            color = color
+        )
     }
 }
 

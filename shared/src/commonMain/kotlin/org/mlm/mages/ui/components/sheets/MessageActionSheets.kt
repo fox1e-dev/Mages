@@ -72,6 +72,7 @@ fun MessageActionSheet(
     resolveReactionPreview: suspend (thumbnailMxcUri: String?, mxcUrl: String) -> String? = { _, _ -> null },
 ) {
     val clipboardManager = LocalClipboardManager.current
+    val isRedacted = event.isRedacted
     var showEmojiPicker by remember { mutableStateOf(false) }
     var showImagePicker by remember { mutableStateOf(false) }
 
@@ -108,12 +109,14 @@ fun MessageActionSheet(
                 .padding(bottom = Spacing.xxl)
         ) {
             MessagePreview(event)
-            Spacer(Modifier.height(Spacing.lg))
-            QuickReactionsRow(
-                onReact = { emoji -> onReact(emoji); onDismiss() },
-                onOpenPicker = { showEmojiPicker = true },
-                onOpenImagePicker = { showImagePicker = true }
-            )
+            if (!isRedacted) {
+                Spacer(Modifier.height(Spacing.lg))
+                QuickReactionsRow(
+                    onReact = { emoji -> onReact(emoji); onDismiss() },
+                    onOpenPicker = { showEmojiPicker = true },
+                    onOpenImagePicker = { showImagePicker = true }
+                )
+            }
             Spacer(Modifier.height(Spacing.lg))
             HorizontalDivider(Modifier.padding(horizontal = Spacing.lg))
             Spacer(Modifier.height(Spacing.sm))
@@ -135,15 +138,17 @@ fun MessageActionSheet(
             if (onForward != null && event.isForwardable()) {
                 ActionItem(Icons.AutoMirrored.Filled.Forward, stringResource(Res.string.forward)) { onForward(); onDismiss() }
             }
-            ActionItem(Icons.AutoMirrored.Filled.Reply, stringResource(Res.string.reply_action)) { onReply(); onDismiss() }
-            if (onReplyInThread != null) {
-                ActionItem(Icons.Default.Forum, stringResource(Res.string.reply_in_thread)) { onReplyInThread(); onDismiss() }
+            if (!isRedacted) {
+                ActionItem(Icons.AutoMirrored.Filled.Reply, stringResource(Res.string.reply_action)) { onReply(); onDismiss() }
+                if (onReplyInThread != null) {
+                    ActionItem(Icons.Default.Forum, stringResource(Res.string.reply_in_thread)) { onReplyInThread(); onDismiss() }
+                }
             }
             if (isMine && event.sendState == SendState.Failed && onRetry != null) {
                 ActionItem(Icons.Default.Refresh, stringResource(Res.string.retry)) { onRetry(); onDismiss() }
             }
             ActionItem(Icons.Default.Bookmark, stringResource(Res.string.mark_as_read_here)) { onMarkReadHere(); onDismiss() }
-            if (isMine && event.sendState != SendState.Failed && event.eventId.isNotBlank()) {
+            if (isMine && !isRedacted && event.sendState != SendState.Failed && event.eventId.isNotBlank()) {
                 if (event.pollData != null) {
                     if (event.pollData?.isEnded == false && onEditPoll != null) {
                         ActionItem(Icons.Default.Poll, stringResource(Res.string.edit_poll)) { onEditPoll(); onDismiss() }
@@ -172,7 +177,7 @@ fun MessageActionSheet(
             if (isMine || (canDeleteOthers && event.eventId.isNotBlank())) {
                 ActionItem(Icons.Default.Delete, stringResource(Res.string.delete), MaterialTheme.colorScheme.error) { onDelete(); onDismiss() }
             }
-            if (canPin && event.eventId.isNotBlank()) {
+            if (canPin && event.eventId.isNotBlank() && (!isRedacted || isPinned)) {
                 if (isPinned && onUnpin != null) {
                     ActionItem(Icons.Default.PushPin, stringResource(Res.string.unpin)) { onUnpin(); onDismiss() }
                 } else if (!isPinned && onPin != null) {
