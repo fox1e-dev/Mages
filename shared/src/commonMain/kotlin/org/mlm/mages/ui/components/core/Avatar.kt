@@ -19,14 +19,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import org.mlm.mages.ui.theme.Sizes
+
+private const val InitialsFontSizeRatio = 0.45f
+private const val InitialsLineHeightRatio = 0.55f
 
 
 @Composable
@@ -61,14 +67,21 @@ fun Avatar(
                     onError = { showImage = false },
                 )
             } else {
+                val style: TextStyle = when {
+                    size >= Sizes.avatarLarge -> MaterialTheme.typography.titleLarge
+                    size >= Sizes.avatarMedium -> MaterialTheme.typography.titleMedium
+                    size >= 24.dp -> MaterialTheme.typography.labelLarge
+                    else -> with(LocalDensity.current) {
+                        MaterialTheme.typography.labelSmall.copy(
+                            fontSize = (size * InitialsFontSizeRatio).toSp(),
+                            lineHeight = (size * InitialsLineHeightRatio).toSp(),
+                            letterSpacing = 0.sp
+                        )
+                    }
+                }
                 Text(
                     text = initials,
-                    style = when {
-                        size >= Sizes.avatarLarge -> MaterialTheme.typography.titleLarge
-                        size >= Sizes.avatarMedium -> MaterialTheme.typography.titleMedium
-                        size >= 24.dp -> MaterialTheme.typography.labelLarge
-                        else -> MaterialTheme.typography.labelSmall
-                    },
+                    style = style,
                     fontWeight = FontWeight.Bold,
                     color = contentColor,
                     maxLines = 1
