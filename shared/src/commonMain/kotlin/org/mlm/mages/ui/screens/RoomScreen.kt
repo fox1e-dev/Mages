@@ -313,11 +313,17 @@ fun RoomScreen(
     }
     fun lastListIndex(): Int = 0
 
+    fun atNewest(): Boolean =
+        listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+
+    val hasListLayout by remember(listState) {
+        derivedStateOf { listState.layoutInfo.totalItemsCount > 0 }
+    }
 
     val isNearBottom by remember(listState, events) {
         derivedStateOf {
-            val firstVisible = listState.layoutInfo.visibleItemsInfo.firstOrNull()?.index ?: -1
-            events.isNotEmpty() && firstVisible <= 3
+            val visible = listState.layoutInfo.visibleItemsInfo
+            events.isNotEmpty() && visible.isNotEmpty() && visible.first().index <= 3
         }
     }
 
@@ -348,28 +354,23 @@ fun RoomScreen(
         if (!state.hasTimelineSnapshot || state.events.isEmpty()) return@LaunchedEffect
         if (pendingJumpEventId != null) return@LaunchedEffect
         if (!state.hasLoadedLastRead) return@LaunchedEffect
+        if (didInitialScroll || seekingUnread) return@LaunchedEffect
 
-        if (!didInitialScroll &&
-            listState.firstVisibleItemIndex == 0 &&
-            listState.firstVisibleItemScrollOffset == 0
-        ) {
-            if (needsUnreadSeek) {
-                seekingUnread = true
-                seekUnreadAttempts = 0
-            } else {
-                val unreadIdx = state.events
-                    .indexOfFirst { it.timestampMs > (state.lastReadTs ?: Long.MAX_VALUE) }
-                    .takeIf { it >= 0 }
-                if (unreadIdx != null) {
-                    val targetIndex = listIndexForEventIndex(unreadIdx)
-                    listState.scrollToItem(targetIndex)
-                    didInitialScroll = true
-                } else {
-                    listState.scrollToItem(lastListIndex())
-                    didInitialScroll = true
-                }
-            }
+        if (needsUnreadSeek) {
+            seekingUnread = true
+            seekUnreadAttempts = 0
+            return@LaunchedEffect
         }
+
+        val unreadIdx = state.events
+            .indexOfFirst { it.timestampMs > (state.lastReadTs ?: Long.MAX_VALUE) }
+            .takeIf { it >= 0 }
+        if (unreadIdx == null) {
+            didInitialScroll = true
+            return@LaunchedEffect
+        }
+        if (atNewest()) listState.scrollToItem(listIndexForEventIndex(unreadIdx))
+        didInitialScroll = true
     }
 
     LaunchedEffect(
@@ -386,42 +387,25 @@ fun RoomScreen(
         if (!state.hasTimelineSnapshot || state.events.isEmpty()) return@LaunchedEffect
         if (!state.hasLoadedLastRead) return@LaunchedEffect
 
-        when {
+        val target = when {
             needsUnreadSeek -> {
-                if (!state.isPaginatingBack) {
-                    if (seekUnreadAttempts < 30) {
-                        seekUnreadAttempts++
-                        viewModel.paginateBack()
-                    } else {
-                        seekingUnread = false
-                        seekUnreadAttempts = 0
-                        listState.scrollToItem(listIndexForEventIndex(0))
-                        didInitialScroll = true
-                    }
+                if (state.isPaginatingBack) return@LaunchedEffect
+                if (seekUnreadAttempts < 30) {
+                    seekUnreadAttempts++
+                    viewModel.paginateBack()
+                    return@LaunchedEffect
                 }
+                listIndexForEventIndex(0)
             }
 
-            firstUnreadIndex != null -> {
-                val unreadIdx = state.events
-                    .indexOfFirst { it.timestampMs > (state.lastReadTs ?: Long.MAX_VALUE) }
-                    .takeIf { it >= 0 }
-                if (unreadIdx != null) {
-                    listState.scrollToItem(listIndexForEventIndex(unreadIdx))
-                } else {
-                    listState.scrollToItem(lastListIndex())
-                }
-                seekingUnread = false
-                seekUnreadAttempts = 0
-                didInitialScroll = true
-            }
-
-            else -> {
-                listState.scrollToItem(lastListIndex())
-                seekingUnread = false
-                seekUnreadAttempts = 0
-                didInitialScroll = true
-            }
+            firstUnreadIndex != null -> listIndexForEventIndex(firstUnreadIndex!!)
+            else -> lastListIndex()
         }
+
+        if (atNewest()) listState.scrollToItem(target)
+        seekingUnread = false
+        seekUnreadAttempts = 0
+        didInitialScroll = true
     }
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -496,12 +480,12 @@ fun RoomScreen(
     }
 
     val seekingJump = state.seekingEventId != null
-    LaunchedEffect(events.lastOrNull()?.itemId, isNearBottom, seekingUnread, seekingJump) {
-        if ((isNearBottom && !seekingUnread && !seekingJump)) viewModel.markRoomSeen()
+    LaunchedEffect(events.lastOrNull()?.itemId, isNearBottom, seekingUnread, seekingJump, didInitialScroll) {
+        if (didInitialScroll && isNearBottom && !seekingUnread && !seekingJump) viewModel.markRoomSeen()
     }
 
     LaunchedEffect(events.size, seekingJump) {
-        if (isNearBottom && events.isNotEmpty() && !seekingUnread && !seekingJump) {
+        if (didInitialScroll && isNearBottom && events.isNotEmpty() && !seekingUnread && !seekingJump) {
             listState.animateScrollToItem(lastListIndex())
         }
     }
@@ -594,7 +578,7 @@ fun RoomScreen(
         },
         floatingActionButton = {
             AnimatedVisibility(
-                visible = !isNearBottom,
+                visible = hasListLayout && !isNearBottom,
                 enter = scaleIn() + fadeIn(),
                 exit = scaleOut() + fadeOut()
             ) {
