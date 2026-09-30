@@ -31,8 +31,8 @@ android {
         applicationId = "org.mlm.mages"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1511
-        versionName = "5.0.1"
+        versionCode = 1521
+        versionName = "5.0.2"
 
         // have to keep versionName here for fdroid, do not change
 
