@@ -67,6 +67,19 @@ private val EMOTE_HEIGHT: TextUnit = 32.sp
 
 private val LINK_COLOR = Color(0xFF1A73E8)
 
+private val LINK_STYLE = SpanStyle(color = LINK_COLOR, textDecoration = TextDecoration.Underline)
+
+private val BARE_URL = Regex(
+    """(?:https?://|www\.)[0-9A-Za-z][^\s<>"']*""",
+    RegexOption.IGNORE_CASE
+)
+
+private val TRAILING_PUNCTUATION = ".,;:!?*_~`"
+
+private val UNBALANCED_CLOSERS = mapOf(')' to '(', ']' to '[', '}' to '{')
+
+private val CODE_TAGS = setOf("code", "pre")
+
 /** Never displayed. `head` is dropped so document metadata cannot leak. */
 private val DROPPED_TAGS = setOf("head", "script", "style", "template", "svg", "math")
 
@@ -144,15 +157,15 @@ private class Builder(
 
     fun build() = FormattedBody(text.toAnnotatedString(), inlineContent)
 
-    fun walk(node: Node) {
+    fun walk(node: Node, linkify: Boolean = true) {
         when (node) {
-            is TextNode -> appendText(node.getWholeText())
-            is Element -> walkElement(node)
+            is TextNode -> appendText(node.getWholeText(), linkify)
+            is Element -> walkElement(node, linkify)
             else -> Unit
         }
     }
 
-    private fun walkElement(element: Element) {
+    private fun walkElement(element: Element, linkify: Boolean) {
         val tag = element.normalName()
 
         if (tag in DROPPED_TAGS) return
@@ -165,7 +178,7 @@ private class Builder(
             return
         }
         if (isSpoiler(element)) {
-            walkSpoiler(element)
+            walkSpoiler(element, linkify)
             return
         }
 
@@ -181,7 +194,8 @@ private class Builder(
                 )
             )
         }
-        element.childNodes().forEach { walk(it) }
+        val childLinkify = linkify && tag != "a" && tag !in CODE_TAGS
+        element.childNodes().forEach { walk(it, childLinkify) }
         if (link != null) text.pop()
         if (style != null) text.pop()
     }
@@ -189,10 +203,11 @@ private class Builder(
     private fun isSpoiler(element: Element): Boolean =
         element.normalName() == "span" && element.hasAttr(SPOILER_ATTR)
 
-    private fun walkSpoiler(element: Element) {
+    private fun walkSpoiler(element: Element, linkify: Boolean) {
         val index = spoilers++
+        val concealed = conceal != null && index !in revealed
 
-        if (conceal != null && index !in revealed) {
+        if (concealed) {
             text.pushStyle(SpanStyle(color = conceal))
             // A link annotation with no styles of its own inherits the ambient
             // link style, which recolours and underlines the range and so would
@@ -211,9 +226,9 @@ private class Builder(
             )
         }
 
-        element.childNodes().forEach { walk(it) }
+        element.childNodes().forEach { walk(it, linkify && !concealed) }
 
-        if (conceal != null && index !in revealed) {
+        if (concealed) {
             text.pop()
             text.pop()
         }
@@ -232,15 +247,61 @@ private class Builder(
         tag in UNDERLINE_TAGS -> SpanStyle(textDecoration = TextDecoration.Underline)
         tag in STRIKE_TAGS -> SpanStyle(textDecoration = TextDecoration.LineThrough)
         tag == "code" -> SpanStyle(fontFamily = FontFamily.Monospace)
-        isLink -> SpanStyle(color = LINK_COLOR, textDecoration = TextDecoration.Underline)
+        isLink -> LINK_STYLE
         else -> null
     }
 
-    private fun appendText(raw: String) {
+    private fun appendText(raw: String, linkify: Boolean) {
         val collapsed = raw.replace(WHITESPACE_RUN, " ")
         if (collapsed.isEmpty()) return
-        text.append(collapsed)
+        if (!linkify) {
+            text.append(collapsed)
+            return
+        }
+
+        var cursor = 0
+        for (match in BARE_URL.findAll(collapsed)) {
+            val start = match.range.first
+            if (start > 0 && isAsciiLetterOrDigit(collapsed[start - 1])) continue
+            val url = trimUrlTail(match.value)
+            if (start > cursor) text.append(collapsed.substring(cursor, start))
+            text.pushStyle(LINK_STYLE)
+            text.pushLink(
+                LinkAnnotation.Url(
+                    url = absoluteUrl(url),
+                    styles = TextLinkStyles(SpanStyle(color = LINK_COLOR))
+                )
+            )
+            text.append(url)
+            text.pop()
+            text.pop()
+            cursor = start + url.length
+        }
+        if (cursor < collapsed.length) text.append(collapsed.substring(cursor))
     }
+
+    private fun isAsciiLetterOrDigit(c: Char): Boolean =
+        c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9'
+
+    private fun trimUrlTail(url: String): String {
+        var end = url.length
+        while (end > 0) {
+            val last = url[end - 1]
+            when {
+                last in TRAILING_PUNCTUATION -> end--
+                last in UNBALANCED_CLOSERS -> {
+                    val opener = UNBALANCED_CLOSERS.getValue(last)
+                    val head = url.substring(0, end)
+                    if (head.count { it == last } > head.count { it == opener }) end-- else break
+                }
+                else -> break
+            }
+        }
+        return url.substring(0, end)
+    }
+
+    private fun absoluteUrl(url: String): String =
+        if (url.startsWith("www.", ignoreCase = true)) "http://$url" else url
 
     private fun appendEmote(element: Element) {
         if (!element.hasAttr("data-mx-emoticon")) return
