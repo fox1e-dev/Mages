@@ -19,14 +19,19 @@ import androidx.compose.ui.unit.dp
 import org.mlm.mages.matrix.SpaceChildInfo
 import org.mlm.mages.matrix.SpaceInfo
 import org.koin.compose.koinInject
+import org.mlm.mages.ui.components.dialogs.AddRoomToSpaceDialog
+import org.mlm.mages.ui.components.dialogs.CreateRoomInSpaceDialog
+import org.mlm.mages.ui.components.dialogs.InviteUserToSpaceDialog
 import org.mlm.mages.ui.components.snackbar.SnackbarManager
 import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.components.core.EmptyState
 import org.mlm.mages.ui.components.core.LoadMoreButton
 import org.mlm.mages.ui.components.core.SectionHeader
+import org.mlm.mages.ui.components.sheets.SpaceAddSheet
 import org.mlm.mages.ui.components.snackbar.snackbarHost
 import org.mlm.mages.ui.components.snackbar.rememberErrorPoster
 import org.mlm.mages.ui.theme.Spacing
+import org.mlm.mages.ui.viewmodel.SpaceActionsViewModel
 import org.mlm.mages.ui.viewmodel.SpaceDetailViewModel
 import mages.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -35,15 +40,28 @@ import mages.shared.generated.resources.Res
 @Composable
 fun SpaceDetailScreen(
     viewModel: SpaceDetailViewModel,
+    actionsViewModel: SpaceActionsViewModel,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+    val actionsState by actionsViewModel.state.collectAsState()
     val snackbarManager: SnackbarManager = koinInject()
     val postError = rememberErrorPoster(snackbarManager)
+    var showAddSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.error) {
         state.error?.let { postError(it) }
+    }
+
+    LaunchedEffect(Unit) {
+        actionsViewModel.events.collect { event ->
+            when (event) {
+                is SpaceActionsViewModel.Event.ShowError -> postError(event.message)
+                is SpaceActionsViewModel.Event.ShowSuccess -> snackbarManager.show(event.message)
+                is SpaceActionsViewModel.Event.ChildAdded -> viewModel.refresh()
+            }
+        }
     }
 
     Scaffold(
@@ -73,7 +91,20 @@ fun SpaceDetailScreen(
                 }
             )
         },
-        snackbarHost = { snackbarManager.snackbarHost() }
+        snackbarHost = { snackbarManager.snackbarHost() },
+        floatingActionButton = {
+            if (actionsState.hasAnyAction) {
+                ExtendedFloatingActionButton(
+                    onClick = { showAddSheet = true },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
+                    Icon(Icons.Default.Add, stringResource(Res.string.add))
+                    Spacer(Modifier.width(Spacing.sm))
+                    Text(stringResource(Res.string.add))
+                }
+            }
+        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -155,6 +186,54 @@ fun SpaceDetailScreen(
                 }
             }
         }
+    }
+
+    if (showAddSheet) {
+        SpaceAddSheet(
+            canManageChildren = actionsState.canManageChildren,
+            spaceChildReason = actionsState.spaceChildReason,
+            canInvite = actionsState.canInvite,
+            inviteReason = actionsState.inviteReason,
+            onCreateRoom = actionsViewModel::showCreateRoom,
+            onAddRoom = {
+                actionsViewModel.showAddRoom(state.hierarchy.mapTo(mutableSetOf()) { it.roomId })
+            },
+            onInvite = actionsViewModel::showInviteDialog,
+            onDismiss = { showAddSheet = false }
+        )
+    }
+
+    if (actionsState.showCreateRoom) {
+        CreateRoomInSpaceDialog(
+            name = actionsState.newRoomName,
+            topic = actionsState.newRoomTopic,
+            isPublic = actionsState.newRoomIsPublic,
+            isSaving = actionsState.isSaving,
+            onNameChange = actionsViewModel::setNewRoomName,
+            onTopicChange = actionsViewModel::setNewRoomTopic,
+            onPublicChange = actionsViewModel::setNewRoomIsPublic,
+            onCreate = actionsViewModel::createRoomInSpace,
+            onDismiss = actionsViewModel::hideCreateRoom
+        )
+    }
+
+    if (actionsState.showAddRoom) {
+        AddRoomToSpaceDialog(
+            availableRooms = actionsState.addableRooms,
+            isSaving = actionsState.isSaving,
+            onAdd = { roomId, suggested -> actionsViewModel.addChild(roomId, suggested) },
+            onDismiss = actionsViewModel::hideAddRoom
+        )
+    }
+
+    if (actionsState.showInviteUser) {
+        InviteUserToSpaceDialog(
+            userId = actionsState.inviteUserId,
+            onUserIdChange = actionsViewModel::setInviteUserId,
+            onInvite = actionsViewModel::inviteUser,
+            onDismiss = actionsViewModel::hideInviteDialog,
+            isSaving = actionsState.isSaving
+        )
     }
 }
 

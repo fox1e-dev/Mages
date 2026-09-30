@@ -483,6 +483,7 @@ pub struct RoomActionState {
     pub edit_topic: ActionAvailability,
     pub invite: ActionAvailability,
     pub manage_settings: ActionAvailability,
+    pub space_child: ActionAvailability,
     pub redact_others: ActionAvailability,
     pub pin: ActionAvailability,
 }

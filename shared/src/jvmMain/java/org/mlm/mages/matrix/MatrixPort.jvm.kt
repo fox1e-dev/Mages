@@ -1204,6 +1204,7 @@ class RustMatrixPort : MatrixPort, VerificationService {
         editTopic = editTopic.toModel(),
         invite = invite.toModel(),
         manageSettings = manageSettings.toModel(),
+        spaceChild = spaceChild.toModel(),
         redactOthers = redactOthers.toModel(),
         pin = pin.toModel(),
     )

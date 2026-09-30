@@ -1451,6 +1451,24 @@ impl CoreClient {
             }
         };
 
+        // Linking a room into a space is an m.space.child state event, so it follows that
+        // event's power level (state_default unless the room overrides it).
+        let space_child = {
+            let min_level: i64 = power_levels
+                .events
+                .get(&matrix_sdk::ruma::events::TimelineEventType::from(
+                    "m.space.child",
+                ))
+                .copied()
+                .map(|v| v.into())
+                .unwrap_or(state_default);
+            if my_level >= min_level {
+                ActionAvailability::enabled()
+            } else {
+                ActionAvailability::disabled("You don't have permission to add rooms to this space")
+            }
+        };
+
         let redact_others = {
             let min_level: i64 = power_levels.redact.into();
             if my_level >= min_level {
@@ -1502,6 +1520,7 @@ impl CoreClient {
             edit_topic,
             invite,
             manage_settings,
+            space_child,
             redact_others,
             pin,
         })

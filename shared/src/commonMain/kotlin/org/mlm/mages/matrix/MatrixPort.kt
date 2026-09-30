@@ -98,6 +98,7 @@ data class RoomActionState(
     val editTopic: ActionAvailability,
     val invite: ActionAvailability,
     val manageSettings: ActionAvailability,
+    val spaceChild: ActionAvailability,
     val redactOthers: ActionAvailability,
     val pin: ActionAvailability,
 )

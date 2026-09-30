@@ -843,6 +843,9 @@ private fun AppContent(
                             val viewModel: SpaceDetailViewModel = koinViewModel(
                                 parameters = { parametersOf(key.spaceId, key.spaceName) }
                             )
+                            val actionsViewModel: SpaceActionsViewModel = koinViewModel(
+                                parameters = { parametersOf(key.spaceId) }
+                            )
 
                             LaunchedEffect(Unit) {
                                 viewModel.events.collect { event ->
@@ -873,6 +876,7 @@ private fun AppContent(
 
                             SpaceDetailScreen(
                                 viewModel = viewModel,
+                                actionsViewModel = actionsViewModel,
                                 onBack = backStack::popBack,
                                 onOpenSettings = { backStack.add(Route.SpaceSettings(key.spaceId)) }
                             )
@@ -880,6 +884,9 @@ private fun AppContent(
 
                         entry<Route.SpaceSettings> { key ->
                             val viewModel: SpaceSettingsViewModel = koinViewModel(
+                                parameters = { parametersOf(key.spaceId) }
+                            )
+                            val actionsViewModel: SpaceActionsViewModel = koinViewModel(
                                 parameters = { parametersOf(key.spaceId) }
                             )
 
@@ -904,6 +911,7 @@ private fun AppContent(
 
                             SpaceSettingsScreen(
                                 viewModel = viewModel,
+                                actionsViewModel = actionsViewModel,
                                 onBack = backStack::popBack,
                                 onLeaveSuccess = {
                                     // Pop noth SpaceSettings and SpaceDetail to return to room list

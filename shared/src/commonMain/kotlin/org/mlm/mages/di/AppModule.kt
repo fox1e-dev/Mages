@@ -65,6 +65,13 @@ val viewModelModule = module {
         )
     }
 
+    viewModel { (spaceId: String) ->
+        SpaceActionsViewModel(
+            service = get(),
+            spaceId = spaceId
+        )
+    }
+
     viewModel { (roomId: String, rootEventId: String) ->
         ThreadViewModel(
             service = get(),

@@ -533,7 +533,6 @@ data class SpaceSettingsUiState(
     val spaceId: String,
     val space: SpaceInfo? = null,
     val children: List<SpaceChildInfo> = emptyList(),
-    val joinedRooms: List<RoomSummary> = emptyList(),
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val error: String? = null,
@@ -543,7 +542,6 @@ data class SpaceSettingsUiState(
     // Permissions (from roomInfoSnapshot on the space)
     val canManageSettings: Boolean = false,
     val canEditDetails: Boolean = false,
-    val canInvite: Boolean = false,
 
     // People & roles
     val members: List<MemberSummary> = emptyList(),
@@ -558,9 +556,6 @@ data class SpaceSettingsUiState(
     val selectableSpaces: List<SpaceInfo> = emptyList(),
 
     // Dialogs
-    val showAddRoom: Boolean = false,
-    val showInviteUser: Boolean = false,
-    val inviteUserId: String = "",
     val showLeaveConfirm: Boolean = false,
 
     // Edit details
@@ -576,23 +571,41 @@ data class SpaceSettingsUiState(
     val pendingJoinRule: RoomJoinRule? = null,
     val selectedMember: MemberSummary? = null,
 
+    // Leave with children
+    val showLeaveWithChildren: Boolean = false,
+    val joinedChildren: List<SpaceChildInfo> = emptyList(),
+    val selectedChildIds: Set<String> = emptySet(),
+)
+
+data class SpaceActionsUiState(
+    val spaceId: String,
+    val canManageChildren: Boolean = false,
+    val spaceChildReason: String? = null,
+    val canInvite: Boolean = false,
+    val inviteReason: String? = null,
+    val isSaving: Boolean = false,
+
+    val joinedRooms: List<RoomSummary> = emptyList(),
+    val excludedChildIds: Set<String> = emptySet(),
+
     // Create room in space
     val showCreateRoom: Boolean = false,
     val newRoomName: String = "",
     val newRoomTopic: String = "",
     val newRoomIsPublic: Boolean = false,
 
-    // Leave with children
-    val showLeaveWithChildren: Boolean = false,
-    val joinedChildren: List<SpaceChildInfo> = emptyList(),
-    val selectedChildIds: Set<String> = emptySet(),
+    // Add existing room
+    val showAddRoom: Boolean = false,
+
+    // Invite user
+    val showInviteUser: Boolean = false,
+    val inviteUserId: String = "",
 ) {
     val addableRooms: List<RoomSummary>
-        get() {
-            val taken = children.mapTo(mutableSetOf()) { it.roomId }
-            taken += spaceId
-            return joinedRooms.filter { it.id !in taken }
-        }
+        get() = joinedRooms.filter { it.id !in excludedChildIds && it.id != spaceId }
+
+    val hasAnyAction: Boolean
+        get() = canManageChildren || canInvite
 }
 
 data class ThreadUiState(

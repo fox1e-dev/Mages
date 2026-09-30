@@ -13,14 +13,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import org.mlm.mages.RoomSummary
 import org.mlm.mages.matrix.RoomJoinRule
 import org.mlm.mages.matrix.SpaceChildInfo
 import org.mlm.mages.matrix.SpaceInfo
 import org.koin.compose.koinInject
+import org.mlm.mages.ui.components.dialogs.AddRoomToSpaceDialog
+import org.mlm.mages.ui.components.dialogs.CreateRoomInSpaceDialog
+import org.mlm.mages.ui.components.dialogs.InviteUserToSpaceDialog
 import org.mlm.mages.ui.components.sheets.JoinRuleSpacePickerSheet
 import org.mlm.mages.ui.components.sheets.MemberActionsSheet
 import org.mlm.mages.ui.components.sheets.MemberListSheet
@@ -31,6 +34,7 @@ import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.components.snackbar.snackbarHost
 import org.mlm.mages.ui.components.snackbar.rememberErrorPoster
 import org.mlm.mages.ui.theme.Spacing
+import org.mlm.mages.ui.viewmodel.SpaceActionsViewModel
 import org.mlm.mages.ui.viewmodel.SpaceSettingsViewModel
 import mages.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -40,10 +44,12 @@ import androidx.compose.runtime.Composable
 @Composable
 fun SpaceSettingsScreen(
     viewModel: SpaceSettingsViewModel,
+    actionsViewModel: SpaceActionsViewModel,
     onBack: () -> Unit,
     onLeaveSuccess: () -> Unit = onBack
 ) {
     val state by viewModel.state.collectAsState()
+    val actionsState by actionsViewModel.state.collectAsState()
     val snackbarManager: SnackbarManager = koinInject()
     val postError = rememberErrorPoster(snackbarManager)
 
@@ -51,6 +57,17 @@ fun SpaceSettingsScreen(
         state.error?.let {
             postError(it)
             viewModel.clearError()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        actionsViewModel.events.collect { event ->
+            when (event) {
+                is SpaceActionsViewModel.Event.ShowError -> postError(event.message)
+                is SpaceActionsViewModel.Event.ShowSuccess -> snackbarManager.show(event.message)
+                is SpaceActionsViewModel.Event.ChildAdded ->
+                    viewModel.reloadChildrenUntilPresent(event.roomId)
+            }
         }
     }
 
@@ -79,7 +96,7 @@ fun SpaceSettingsScreen(
                 .padding(padding)
         ) {
             // Loading indicator
-            AnimatedVisibility(visible = state.isLoading || state.isSaving) {
+            AnimatedVisibility(visible = state.isLoading || state.isSaving || actionsState.isSaving) {
                 LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
 
@@ -143,20 +160,40 @@ fun SpaceSettingsScreen(
                 item(key = "action_new_room") {
                     ListItem(
                         headlineContent = { Text(stringResource(Res.string.new_room_in_this_space)) },
-                        supportingContent = { Text(stringResource(Res.string.create_a_room_inside_this_space)) },
+                        supportingContent = {
+                            Text(
+                                if (actionsState.canManageChildren) {
+                                    stringResource(Res.string.create_a_room_inside_this_space)
+                                } else {
+                                    actionsState.spaceChildReason
+                                        ?: stringResource(Res.string.you_don_t_have_permission_to_change_this)
+                                }
+                            )
+                        },
                         leadingContent = {
                             Icon(Icons.Default.AddComment, null, tint = MaterialTheme.colorScheme.primary)
                         },
-                        modifier = Modifier.clickable(enabled = !state.isSaving) {
-                            viewModel.showCreateRoom()
-                        }
+                        modifier = Modifier
+                            .alpha(if (actionsState.canManageChildren) 1f else 0.5f)
+                            .clickable(enabled = actionsState.canManageChildren && !actionsState.isSaving) {
+                                actionsViewModel.showCreateRoom()
+                            }
                     )
                 }
 
                 item(key = "action_add_room") {
                     ListItem(
                         headlineContent = { Text(stringResource(Res.string.add_rooms)) },
-                        supportingContent = { Text(stringResource(Res.string.add_existing_rooms_to_this_space)) },
+                        supportingContent = {
+                            Text(
+                                if (actionsState.canManageChildren) {
+                                    stringResource(Res.string.add_existing_rooms_to_this_space)
+                                } else {
+                                    actionsState.spaceChildReason
+                                        ?: stringResource(Res.string.you_don_t_have_permission_to_change_this)
+                                }
+                            )
+                        },
                         leadingContent = {
                             Icon(
                                 Icons.Default.Add,
@@ -164,29 +201,40 @@ fun SpaceSettingsScreen(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        modifier = Modifier.clickable(enabled = !state.isSaving) {
-                            viewModel.showAddRoomDialog()
-                        }
+                        modifier = Modifier
+                            .alpha(if (actionsState.canManageChildren) 1f else 0.5f)
+                            .clickable(enabled = actionsState.canManageChildren && !actionsState.isSaving) {
+                                actionsViewModel.showAddRoom(state.children.mapTo(mutableSetOf()) { it.roomId })
+                            }
                     )
                 }
 
                 item(key = "action_invite") {
-                    if (state.canInvite || !state.canManageSettings) {
-                        ListItem(
-                            headlineContent = { Text(stringResource(Res.string.invite_users)) },
-                            supportingContent = { Text(stringResource(Res.string.invite_users_to_this_space)) },
-                            leadingContent = {
-                                Icon(
-                                    Icons.Default.PersonAdd,
-                                    null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            },
-                            modifier = Modifier.clickable(enabled = !state.isSaving) {
-                                viewModel.showInviteDialog()
+                    ListItem(
+                        headlineContent = { Text(stringResource(Res.string.invite_users)) },
+                        supportingContent = {
+                            Text(
+                                if (actionsState.canInvite) {
+                                    stringResource(Res.string.invite_users_to_this_space)
+                                } else {
+                                    actionsState.inviteReason
+                                        ?: stringResource(Res.string.you_don_t_have_permission_to_change_this)
+                                }
+                            )
+                        },
+                        leadingContent = {
+                            Icon(
+                                Icons.Default.PersonAdd,
+                                null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        modifier = Modifier
+                            .alpha(if (actionsState.canInvite) 1f else 0.5f)
+                            .clickable(enabled = actionsState.canInvite && !actionsState.isSaving) {
+                                actionsViewModel.showInviteDialog()
                             }
-                        )
-                    }
+                    )
                 }
 
                 item(key = "action_leave") {
@@ -293,22 +341,23 @@ fun SpaceSettingsScreen(
     }
 
     // Add room dialog
-    if (state.showAddRoom) {
-        AddRoomDialog(
-            availableRooms = state.addableRooms,
-            onAdd = { roomId, suggested -> viewModel.addChild(roomId, suggested) },
-            onDismiss = viewModel::hideAddRoomDialog
+    if (actionsState.showAddRoom) {
+        AddRoomToSpaceDialog(
+            availableRooms = actionsState.addableRooms,
+            isSaving = actionsState.isSaving,
+            onAdd = { roomId, suggested -> actionsViewModel.addChild(roomId, suggested) },
+            onDismiss = actionsViewModel::hideAddRoom
         )
     }
 
     // Invite user dialog
-    if (state.showInviteUser) {
+    if (actionsState.showInviteUser) {
         InviteUserToSpaceDialog(
-            userId = state.inviteUserId,
-            onUserIdChange = viewModel::setInviteUserId,
-            onInvite = viewModel::inviteUser,
-            onDismiss = viewModel::hideInviteDialog,
-            isSaving = state.isSaving
+            userId = actionsState.inviteUserId,
+            onUserIdChange = actionsViewModel::setInviteUserId,
+            onInvite = actionsViewModel::inviteUser,
+            onDismiss = actionsViewModel::hideInviteDialog,
+            isSaving = actionsState.isSaving
         )
     }
 
@@ -368,41 +417,17 @@ fun SpaceSettingsScreen(
     }
 
     // Create room in space dialog
-    if (state.showCreateRoom) {
-        AlertDialog(
-            onDismissRequest = viewModel::hideCreateRoom,
-            title = { Text(stringResource(Res.string.new_room_action)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    OutlinedTextField(
-                        value = state.newRoomName,
-                        onValueChange = viewModel::setNewRoomName,
-                        label = { Text(stringResource(Res.string.name)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = state.newRoomTopic,
-                        onValueChange = viewModel::setNewRoomTopic,
-                        label = { Text(stringResource(Res.string.topic)) },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Switch(
-                            checked = state.newRoomIsPublic,
-                            onCheckedChange = viewModel::setNewRoomIsPublic
-                        )
-                        Spacer(Modifier.width(Spacing.sm))
-                        Text(stringResource(Res.string.make_this_room_public))
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = viewModel::createRoomInSpace, enabled = !state.isSaving) { Text(stringResource(Res.string.create)) }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::hideCreateRoom) { Text(stringResource(Res.string.cancel)) }
-            }
+    if (actionsState.showCreateRoom) {
+        CreateRoomInSpaceDialog(
+            name = actionsState.newRoomName,
+            topic = actionsState.newRoomTopic,
+            isPublic = actionsState.newRoomIsPublic,
+            isSaving = actionsState.isSaving,
+            onNameChange = actionsViewModel::setNewRoomName,
+            onTopicChange = actionsViewModel::setNewRoomTopic,
+            onPublicChange = actionsViewModel::setNewRoomIsPublic,
+            onCreate = actionsViewModel::createRoomInSpace,
+            onDismiss = actionsViewModel::hideCreateRoom
         )
     }
 
@@ -455,7 +480,7 @@ fun SpaceSettingsScreen(
             myUserId = state.myUserId,
             onDismiss = viewModel::hidePeople,
             onMemberClick = { viewModel.selectMember(it) },
-            onInvite = { viewModel.hidePeople(); viewModel.showInviteDialog() }
+            onInvite = { viewModel.hidePeople(); actionsViewModel.showInviteDialog() }
         )
     }
 
@@ -599,128 +624,3 @@ private fun RoomJoinRule.displayNameForSpace(): String = when (this) {
     RoomJoinRule.KnockRestricted -> stringResource(Res.string.ask_to_join_with_space_members)
 }
 
-@Composable
-private fun AddRoomDialog(
-    availableRooms: List<RoomSummary>,
-    onAdd: (roomId: String, suggested: Boolean) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var selectedRoom by remember { mutableStateOf<RoomSummary?>(null) }
-    var suggested by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(Res.string.add_room_to_space)) },
-        text = {
-            Column {
-                if (availableRooms.isEmpty()) {
-                    Text(
-                        stringResource(Res.string.all_your_rooms_are_already_in_this_space),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.heightIn(max = 300.dp),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
-                    ) {
-                        items(availableRooms, key = { it.id }) { room ->
-                            ListItem(
-                                headlineContent = { Text(room.name) },
-                                supportingContent = {
-                                    Text(
-                                        room.id,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                },
-                                leadingContent = {
-                                    RadioButton(
-                                        selected = selectedRoom?.id == room.id,
-                                        onClick = { selectedRoom = room }
-                                    )
-                                },
-                                modifier = Modifier.clickable { selectedRoom = room }
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(Spacing.md))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Checkbox(
-                            checked = suggested,
-                            onCheckedChange = { suggested = it }
-                        )
-                        Spacer(Modifier.width(Spacing.sm))
-                        Text(stringResource(Res.string.mark_as_suggested))
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { selectedRoom?.let { onAdd(it.id, suggested) } },
-                enabled = selectedRoom != null
-            ) {
-                Text(stringResource(Res.string.add))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(Res.string.cancel))
-            }
-        }
-    )
-}
-
-@Composable
-private fun InviteUserToSpaceDialog(
-    userId: String,
-    onUserIdChange: (String) -> Unit,
-    onInvite: () -> Unit,
-    onDismiss: () -> Unit,
-    isSaving: Boolean
-) {
-    val isValid = userId.startsWith("@") && ":" in userId && userId.length > 3
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Default.PersonAdd, null) },
-        title = { Text(stringResource(Res.string.invite_user_to_space)) },
-        text = {
-            OutlinedTextField(
-                value = userId,
-                onValueChange = onUserIdChange,
-                label = { Text(stringResource(Res.string.user_id)) },
-                placeholder = { Text(stringResource(Res.string.user_id_placeholder)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                enabled = !isSaving,
-                isError = userId.isNotBlank() && !isValid
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = onInvite,
-                enabled = isValid && !isSaving
-            ) {
-                if (isSaving) {
-                    CircularWavyProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(Modifier.width(Spacing.sm))
-                }
-                Text(stringResource(Res.string.invite))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(Res.string.cancel))
-            }
-        }
-    )
-}

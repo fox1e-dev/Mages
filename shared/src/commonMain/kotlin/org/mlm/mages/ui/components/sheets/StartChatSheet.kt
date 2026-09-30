@@ -1,6 +1,5 @@
 package org.mlm.mages.ui.components.sheets
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -11,10 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import mages.shared.generated.resources.*
@@ -64,7 +60,7 @@ fun StartChatSheet(
                 verticalArrangement = Arrangement.spacedBy(Spacing.xs)
             ) {
                 item {
-                    ActionButton(
+                    ActionListItem(
                         icon = Icons.Default.Add,
                         label = stringResource(Res.string.new_room),
                         description = stringResource(Res.string.create_room_desc),
@@ -75,7 +71,7 @@ fun StartChatSheet(
                     )
                 }
                 item {
-                    ActionButton(
+                    ActionListItem(
                         icon = Icons.Default.Search,
                         label = stringResource(Res.string.room_directory),
                         description = stringResource(Res.string.browse_directory_desc),
@@ -87,7 +83,7 @@ fun StartChatSheet(
                 }
                 if (inviteLink != null) {
                     item {
-                        ActionButton(
+                        ActionListItem(
                             icon = Icons.Default.Share,
                             label = stringResource(Res.string.invite_to_chat_on_matrix),
                             description = myUserId,
@@ -108,27 +104,4 @@ fun StartChatSheet(
             Spacer(Modifier.height(Spacing.sm))
         }
     }
-}
-
-@Composable
-private fun ActionButton(
-    icon: ImageVector,
-    label: String,
-    description: String?,
-    onClick: () -> Unit
-) {
-    ListItem(
-        headlineContent = { Text(label, style = MaterialTheme.typography.bodyLarge) },
-        supportingContent = description?.let {
-            { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        },
-        leadingContent = {
-            Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.size(40.dp)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                }
-            }
-        },
-        modifier = Modifier.clickable(onClick = onClick)
-    )
 }
