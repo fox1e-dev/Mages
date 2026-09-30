@@ -505,6 +505,7 @@ data class SpacesUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val avatarPathByRoomId: Map<String, String> = emptyMap(),
+    val unreadSpaceIds: Set<String> = emptySet(),
 
     // Create space
     val showCreateSpace: Boolean = false,

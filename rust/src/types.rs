@@ -690,6 +690,13 @@ pub struct SpaceParentInfo {
     pub avatar_url: Option<String>,
 }
 
+#[derive(Clone, Serialize, Deserialize, Record)]
+pub struct SpaceUnread {
+    pub space_id: String,
+    pub unread_messages: u64,
+    pub unread_notifications: u64,
+}
+
 /// One image inside an image pack (spec v1.19). `info_json` stays an opaque JSON
 /// string so it can be handed back verbatim when sending, instead of being
 /// re-derived from a download.

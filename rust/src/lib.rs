@@ -923,6 +923,10 @@ impl Client {
         RT.block_on(self.core.room_parent_spaces(room_id))
     }
 
+    pub fn space_unread_counts(&self) -> Vec<SpaceUnread> {
+        RT.block_on(self.core.space_unread_counts())
+    }
+
     pub fn list_image_packs(&self, room_id: String) -> Result<Vec<ImagePackSummary>, FfiError> {
         RT.block_on(self.core.list_image_packs(room_id))
     }

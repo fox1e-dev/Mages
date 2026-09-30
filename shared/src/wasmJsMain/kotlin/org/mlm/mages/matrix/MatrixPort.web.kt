@@ -1312,6 +1312,11 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
             requireClient().roomParentSpaces(roomId).await<JsAny?>().toJsonElement()
         )
 
+    override suspend fun spaceUnreadCounts(): List<SpaceUnread> =
+        wasmJson.decodeFromJsonElement(
+            requireClient().spaceUnreadCounts().await<JsAny?>().toJsonElement()
+        )
+
     override suspend fun createSpace(
         name: String,
         topic: String?,

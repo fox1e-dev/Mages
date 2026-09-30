@@ -250,4 +250,7 @@ class MatrixService(
     // caching of its own.
     suspend fun roomParentSpaces(roomId: String): List<SpaceParentInfo> =
         port.roomParentSpaces(roomId)
+
+    suspend fun spaceUnreadCounts(): List<SpaceUnread> =
+        port.spaceUnreadCounts()
 }

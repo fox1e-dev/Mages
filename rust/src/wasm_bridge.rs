@@ -1004,6 +1004,14 @@ impl WasmClient {
         }
     }
 
+    #[wasm_bindgen(js_name = spaceUnreadCounts)]
+    pub async fn space_unread_counts(&self) -> JsValue {
+        let Some(s) = self.state() else {
+            return webffi_not_init();
+        };
+        to_json(&s.core.space_unread_counts().await)
+    }
+
     #[wasm_bindgen(js_name = memberActionState)]
     pub async fn member_action_state(&self, room_id: String, user_id: String) -> JsValue {
         let Some(s) = self.state() else {

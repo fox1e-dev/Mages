@@ -42,6 +42,8 @@ fun SpacesScreen(
     val state by viewModel.state.collectAsState()
     val snackbarManager: SnackbarManager = koinInject()
 
+    LaunchedEffect(Unit) { viewModel.refreshUnread() }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -123,6 +125,7 @@ fun SpacesScreen(
                             SpaceCard(
                                 space = space,
                                 avatarPath = state.avatarPathByRoomId[space.roomId],
+                                hasUnread = space.roomId in state.unreadSpaceIds,
                                 onClick = { viewModel.openSpace(space) }
                             )
                         }
@@ -155,6 +158,7 @@ fun SpacesScreen(
 private fun SpaceCard(
     space: SpaceInfo,
     avatarPath: String?,
+    hasUnread: Boolean,
     onClick: () -> Unit
 ) {
     Card(
@@ -171,31 +175,47 @@ private fun SpaceCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Space icon
-            if (avatarPath != null) {
-                val ctx = LocalPlatformContext.current
-                AsyncImage(
-                    model = ImageRequest.Builder(ctx)
-                        .data(avatarPath)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(MaterialTheme.shapes.medium)
-                )
-            } else {
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.size(56.dp)
-                ) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.Workspaces,
-                            null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(28.dp)
+            Box {
+                if (avatarPath != null) {
+                    val ctx = LocalPlatformContext.current
+                    AsyncImage(
+                        model = ImageRequest.Builder(ctx)
+                            .data(avatarPath)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                    )
+                } else {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Default.Workspaces,
+                                null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+                }
+
+                if (hasUnread) {
+                    Badge(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 4.dp, y = (-4).dp),
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Text(
+                            "•",
+                            style = MaterialTheme.typography.labelSmall
                         )
                     }
                 }

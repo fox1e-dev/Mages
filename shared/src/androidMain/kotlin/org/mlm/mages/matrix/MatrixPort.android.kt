@@ -1572,6 +1572,20 @@ class RustMatrixPort : MatrixPort, VerificationService {
             }.getOrDefault(emptyList())
         }
 
+    override suspend fun spaceUnreadCounts(): List<SpaceUnread> =
+        withContext(matrixDispatcher) {
+            runCatching {
+                withClient { it.spaceUnreadCounts() }
+                    .map { unread ->
+                        SpaceUnread(
+                            spaceId = unread.spaceId,
+                            unreadMessages = unread.unreadMessages,
+                            unreadNotifications = unread.unreadNotifications
+                        )
+                    }
+            }.getOrDefault(emptyList())
+        }
+
     override suspend fun createSpace(
         name: String,
         topic: String?,

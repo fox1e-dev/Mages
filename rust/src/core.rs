@@ -70,7 +70,8 @@ use crate::{
     RoomInfoSnapshot, RoomJoinRule, RoomListEntry, RoomListMembership, RoomPowerLevelChanges,
     RoomPowerLevels, RoomPreview, RoomPreviewMembership, RoomSummary, RoomTags, RoomUpgradeLinks,
     SearchHit, SearchPage, SeenByEntry, SendState, SendUpdate, SpaceChildInfo, SpaceHierarchyPage,
-    SpaceInfo, SpaceParentInfo, SuccessorRoomInfo, ThreadPage, ThreadSummary, UnreadStats,
+    SpaceInfo, SpaceParentInfo, SpaceUnread, SuccessorRoomInfo, ThreadPage, ThreadSummary,
+    UnreadStats,
     ForwardResult, MediaPreviewMode,
     VerificationInboxObserver, build_unstable_poll_content, latest_room_event_for,
     map_event_id_via_timeline, map_timeline_event, paginate_backwards_visible,
@@ -3757,6 +3758,47 @@ impl CoreClient {
             });
         }
         out
+    }
+
+    pub async fn space_unread_counts(&self) -> Vec<SpaceUnread> {
+        self.space_service.top_level_joined_spaces().await;
+
+        let spaces: HashSet<OwnedRoomId> = self
+            .sdk
+            .joined_space_rooms()
+            .iter()
+            .map(|room| room.room_id().to_owned())
+            .collect();
+
+        let mut counts: HashMap<OwnedRoomId, SpaceUnread> = HashMap::new();
+
+        for room in self.sdk.joined_rooms() {
+            let messages = room.num_unread_messages();
+            let notifications = room.num_unread_notifications();
+            if messages == 0 && notifications == 0 {
+                continue;
+            }
+
+            let mut seen = HashSet::new();
+            let mut queue = vec![room.room_id().to_owned()];
+            while let Some(id) = queue.pop() {
+                if !seen.insert(id.clone()) {
+                    continue;
+                }
+                if spaces.contains(&id) {
+                    let entry = counts.entry(id.clone()).or_insert_with(|| SpaceUnread {
+                        space_id: id.to_string(),
+                        unread_messages: 0,
+                        unread_notifications: 0,
+                    });
+                    entry.unread_messages += messages;
+                    entry.unread_notifications += notifications;
+                }
+                queue.extend(self.space_service.joined_parent_ids_of_child(&id).await);
+            }
+        }
+
+        counts.into_values().collect()
     }
 
     pub async fn space_add_child(

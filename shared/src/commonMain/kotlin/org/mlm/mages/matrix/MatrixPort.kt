@@ -683,6 +683,13 @@ data class SpaceParentInfo(
 )
 
 @Serializable
+data class SpaceUnread(
+    val spaceId: String,
+    val unreadMessages: ULong,
+    val unreadNotifications: ULong
+)
+
+@Serializable
 data class RecentEmojiEntry(
     val emoji: String,
     val total: ULong = 0u
@@ -1191,6 +1198,7 @@ interface MatrixPort {
     suspend fun isSpace(roomId: String): Boolean
     suspend fun mySpaces(): List<SpaceInfo>
     suspend fun roomParentSpaces(roomId: String): List<SpaceParentInfo>
+    suspend fun spaceUnreadCounts(): List<SpaceUnread>
 
     suspend fun listImagePacks(roomId: String): List<ImagePackSummary>
 
