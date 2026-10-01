@@ -1,3 +1,8 @@
+## v5.0.4
+
+- fix :emote: display (not send)
+
+
 ## v5.0.3
 
 - No user-facing changes were mentioned since previous release
