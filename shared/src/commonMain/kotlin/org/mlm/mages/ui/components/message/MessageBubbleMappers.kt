@@ -48,6 +48,7 @@ private fun MessageEvent.toAttachmentUi(
             height = info.height,
             caption = caption,
             captionFormattedBody = captionFormattedBody,
+            blurhash = info.blurhash,
         )
         AttachmentKind.Video -> MessageAttachmentUi.Video(
             previewPath = resolvedPreviewPath ?: info.thumbnailMxcUri,
@@ -56,6 +57,7 @@ private fun MessageEvent.toAttachmentUi(
             durationMs = info.durationMs,
             caption = caption,
             captionFormattedBody = captionFormattedBody,
+            blurhash = info.blurhash,
         )
         AttachmentKind.Audio -> MessageAttachmentUi.Audio(
             filePath = resolvedAudioPath,
@@ -90,6 +92,7 @@ internal fun TimelineContent.Bubble.toBubbleModel(
             width = it.width,
             height = it.height,
             mime = it.mime,
+            blurhash = it.blurhash,
         )
     }
     val toRedactedEvent = event.replyPreview?.kind == ReplyPreviewKind.Redacted

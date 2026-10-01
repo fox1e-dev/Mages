@@ -51,6 +51,12 @@ val MessageEvent.thumbKey: String?
         }
     }
 
+fun thumbToBridge(event: MessageEvent, thumbs: Map<String, String>): String? {
+    val txn = event.txnId ?: return null
+    if (event.eventId.isBlank() || event.eventId in thumbs) return null
+    return thumbs["pending:$txn"]
+}
+
 @Serializable
 enum class ReplyPreviewKind {
     Text,
@@ -156,6 +162,7 @@ data class AttachmentInfo(
     val thumbnailEncrypted: EncFile? = null,
     val waveform: List<Float>? = null,
     val isVoice: Boolean? = null,
+    val blurhash: String? = null,
 )
 
 /**
@@ -180,4 +187,5 @@ data class StickerInfo(
     val encrypted: EncFile? = null,
     val thumbnailEncrypted: EncFile? = null,
     val isAnimated: Boolean? = null,
+    val blurhash: String? = null,
 )

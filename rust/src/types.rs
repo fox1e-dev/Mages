@@ -176,6 +176,7 @@ pub struct AttachmentInfo {
     pub thumbnail_encrypted: Option<EncFile>,
     pub waveform: Option<Vec<f32>>,
     pub is_voice: Option<bool>,
+    pub blurhash: Option<String>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Record)]
@@ -204,6 +205,7 @@ pub struct StickerInfo {
     pub encrypted: Option<EncFile>,
     pub thumbnail_encrypted: Option<EncFile>,
     pub is_animated: Option<bool>,
+    pub blurhash: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Enum)]

@@ -16,6 +16,7 @@ import org.mlm.mages.MatrixService
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.ReplyPreviewKind
 import org.mlm.mages.thumbKey
+import org.mlm.mages.thumbToBridge
 import org.mlm.mages.matrix.ImagePackSummary
 import org.mlm.mages.matrix.LINK_PREVIEW_IMAGE_PX
 import org.mlm.mages.matrix.TimelineDiff
@@ -271,9 +272,15 @@ class ThreadViewModel(
                     .distinctBy { it.itemId }
             }.sortedBy { it.timestampMs }
 
+            var thumbs = thumbByEvent
+            events.forEach { ev ->
+                thumbToBridge(ev, thumbs)?.let { thumbs = thumbs + (ev.eventId to it) }
+            }
+
             copy(
                 rootMessage = updatedRoot,
                 replies = mergedReplies,
+                thumbByEvent = thumbs,
                 hasInitialLoad = !hasOnlyRootSnapshot,
                 isLoading = false,
                 error = null
@@ -290,7 +297,8 @@ class ThreadViewModel(
         prefetchLinkPreviews(listOf(event))
 
         updateState {
-            when {
+            val bridge = thumbToBridge(event, thumbByEvent)
+            val base = when {
                 event.eventId == rootEventId -> {
                     copy(rootMessage = event)
                 }
@@ -303,6 +311,8 @@ class ThreadViewModel(
                     }
                 }
             }
+            if (bridge == null) base
+            else base.copy(thumbByEvent = thumbByEvent + (event.eventId to bridge))
         }
     }
 
@@ -315,7 +325,8 @@ class ThreadViewModel(
         prefetchLinkPreviews(listOf(event))
 
         updateState {
-            when {
+            val bridge = thumbToBridge(event, thumbByEvent)
+            val base = when {
                 event.eventId == rootEventId -> {
                     copy(rootMessage = event)
                 }
@@ -332,6 +343,8 @@ class ThreadViewModel(
                     }
                 }
             }
+            if (bridge == null) base
+            else base.copy(thumbByEvent = thumbByEvent + (event.eventId to bridge))
         }
     }
 
@@ -605,6 +618,10 @@ class ThreadViewModel(
         if (!mediaPreviewsAllowed()) return
         val key = event.thumbKey ?: return
         if (currentState.thumbByEvent.containsKey(key)) return
+        thumbToBridge(event, currentState.thumbByEvent)?.let {
+            updateState { copy(thumbByEvent = thumbByEvent + (event.eventId to it)) }
+            return
+        }
         if (key in thumbnailFetchInFlight) return
 
         val attachment = event.attachment

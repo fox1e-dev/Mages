@@ -3233,6 +3233,7 @@ fn extract_sticker_info(sticker_event: &matrix_sdk_ui::timeline::Sticker) -> Sti
         encrypted,
         thumbnail_encrypted,
         is_animated: info.is_animated,
+        blurhash: info.blurhash.clone(),
     }
 }
 
@@ -3759,6 +3760,7 @@ fn extract_sticker(
         encrypted,
         thumbnail_encrypted,
         is_animated: content.info.is_animated,
+        blurhash: content.info.blurhash.clone(),
     }
 }
 
@@ -3799,7 +3801,7 @@ fn extract_attachment(
             let file_name = c.filename.clone();
 
             // metadata + thumbnail
-            let (w, h, size, mime, thumb_mxc, thumb_enc) = c
+            let (w, h, size, mime, thumb_mxc, thumb_enc, blurhash) = c
                 .info
                 .as_ref()
                 .map(|info| {
@@ -3811,9 +3813,10 @@ fn extract_attachment(
                         info.mimetype.clone(),
                         thumb_mxc,
                         thumb_enc,
+                        info.blurhash.clone(),
                     )
                 })
-                .unwrap_or((None, None, None, None, None, None));
+                .unwrap_or((None, None, None, None, None, None, None));
 
             Some(AttachmentInfo {
                 kind: AttachmentKind::Image,
@@ -3829,6 +3832,7 @@ fn extract_attachment(
                 thumbnail_encrypted: thumb_enc,
                 waveform: None,
                 is_voice: None,
+                blurhash,
             })
         }
 
@@ -3836,7 +3840,7 @@ fn extract_attachment(
             let (mxc_uri, encrypted) = split_source(&c.source);
             let file_name = c.filename.clone();
 
-            let (w, h, size, mime, dur, thumb_mxc, thumb_enc) = c
+            let (w, h, size, mime, dur, thumb_mxc, thumb_enc, blurhash) = c
                 .info
                 .as_ref()
                 .map(|info| {
@@ -3849,9 +3853,10 @@ fn extract_attachment(
                         info.duration.map(|d| d.as_millis() as u64),
                         thumb_mxc,
                         thumb_enc,
+                        info.blurhash.clone(),
                     )
                 })
-                .unwrap_or((None, None, None, None, None, None, None));
+                .unwrap_or((None, None, None, None, None, None, None, None));
             let (thumb_mxc, thumb_enc) = if thumb_mxc.is_some() {
                 (thumb_mxc, thumb_enc)
             } else {
@@ -3872,6 +3877,7 @@ fn extract_attachment(
                 thumbnail_encrypted: thumb_enc,
                 waveform: None,
                 is_voice: None,
+                blurhash,
             })
         }
 
@@ -3907,6 +3913,7 @@ fn extract_attachment(
                 thumbnail_encrypted: thumb_enc,
                 waveform: None,
                 is_voice: None,
+                blurhash: None,
             })
         }
 
@@ -3960,6 +3967,7 @@ fn extract_attachment(
                 thumbnail_encrypted: None,
                 waveform,
                 is_voice,
+                blurhash: None,
             })
         }
 

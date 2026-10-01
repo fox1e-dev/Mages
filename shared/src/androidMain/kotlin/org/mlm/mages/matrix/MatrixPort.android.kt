@@ -2357,6 +2357,7 @@ private fun mages.AttachmentInfo.toModel() = AttachmentInfo(
     thumbnailEncrypted = thumbnailEncrypted?.toModel(),
     waveform = waveform,
     isVoice = isVoice,
+    blurhash = blurhash,
 )
 
 private fun EncFile.toFfi() = mages.EncFile(url = url, json = json)
@@ -2386,6 +2387,7 @@ private fun AttachmentInfo.toFfi() = mages.AttachmentInfo(
     thumbnailEncrypted = thumbnailEncrypted?.toFfi(),
     waveform = waveform,
     isVoice = isVoice,
+    blurhash = blurhash,
 )
 
 private fun StickerInfo.toFfi() = mages.StickerInfo(
@@ -2398,6 +2400,7 @@ private fun StickerInfo.toFfi() = mages.StickerInfo(
     encrypted = encrypted?.toFfi(),
     thumbnailEncrypted = thumbnailEncrypted?.toFfi(),
     isAnimated = isAnimated,
+    blurhash = blurhash,
 )
 
 private fun mages.NotificationContent.toModel() = NotificationContent(
@@ -2451,6 +2454,7 @@ private fun mages.StickerInfo.toModel() = StickerInfo(
     encrypted = encrypted?.toModel(),
     thumbnailEncrypted = thumbnailEncrypted?.toModel(),
     isAnimated = isAnimated,
+    blurhash = blurhash,
 )
 
 private fun RoomNotificationMode.toFfi(): FfiRoomNotificationMode = when (this) {

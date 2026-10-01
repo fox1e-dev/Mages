@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontStyle
@@ -45,8 +46,10 @@ import org.jetbrains.compose.resources.stringResource
 import org.mlm.mages.ReplyPreview
 import org.mlm.mages.ReplyPreviewKind
 import org.mlm.mages.matrix.SendState
+import org.mlm.mages.ui.components.blurHashBackground
 import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.components.core.FormattedBodyText
+import org.mlm.mages.ui.components.rememberBlurHashImage
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.components.voice.VoiceMessageBubble
 import org.mlm.mages.ui.theme.Spacing
@@ -693,6 +696,7 @@ private fun ImageAttachmentBubble(
     val previewPath = attachment.previewPath
     val hasCaption = !attachment.caption.isNullOrBlank()
     val isShortCaption = hasCaption && (attachment.caption!!.length < 30)
+    val blurhashImage = rememberBlurHashImage(attachment.blurhash)
 
     if (previewPath != null) {
         val aspectRatio = if ((attachment.width ?: 0) > 0 && (attachment.height ?: 0) > 0) {
@@ -710,6 +714,7 @@ private fun ImageAttachmentBubble(
                         if (aspectRatio != null) Modifier.aspectRatio(aspectRatio) else Modifier
                     )
                     .clip(RoundedCornerShape(8.dp))
+                    .blurHashBackground(blurhashImage)
                     .clickable(enabled = onOpen != null) { onOpen?.invoke() }
             ) {
                 AsyncImage(
@@ -756,7 +761,8 @@ private fun ImageAttachmentBubble(
     } else {
         MediaPlaceholderBubble(
             label = stringResource(Res.string.image),
-            contentColor = contentColor
+            contentColor = contentColor,
+            blurhashImage = blurhashImage
         )
     }
 }
@@ -777,6 +783,7 @@ private fun VideoAttachmentBubble(
     val previewPath = attachment.previewPath
     val hasCaption = !attachment.caption.isNullOrBlank()
     val isShortCaption = hasCaption && (attachment.caption!!.length < 30)
+    val blurhashImage = rememberBlurHashImage(attachment.blurhash)
 
     if (previewPath != null) {
         val aspectRatio = if ((attachment.width ?: 0) > 0 && (attachment.height ?: 0) > 0) {
@@ -794,6 +801,7 @@ private fun VideoAttachmentBubble(
                         if (aspectRatio != null) Modifier.aspectRatio(aspectRatio) else Modifier
                     )
                     .clip(RoundedCornerShape(8.dp))
+                    .blurHashBackground(blurhashImage)
                     .clickable(enabled = onOpen != null) { onOpen?.invoke() }
             ) {
                 AsyncImage(
@@ -846,6 +854,7 @@ private fun VideoAttachmentBubble(
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
+                .blurHashBackground(blurhashImage)
                 .background(contentColor.copy(alpha = 0.08f))
                 .border(1.dp, contentColor.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
         ) {
@@ -920,6 +929,7 @@ private fun StickerMessage(
         val aspectRatio = if ((sticker.width ?: 0) > 0 && (sticker.height ?: 0) > 0) {
             sticker.width!!.toFloat() / sticker.height!!.toFloat()
         } else 1f
+        val blurhashImage = rememberBlurHashImage(sticker.blurhash)
 
         val timestampContent = @Composable {
             MessageTimeAndStatus(
@@ -940,6 +950,7 @@ private fun StickerMessage(
                 modifier = Modifier
                     .widthIn(max = maxStickerSize)
                     .aspectRatio(aspectRatio, matchHeightConstraintsFirst = false)
+                    .blurHashBackground(blurhashImage)
                     .combinedClickable(
                         onClick = { onOpen?.invoke() },
                         onLongClick = onLongPress,
@@ -959,6 +970,7 @@ private fun StickerMessage(
                     Box(
                         modifier = Modifier
                             .size(maxStickerSize)
+                            .blurHashBackground(blurhashImage)
                             .background(
                                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                                 RoundedCornerShape(8.dp)
@@ -1117,11 +1129,13 @@ private fun RedactedBody(
 fun MediaPlaceholderBubble(
     label: String,
     contentColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    blurhashImage: ImageBitmap? = null,
 ) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
+            .blurHashBackground(blurhashImage)
             .background(contentColor.copy(alpha = 0.08f))
             .border(1.dp, contentColor.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
     ) {

@@ -47,6 +47,7 @@ sealed interface MessageAttachmentUi {
         val height: Int?,
         val caption: String?,
         val captionFormattedBody: String? = null,
+        val blurhash: String? = null,
     ) : MessageAttachmentUi
 
     data class Video(
@@ -56,6 +57,7 @@ sealed interface MessageAttachmentUi {
         val durationMs: Long?,
         val caption: String?,
         val captionFormattedBody: String? = null,
+        val blurhash: String? = null,
     ) : MessageAttachmentUi
 
     data class Audio(
@@ -82,6 +84,7 @@ data class MessageStickerUi(
     val width: Int? = null,
     val height: Int? = null,
     val mime: String? = null,
+    val blurhash: String? = null,
 )
 
 data class MessageBubbleRenderContext(

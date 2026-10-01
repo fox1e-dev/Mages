@@ -2692,9 +2692,15 @@ class RoomViewModel(
                 }
             }
 
+            var thumbs = thumbByEvent
+            newAll.forEach { ev ->
+                thumbToBridge(ev, thumbs)?.let { thumbs = thumbs + (ev.eventId to it) }
+            }
+
             copy(
                 allEvents = newAll,
                 events = filteredVisibleEvents(newAll),
+                thumbByEvent = thumbs,
                 hasTimelineSnapshot = when {
                     r.reset -> true
                     r.cleared -> false
@@ -2980,6 +2986,10 @@ class RoomViewModel(
         if (!mediaPreviewsAllowed()) return
         val key = event.thumbKey ?: return
         if (currentState.thumbByEvent.containsKey(key)) return
+        thumbToBridge(event, currentState.thumbByEvent)?.let {
+            updateState { copy(thumbByEvent = thumbByEvent + (event.eventId to it)) }
+            return
+        }
         if (key in thumbnailFetchInFlight) return
 
         val a = event.attachment
