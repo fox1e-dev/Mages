@@ -120,6 +120,7 @@ kotlin {
 
                 runtimeOnly(libs.maplibre.runtime.vulkan.android)
                 runtimeOnly(libs.coil.gif)
+                runtimeOnly(libs.coil.video)
             }
         }
 

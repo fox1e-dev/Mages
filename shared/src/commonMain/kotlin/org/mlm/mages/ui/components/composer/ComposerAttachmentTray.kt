@@ -8,7 +8,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.AudioFile
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -43,17 +47,34 @@ fun ComposerAttachmentTray(
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
         attachments.forEachIndexed { index, attachment ->
-            if (attachment.mode == OutgoingMediaMode.Attachment &&
-                attachment.mimeType.startsWith("image/", ignoreCase = true)
-            ) {
+            val isVisualMedia = attachment.mode == OutgoingMediaMode.Attachment &&
+                (attachment.mimeType.startsWith("image/", ignoreCase = true) ||
+                    attachment.mimeType.startsWith("video/", ignoreCase = true))
+            if (isVisualMedia) {
                 AttachmentThumbnail(
                     attachment = attachment,
                     onRemove = onRemoveAttachment?.let { callback -> { callback(index) } },
                 )
             } else {
+                val typeIcon = when {
+                    attachment.mode == OutgoingMediaMode.Sticker -> null
+                    attachment.mimeType.startsWith("audio/", ignoreCase = true) -> Icons.Default.AudioFile
+                    attachment.mimeType.equals("application/pdf", ignoreCase = true) -> Icons.Default.PictureAsPdf
+                    else -> Icons.Default.AttachFile
+                }
                 InputChip(
                     selected = true,
                     onClick = {},
+                    leadingIcon = typeIcon?.let { icon ->
+                        {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
                     label = {
                         Text(
                             buildString {
@@ -104,6 +125,23 @@ private fun AttachmentThumbnail(
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
+        if (attachment.mimeType.startsWith("video/", ignoreCase = true)) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
         if (onRemove != null) {
             Box(
                 modifier = Modifier
