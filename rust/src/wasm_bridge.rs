@@ -3,25 +3,19 @@ use crate::js_observer_json;
 use crate::js_observer_noargs;
 use crate::types::*;
 use crate::verification_flow::{
-    VerifEvent, drive_incoming_verification, drive_verification_request,
+    VerifEvent, drive_and_emit, drive_incoming_verification, drive_verification_request,
+    error_json,
 };
-use crate::wasm_delegate_bool;
-use crate::wasm_delegate_json;
-use crate::wasm_delegate_option_json;
-use crate::wasm_delegate_result_bool;
-use crate::wasm_delegate_result_bool_as_bool;
-use crate::wasm_delegate_result_json;
+use crate::wasm_delegate;
 use crate::wasm_subscribe;
 use crate::wasm_unobserve;
 use crate::webffi_bool;
 use crate::{
-    count_visible_room_view, latest_room_event_for, mages_client_metadata,
-    map_timeline_items_to_events, map_vec_diff, missing_reply_event_id, paginate_backwards_visible,
+    latest_room_event_for, mages_client_metadata,
     strip_matrix_path,
 };
-use crate::{map_live_location_share, map_live_location_vec_diff};
 use crate::{
-    spawn_detached, webffi_err, webffi_not_init, webffi_option, webffi_unit, webffi_value,
+    webffi_err, webffi_not_init, webffi_option, webffi_unit, webffi_value,
 };
 
 use futures_util::StreamExt;
@@ -34,13 +28,11 @@ use matrix_sdk::utils::UrlOrQuery;
 use matrix_sdk::ruma::events::room::{MediaSource, message::MessageType};
 
 use matrix_sdk::ruma::events::{
-    key::verification::request::ToDeviceKeyVerificationRequestEvent, receipt::SyncReceiptEvent,
+    key::verification::request::ToDeviceKeyVerificationRequestEvent,
     room::message::SyncRoomMessageEvent,
 };
 
-use matrix_sdk::ruma::{OwnedDeviceId, OwnedEventId, OwnedRoomId, OwnedUserId};
-
-use matrix_sdk::sleep::sleep;
+use matrix_sdk::ruma::{OwnedEventId, OwnedRoomId};
 
 use matrix_sdk::widget::{
     ClientProperties, Intent as WidgetIntent, VirtualElementCallWidgetConfig,
@@ -48,7 +40,7 @@ use matrix_sdk::widget::{
 };
 
 use matrix_sdk::{
-    Client as SdkClient, Room, RoomDisplayName, RoomState,
+    Client as SdkClient,
     attachment::AttachmentConfig,
     authentication::AuthSession,
     encryption::{BackupDownloadStrategy, EncryptionSettings},
@@ -57,7 +49,7 @@ use matrix_sdk::{
 use mime::Mime;
 
 use matrix_sdk_ui::{
-    eyeball_im::{Vector, VectorDiff},
+    eyeball_im::Vector,
     notification_client::{NotificationClient, NotificationProcessSetup, NotificationStatus},
     room_list_service::filters,
     sync_service::{State, SyncService},
@@ -66,7 +58,6 @@ use matrix_sdk_ui::{
 
 use serde_json;
 
-use crate::safe_call;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -75,13 +66,9 @@ use std::sync::Arc;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
 
-use web_time::Duration;
-
 use matrix_sdk::authentication::matrix::MatrixSession;
 use matrix_sdk::authentication::oauth::{ClientId, OAuthSession, UserSession};
 use matrix_sdk::{SessionMeta, SessionTokens};
-
-use matrix_sdk::encryption::verification::Verification;
 
 #[wasm_bindgen(start)]
 pub fn init() {
@@ -154,11 +141,54 @@ fn sniff_image_mime(data: &[u8]) -> &'static str {
     }
 }
 
+async fn media_data_url<F, M>(
+    client: &SdkClient,
+    req: &MediaRequestParameters,
+    mime_of: F,
+    label: &str,
+) -> Result<String, JsValue>
+where
+    F: FnOnce(&[u8]) -> M,
+    M: Into<String>,
+{
+    let data = client
+        .media()
+        .get_media_content(req, true)
+        .await
+        .map_err(|e| webffi_err(&format!("{label} failed: {e}")))?;
+    let b64 = base64_encode(&data).map_err(|e| {
+        webffi_err(&format!(
+            "base64 encode failed: {:?}",
+            e.as_string().unwrap_or_default()
+        ))
+    })?;
+    let mime: String = mime_of(&data).into();
+    Ok(format!("data:{mime};base64,{b64}"))
+}
+
 fn call_js(f: &Function, arg: JsValue) {
     let _ = f.call1(&JsValue::NULL, &arg);
 }
 fn call_js0(f: &Function) {
     let _ = f.call0(&JsValue::NULL);
+}
+
+fn emit_verif_err(on_event: &Function, message: String) {
+    call_js(on_event, JsValue::from_str(&error_json(message)));
+}
+
+fn spawn_verif_drive<F, S>(build: F, on_event: Function)
+where
+    F: std::future::Future<Output = S> + 'static,
+    S: futures_util::Stream<Item = VerifEvent> + 'static,
+{
+    wasm_bindgen_futures::spawn_local(async move {
+        let stream = build.await;
+        drive_and_emit(stream, |json| {
+            call_js(&on_event, JsValue::from_str(json));
+        })
+        .await;
+    });
 }
 
 js_observer_json!(JsConnectionObserver: ConnectionObserver::on_connection_change, state: ConnectionState);
@@ -301,7 +331,6 @@ async fn delete_wasm_databases(store_name: &str) {
 struct WasmAsyncState {
     core: Rc<CoreClient>,
     store_name: String,
-    sync_service: RefCell<Option<Arc<SyncService>>>,
     room_list_cache: RefCell<Vec<RoomListEntry>>,
     send_observers: RefCell<HashMap<u64, Function>>,
     send_obs_counter: Cell<u64>,
@@ -338,25 +367,13 @@ impl WasmAsyncState {
     }
 
     async fn ensure_sync_service(&self) -> Option<Arc<SyncService>> {
-        if let Some(svc) = self.sync_service.borrow().as_ref().cloned() {
-            return Some(svc);
-        }
-        if self.client().session_meta().is_none() {
-            return None;
-        }
-        let built = SyncService::builder(self.client().clone())
-            .with_offline_mode()
-            .build()
-            .await;
-        let svc: Arc<SyncService> = match built {
-            Ok(svc) => svc.into(),
-            Err(error) => {
-                tracing::warn!("ensure_sync_service: build failed: {error:?}");
-                return None;
-            }
-        };
-        self.sync_service.borrow_mut().replace(svc.clone());
-        Some(svc)
+        self.core.ensure_sync_service().await;
+        self.core
+            .sync_service
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_ref()
+            .cloned()
     }
 
     fn persist_session(&self) {
@@ -410,22 +427,43 @@ impl WasmAsyncState {
         let state = self.clone();
         wasm_bindgen_futures::spawn_local(async move {
             let mut rx = state.client().send_queue().subscribe();
+            let mut errors_rx = state.client().send_queue().subscribe_errors();
             let mut attempts: HashMap<String, u32> = HashMap::new();
             loop {
-                let upd = match rx.recv().await {
-                    Ok(u) => u,
-                    Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
-                        tracing::warn!(skipped, "send-queue updates lagged; retry state may be stale");
-                        continue;
+                tokio::select! {
+                    upd = rx.recv() => {
+                        let upd = match upd {
+                            Ok(u) => u,
+                            Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
+                                tracing::warn!(skipped, "send-queue updates lagged; retry state may be stale");
+                                continue;
+                            }
+                            Err(e) => {
+                                tracing::warn!("send-queue subscription ended: {e:?}");
+                                break;
+                            }
+                        };
+                        let rid = upd.room_id.to_string();
+                        if let Some(u) = map_send_queue_update(&rid, upd.update, &mut attempts) {
+                            state.dispatch_send_update(&u);
+                        }
                     }
-                    Err(e) => {
-                        tracing::warn!("send-queue subscription ended: {e:?}");
-                        break;
+                    err = errors_rx.recv() => {
+                        if let Ok(err) = err {
+                            tracing::warn!(
+                                "Send queue error for room {} (recoverable={}): {:?}",
+                                err.room_id, err.is_recoverable, err.error
+                            );
+                            state.dispatch_send_update(&SendUpdate {
+                                room_id: err.room_id.to_string(),
+                                txn_id: String::new(),
+                                attempts: 0,
+                                state: SendState::Failed,
+                                event_id: None,
+                                error: Some(format!("Queue disabled: {:?}", err.error)),
+                            });
+                        }
                     }
-                };
-                let rid = upd.room_id.to_string();
-                if let Some(u) = map_send_queue_update(&rid, upd.update, &mut attempts) {
-                    state.dispatch_send_update(&u);
                 }
             }
         });
@@ -454,12 +492,12 @@ impl WasmClient {
     }
 }
 
-wasm_delegate_bool! {
+wasm_delegate! { webffi_bool;
     "isSpace"              => is_space(room_id: String);
     "isUserIgnored"        => is_user_ignored(user_id: String);
 }
 
-wasm_delegate_result_bool! {
+wasm_delegate! { webffi_unit;
     "markRead"             => mark_read(room_id: String, send_public_receipt: bool);
     "markReadAt"           => mark_read_at(room_id: String, event_id: String, send_public_receipt: bool);
     "markFullyReadAt"      => mark_fully_read_at(room_id: String, event_id: String, send_public_receipt: bool);
@@ -479,7 +517,7 @@ wasm_delegate_result_bool! {
     "redact"               => redact(room_id: String, event_id: String, reason: Option<String>);
 }
 
-wasm_delegate_result_bool_as_bool! {
+wasm_delegate! { webffi_bool;
     "markRoomSeenLatest"   => mark_room_seen_latest(room_id: String, send_public_receipt: bool);
     "canUserBan"           => can_user_ban(room_id: String, user_id: String);
     "canUserInvite"        => can_user_invite(room_id: String, user_id: String);
@@ -487,7 +525,7 @@ wasm_delegate_result_bool_as_bool! {
     "canSetProfileFields"  => can_set_profile_fields();
 }
 
-wasm_delegate_result_bool! {
+wasm_delegate! { webffi_unit;
     "ignoreUser"       => ignore_user(user_id: String);
     "unignoreUser"     => unignore_user(user_id: String);
     "leaveRoom"        => leave_room(room_id: String);
@@ -510,7 +548,7 @@ wasm_delegate_result_bool! {
     "deleteProfileField"   => delete_profile_field(name: String);
 }
 
-wasm_delegate_json! {
+wasm_delegate! { |r| to_json(&r);
     "rooms"             => rooms()                                                or Vec::<RoomSummary>::new();
     "recentEvents"      => recent_events(room_id: String, limit: u32)             or Vec::<MessageEvent>::new();
     "ownLastRead"       => own_last_read(room_id: String)                         or OwnReceipt { event_id: None, ts_ms: None };
@@ -519,7 +557,7 @@ wasm_delegate_json! {
     "roomParentSpaces"  => room_parent_spaces(room_id: String)                     or Vec::<SpaceParentInfo>::new();
 }
 
-wasm_delegate_result_json! {
+wasm_delegate! { webffi_value;
     "roomPowerLevels"  => room_power_levels(room_id: String);
     "getPresence"      => get_presence(user_id: String);
     "roomPreview"      => room_preview(id_or_alias: String, via: Vec<String>);
@@ -540,7 +578,7 @@ wasm_delegate_result_json! {
     "mutualRooms"      => mutual_rooms(user_id: String);
 }
 
-wasm_delegate_option_json! {
+wasm_delegate! { webffi_option;
     "roomUnreadStats"  => room_unread_stats(room_id: String);
     "roomCallState"    => room_call_state(room_id: String);
     "roomInfoSnapshot" => room_info_snapshot(room_id: String);
@@ -549,6 +587,50 @@ wasm_delegate_option_json! {
     "eventDetails"     => event_details(room_id: String, event_id: String);
     "inviteBlocked"    => invite_blocked();
     "getLinkPreview"   => get_link_preview(url: String);
+}
+
+wasm_delegate! { webffi_unit;
+    "sendMessage"        => send_message(room_id: String, body: String, formatted_body: Option<String>);
+    "reply"              => reply(room_id: String, in_reply_to: String, body: String, formatted_body: Option<String>);
+    "edit"               => edit(room_id: String, target_event_id: String, new_body: String, formatted_body: Option<String>);
+    "setImagePackEnabled" => set_image_pack_enabled(room_id: String, state_key: String, enabled: bool);
+    "removeImagePack"    => remove_image_pack(room_id: String, state_key: String);
+    "recordEmojiUse"     => record_emoji_use(emoji: String);
+    "isEventReadBy"      => is_event_read_by(room_id: String, event_id: String, user_id: String);
+    "sendQueueSetEnabled" => send_queue_set_enabled(enabled: bool);
+    "setMarkUnread"      => set_mark_unread(room_id: String, unread: bool);
+    "sendThreadText"     => send_thread_text(room_id: String, root_event_id: String, body: String, reply_to_event_id: Option<String>, latest_event_id: Option<String>, formatted_body: Option<String>);
+    "setReactionNotificationsEnabled" => set_reaction_notifications_enabled(enabled: bool);
+}
+
+wasm_delegate! { webffi_value;
+    "dmPeerUserId"       => dm_peer_user_id(room_id: String);
+    "ensureDm"           => ensure_dm(user_id: String);
+    "ensureDmIfAllowed"  => ensure_dm_if_allowed(room_id: String, user_id: String);
+    "resolveRoomId"      => resolve_room_id(id_or_alias: String);
+    "mediaPreviewConfig" => media_preview_config();
+    "canEditImagePacks"  => can_edit_image_packs(room_id: String);
+    "saveImagePack"      => save_image_pack(room_id: String, write_json: String);
+    "suggestImageShortcodes" => suggest_image_shortcodes(bases: Vec<String>, taken: Vec<String>);
+    "uploadPackImageBytes" => upload_pack_image(bytes: Vec<u8>, mime: String);
+    "setAvatarBytes"     => set_avatar(bytes: Vec<u8>, mime: String);
+    "uploadBytes"        => upload_bytes(bytes: Vec<u8>, mime: String);
+    "recentEmoji"        => recent_emoji();
+    "isReactionNotificationsEnabled" => is_reaction_notifications_enabled();
+}
+
+wasm_delegate! { webffi_option;
+    "roomTags"           => room_tags(room_id: String);
+    "roomNotificationMode" => room_notification_mode(room_id: String);
+}
+
+wasm_delegate! { |r| to_json(&r);
+    "spaceUnreadCounts"  => space_unread_counts();
+}
+
+wasm_delegate! { |r| to_json(&r);
+    "reactionsBatch"     => reactions_batch(room_id: String, event_ids: Vec<String>) or HashMap::<String, Vec<ReactionSummary>>::new();
+    "roomAliases"        => room_aliases(room_id: String) or Vec::<String>::new();
 }
 
 wasm_unobserve! {
@@ -658,7 +740,6 @@ impl WasmClient {
         let state = Rc::new(WasmAsyncState {
             core,
             store_name,
-            sync_service: RefCell::new(None),
             room_list_cache: RefCell::new(Vec::new()),
             send_observers: RefCell::new(HashMap::new()),
             send_obs_counter: Cell::new(0),
@@ -901,55 +982,6 @@ impl WasmClient {
 
     // Methods with wasm-specific signatures (cast, missing optional args)
 
-    #[wasm_bindgen(js_name = sendMessage)]
-    pub async fn send_message(
-        &self,
-        room_id: String,
-        body: String,
-        formatted_body: Option<String>,
-    ) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_unit(s.core.send_message(room_id, body, formatted_body).await)
-    }
-
-    #[wasm_bindgen(js_name = reply)]
-    pub async fn reply(
-        &self,
-        room_id: String,
-        in_reply_to: String,
-        body: String,
-        formatted_body: Option<String>,
-    ) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_unit(
-            s.core
-                .reply(room_id, in_reply_to, body, formatted_body)
-                .await,
-        )
-    }
-
-    #[wasm_bindgen(js_name = edit)]
-    pub async fn edit(
-        &self,
-        room_id: String,
-        target_event_id: String,
-        new_body: String,
-        formatted_body: Option<String>,
-    ) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_unit(
-            s.core
-                .edit(room_id, target_event_id, new_body, formatted_body)
-                .await,
-        )
-    }
-
     #[wasm_bindgen(js_name = paginateBackwards)]
     pub async fn paginate_backwards(&self, room_id: String, count: u32) -> JsValue {
         let Some(s) = self.state() else {
@@ -966,14 +998,6 @@ impl WasmClient {
         webffi_value(s.core.paginate_forwards(room_id, count as u16).await)
     }
 
-    #[wasm_bindgen(js_name = dmPeerUserId)]
-    pub async fn dm_peer_user_id(&self, room_id: String) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_value(s.core.dm_peer_user_id(room_id).await)
-    }
-
     #[wasm_bindgen(js_name = accountManagementUrl)]
     pub async fn account_management_url(&self) -> JsValue {
         let Some(s) = self.state() else {
@@ -985,22 +1009,6 @@ impl WasmClient {
         }
     }
 
-    #[wasm_bindgen(js_name = ensureDm)]
-    pub async fn ensure_dm(&self, user_id: String) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_value(s.core.ensure_dm(user_id).await)
-    }
-
-    #[wasm_bindgen(js_name = ensureDmIfAllowed)]
-    pub async fn ensure_dm_if_allowed(&self, room_id: String, user_id: String) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_value(s.core.ensure_dm_if_allowed(room_id, user_id).await)
-    }
-
     #[wasm_bindgen(js_name = roomActionState)]
     pub async fn room_action_state(&self, room_id: String) -> JsValue {
         let Some(s) = self.state() else {
@@ -1010,14 +1018,6 @@ impl WasmClient {
             Ok(state) => to_json(&state),
             _ => JsValue::NULL,
         }
-    }
-
-    #[wasm_bindgen(js_name = spaceUnreadCounts)]
-    pub async fn space_unread_counts(&self) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        to_json(&s.core.space_unread_counts().await)
     }
 
     #[wasm_bindgen(js_name = memberActionState)]
@@ -1049,14 +1049,6 @@ impl WasmClient {
             Ok(state) => to_json(&state),
             _ => JsValue::NULL,
         }
-    }
-
-    #[wasm_bindgen(js_name = resolveRoomId)]
-    pub async fn resolve_room_id(&self, id_or_alias: String) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_value(s.core.resolve_room_id(id_or_alias).await)
     }
 
     #[wasm_bindgen(js_name = joinByIdOrAlias)]
@@ -1122,14 +1114,6 @@ impl WasmClient {
         JsValue::UNDEFINED
     }
 
-    #[wasm_bindgen(js_name = mediaPreviewConfig)]
-    pub async fn media_preview_config(&self) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_value(s.core.media_preview_config().await)
-    }
-
     #[wasm_bindgen(js_name = setMediaPreviewConfig)]
     pub async fn set_media_preview_config(&self, previews: String) -> JsValue {
         let mode = match previews.as_str() {
@@ -1142,124 +1126,6 @@ impl WasmClient {
             return webffi_not_init();
         };
         webffi_unit(s.core.set_media_preview_config(mode).await)
-    }
-
-    #[wasm_bindgen(js_name = setImagePackEnabled)]
-    pub async fn set_image_pack_enabled(
-        &self,
-        room_id: String,
-        state_key: String,
-        enabled: bool,
-    ) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_unit(
-            s.core
-                .set_image_pack_enabled(room_id, state_key, enabled)
-                .await,
-        )
-    }
-
-    #[wasm_bindgen(js_name = canEditImagePacks)]
-    pub async fn can_edit_image_packs(&self, room_id: String) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_value(s.core.can_edit_image_packs(room_id).await)
-    }
-
-    #[wasm_bindgen(js_name = saveImagePack)]
-    pub async fn save_image_pack(&self, room_id: String, write_json: String) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_value(s.core.save_image_pack(room_id, write_json).await)
-    }
-
-    #[wasm_bindgen(js_name = removeImagePack)]
-    pub async fn remove_image_pack(&self, room_id: String, state_key: String) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_unit(s.core.remove_image_pack(room_id, state_key).await)
-    }
-
-    #[wasm_bindgen(js_name = suggestImageShortcodes)]
-    pub async fn suggest_image_shortcodes(
-        &self,
-        bases: Vec<String>,
-        taken: Vec<String>,
-    ) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_value(s.core.suggest_image_shortcodes(bases, taken).await)
-    }
-
-    #[wasm_bindgen(js_name = uploadPackImageBytes)]
-    pub async fn upload_pack_image_bytes(
-        &self,
-        bytes: Vec<u8>,
-        mime: String,
-    ) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_value(s.core.upload_pack_image(bytes, mime).await)
-    }
-
-    #[wasm_bindgen(js_name = setAvatarBytes)]
-    pub async fn set_avatar_bytes(
-        &self,
-        bytes: Vec<u8>,
-        mime: String,
-    ) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_value(s.core.set_avatar(bytes, &mime).await)
-    }
-
-    #[wasm_bindgen(js_name = uploadBytes)]
-    pub async fn upload_bytes(
-        &self,
-        bytes: Vec<u8>,
-        mime: String,
-    ) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_value(s.core.upload_bytes(bytes, &mime).await)
-    }
-
-    #[wasm_bindgen(js_name = recentEmoji)]
-    pub async fn recent_emoji(&self) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_value(s.core.recent_emoji().await)
-    }
-
-    #[wasm_bindgen(js_name = recordEmojiUse)]
-    pub async fn record_emoji_use(&self, emoji: String) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_unit(s.core.record_emoji_use(emoji).await)
-    }
-
-    #[wasm_bindgen(js_name = isEventReadBy)]
-    pub async fn is_event_read_by(
-        &self,
-        room_id: String,
-        event_id: String,
-        user_id: String,
-    ) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_unit(s.core.is_event_read_by(room_id, event_id, user_id).await)
     }
 
     #[wasm_bindgen(js_name = startLiveLocation)]
@@ -1374,145 +1240,7 @@ impl WasmClient {
                 let _ = svc.start().await;
             }
 
-            {
-                let before = count_visible_room_view(&tl, &rid, &me).await;
-                if before < 20 {
-                    let _ =
-                        paginate_backwards_visible(&tl, &rid, &me, 20usize.saturating_sub(before))
-                            .await;
-                }
-            }
-
-            let (_sub_items, mut stream) = tl.subscribe().await;
-
-            // Snapshot from the FULL timeline items: `subscribe()` returns a
-            // view truncated by the SDK's `subscriber_skip_count`.
-            let items = tl.items().await;
-
-            let mut item_ids: Vec<String> = items
-                .iter()
-                .map(|item| item.unique_id().0.to_string())
-                .collect();
-
-            {
-                let mapped = map_timeline_items_to_events(&items, &rid, &tl, &me);
-                let o = obs.clone();
-                safe_call(move || o.on_diff(TimelineDiffKind::Reset { values: mapped }));
-            }
-
-            for it in items.iter() {
-                if let Some(ev) = it.as_event() {
-                    if let Some(eid) = missing_reply_event_id(ev) {
-                        let tlc = tl.clone();
-                        spawn_detached!(async move {
-                            let _ = tlc.fetch_details_for_event(eid.as_ref()).await;
-                        });
-                    }
-                }
-            }
-
-            while let Some(diffs) = stream.next().await {
-                for diff in diffs {
-                    match &diff {
-                        VectorDiff::Append { values } => {
-                            item_ids.extend(values.iter().map(|v| v.unique_id().0.to_string()));
-                        }
-                        VectorDiff::PushBack { value } => {
-                            item_ids.push(value.unique_id().0.to_string());
-                        }
-                        VectorDiff::PushFront { value } => {
-                            item_ids.insert(0, value.unique_id().0.to_string());
-                        }
-                        VectorDiff::Insert { index, value } => {
-                            let idx = (*index).min(item_ids.len());
-                            item_ids.insert(idx, value.unique_id().0.to_string());
-                        }
-                        VectorDiff::Set { index, value } => {
-                            if let Some(id) = item_ids.get_mut(*index) {
-                                *id = value.unique_id().0.to_string();
-                            }
-                        }
-                        VectorDiff::Remove { index } => {
-                            if *index < item_ids.len() {
-                                let removed = item_ids.remove(*index);
-                                let o = obs.clone();
-                                safe_call(move || {
-                                    o.on_diff(TimelineDiffKind::RemoveByItemId { item_id: removed })
-                                });
-                            }
-                        }
-                        VectorDiff::PopBack => {
-                            if let Some(removed) = item_ids.pop() {
-                                let o = obs.clone();
-                                safe_call(move || {
-                                    o.on_diff(TimelineDiffKind::RemoveByItemId { item_id: removed })
-                                });
-                            }
-                        }
-                        VectorDiff::PopFront => {
-                            if !item_ids.is_empty() {
-                                let removed = item_ids.remove(0);
-                                let o = obs.clone();
-                                safe_call(move || {
-                                    o.on_diff(TimelineDiffKind::RemoveByItemId { item_id: removed })
-                                });
-                            }
-                        }
-                        VectorDiff::Truncate { length } => {
-                            let keep = (*length).min(item_ids.len());
-                            let removed: Vec<String> = item_ids.drain(keep..).collect();
-                            for item_id in removed {
-                                let o = obs.clone();
-                                safe_call(move || {
-                                    o.on_diff(TimelineDiffKind::RemoveByItemId { item_id })
-                                });
-                            }
-                        }
-                        VectorDiff::Clear => {
-                            item_ids.clear();
-                        }
-                        // Handled in the forwarding match below: shadow is
-                        // rebuilt from the full timeline items().
-                        VectorDiff::Reset { .. } => {}
-                    }
-
-                    match diff {
-                        VectorDiff::Remove { .. }
-                        | VectorDiff::PopBack
-                        | VectorDiff::PopFront
-                        | VectorDiff::Truncate { .. } => {}
-
-                        VectorDiff::Clear => {
-                            let o = obs.clone();
-                            safe_call(move || {
-                                o.on_diff(TimelineDiffKind::Reset { values: Vec::new() })
-                            });
-                        }
-
-                        // A catch-up Reset comes from `subscriber_skip_count` and is truncated
-                        // to the tail of the timeline. Re-emit the FULL state.
-                        VectorDiff::Reset { .. } => {
-                            let items = tl.items().await;
-                            item_ids = items
-                                .iter()
-                                .map(|it| it.unique_id().0.to_string())
-                                .collect();
-                            let mapped = map_timeline_items_to_events(&items, &rid, &tl, &me);
-                            let o = obs.clone();
-                            safe_call(move || {
-                                o.on_diff(TimelineDiffKind::Reset { values: mapped })
-                            });
-                        }
-
-                        other => {
-                            if let Some(mapped) = map_vec_diff(other, &rid, &tl, &me) {
-                                let o = obs.clone();
-                                safe_call(move || o.on_diff(mapped));
-                            }
-                        }
-                    }
-                }
-            }
+            crate::observe::drive_timeline(tl, &rid, &me, obs).await;
         })
     }
 
@@ -1593,29 +1321,7 @@ impl WasmClient {
         let obs: Arc<dyn TypingObserver> = Arc::new(JsTypingObserver(on_update));
         let s = state.clone();
         wasm_subscribe!(state, typing_subs, async move {
-            let Some(room) = s.client().get_room(&rid) else {
-                return;
-            };
-            let (_guard, mut rx) = room.subscribe_to_typing_notifications();
-            let mut cache: HashMap<OwnedUserId, String> = HashMap::new();
-            let mut last: Vec<String> = Vec::new();
-            while let Ok(uids) = rx.recv().await {
-                let mut names: Vec<String> = uids
-                    .iter()
-                    .map(|uid| {
-                        cache
-                            .get(uid)
-                            .cloned()
-                            .unwrap_or_else(|| uid.localpart().to_string())
-                    })
-                    .collect();
-                names.sort();
-                names.dedup();
-                if names != last {
-                    last = names.clone();
-                    safe_call(|| obs.on_update(names));
-                }
-            }
+            s.core.drive_typing(&rid, obs).await;
         })
     }
 
@@ -1630,16 +1336,7 @@ impl WasmClient {
         let obs: Arc<dyn ReceiptsObserver> = Arc::new(JsReceiptsObserver(on_changed));
         let s = state.clone();
         wasm_subscribe!(state, receipts_subs, async move {
-            let Some(room) = s.client().get_room(&rid) else {
-                return;
-            };
-            let Ok(tl) = room.timeline().await else {
-                return;
-            };
-            let mut stream = tl.subscribe_own_user_read_receipts_changed().await;
-            while let Some(()) = stream.next().await {
-                safe_call(|| obs.on_changed());
-            }
+            s.core.drive_receipts(&rid, obs).await;
         })
     }
 
@@ -1672,45 +1369,7 @@ impl WasmClient {
         let obs: Arc<dyn LiveLocationObserver> = Arc::new(JsLiveLocationObserver(on_update));
         let s = state.clone();
         wasm_subscribe!(state, live_location_subs, async move {
-            let Some(room) = s.client().get_room(&rid) else {
-                return;
-            };
-            let observable = room.live_locations_observer().await;
-            let (initial_shares, stream) = observable.subscribe();
-            let mut all_shares: Vec<LiveLocationShareInfo> =
-                initial_shares.iter().map(map_live_location_share).collect();
-            safe_call(|| obs.on_update(all_shares.clone()));
-            use futures_util::StreamExt;
-            let mut stream = stream;
-            while let Some(diffs) = stream.next().await {
-                for diff in diffs {
-                    if let Some(mapped) = map_live_location_vec_diff(diff) {
-                        use matrix_sdk_ui::eyeball_im::VectorDiff;
-                        match mapped {
-                            VectorDiff::Insert { index, value } => all_shares.insert(index, value),
-                            VectorDiff::Set { index, value } => all_shares[index] = value,
-                            VectorDiff::Remove { index } => {
-                                all_shares.remove(index);
-                            }
-                            VectorDiff::PushBack { value } => all_shares.push(value),
-                            VectorDiff::PopBack => {
-                                all_shares.pop();
-                            }
-                            VectorDiff::PushFront { value } => all_shares.insert(0, value),
-                            VectorDiff::PopFront => {
-                                all_shares.remove(0);
-                            }
-                            VectorDiff::Clear => all_shares.clear(),
-                            VectorDiff::Truncate { length } => all_shares.truncate(length),
-                            VectorDiff::Append { values } => all_shares.extend(values),
-                            VectorDiff::Reset { values } => {
-                                all_shares = values.into_iter().collect();
-                            }
-                        }
-                    }
-                }
-                safe_call(|| obs.on_update(all_shares.clone()));
-            }
+            s.core.drive_live_location(&rid, obs).await;
         })
     }
 
@@ -1722,21 +1381,7 @@ impl WasmClient {
         let obs: Arc<dyn CallObserver> = Arc::new(JsCallObserver(on_invite));
         let s = state.clone();
         wasm_subscribe!(state, call_subs, async move {
-            use matrix_sdk::ruma::events::call::invite::OriginalSyncCallInviteEvent;
-            let handler = s
-                .client()
-                .observe_events::<OriginalSyncCallInviteEvent, Room>();
-            let mut sub = handler.subscribe();
-            while let Some((ev, room)) = sub.next().await {
-                let invite = CallInvite {
-                    room_id: room.room_id().to_string(),
-                    sender: ev.sender.to_string(),
-                    call_id: ev.content.call_id.to_string(),
-                    is_video: ev.content.offer.sdp.contains("m=video"),
-                    ts_ms: ev.origin_server_ts.0.into(),
-                };
-                safe_call(|| obs.on_invite(invite));
-            }
+            s.core.drive_call_inbox(obs).await;
         })
     }
 
@@ -1752,27 +1397,7 @@ impl WasmClient {
         let obs: Arc<dyn RoomCallStateObserver> = Arc::new(JsRoomCallStateObserver(on_update));
         let s = state.clone();
         wasm_subscribe!(state, call_subs, async move {
-            let Some(room) = s.client().get_room(&rid) else {
-                return;
-            };
-            let mut rx = room.subscribe_to_updates();
-            let mut last = CoreClient::snapshot_room_call_state(&room);
-            safe_call(|| obs.on_update(last.clone()));
-            loop {
-                match rx.recv().await {
-                    Ok(_) => {}
-                    Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
-                    Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
-                        // Fall through to the re-read below: the snapshot heals the gap.
-                        tracing::warn!(room_id = %rid, skipped, "room call-state updates lagged; re-reading snapshot");
-                    }
-                }
-                let next = CoreClient::snapshot_room_call_state(&room);
-                if next != last {
-                    last = next.clone();
-                    safe_call(|| obs.on_update(next));
-                }
-            }
+            s.core.drive_room_call_state(&rid, obs).await;
         })
     }
 
@@ -1788,31 +1413,7 @@ impl WasmClient {
         let obs: Arc<dyn RoomInfoObserver> = Arc::new(JsRoomInfoObserver(on_update));
         let s = state.clone();
         wasm_subscribe!(state, call_subs, async move {
-            let Some(room) = s.client().get_room(&rid) else {
-                return;
-            };
-            let mut rx = room.subscribe_to_updates();
-            let Ok(first) = s.core.build_room_info_snapshot(&room).await else {
-                return;
-            };
-            let mut last = first.clone();
-            safe_call(|| obs.on_update(first));
-            loop {
-                match rx.recv().await {
-                    Ok(_) => {}
-                    Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
-                    Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
-                        tracing::warn!(room_id = %rid, skipped, "room info updates lagged; re-reading snapshot");
-                    }
-                }
-                let Ok(next) = s.core.build_room_info_snapshot(&room).await else {
-                    continue;
-                };
-                if next != last {
-                    last = next.clone();
-                    safe_call(|| obs.on_update(next));
-                }
-            }
+            s.core.drive_room_info(&rid, obs).await;
         })
     }
 
@@ -1837,20 +1438,7 @@ impl WasmClient {
         let obs: Arc<dyn CallDeclineObserver> = Arc::new(JsCallDeclineObserver(on_decline));
         let s = state.clone();
         wasm_subscribe!(state, call_subs, async move {
-            let Some(room) = s.client().get_room(&rid) else {
-                return;
-            };
-            let (_guard, mut rx) = room.subscribe_to_call_decline_events(&eid);
-            loop {
-                match rx.recv().await {
-                    Ok(decliner) => safe_call(|| obs.on_decline(decliner.to_string())),
-                    Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
-                        tracing::warn!(room_id = %rid, notification_event_id = %eid, skipped, "call-decline updates lagged; a decline may have been missed");
-                        continue;
-                    }
-                    Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
-                }
-            }
+            s.core.drive_call_decline(&rid, &eid, obs).await;
         })
     }
 
@@ -1875,22 +1463,7 @@ impl WasmClient {
         let obs: Arc<dyn RecoveryStateObserver> = Arc::new(JsRecoveryStateObserver(on_update));
         let s = state.clone();
         wasm_subscribe!(state, recovery_state_subs, async move {
-            let mut stream = s.client().encryption().recovery().state_stream();
-            while let Some(v) = stream.next().await {
-                let mapped = match v {
-                    matrix_sdk::encryption::recovery::RecoveryState::Disabled => {
-                        RecoveryState::Disabled
-                    }
-                    matrix_sdk::encryption::recovery::RecoveryState::Enabled => {
-                        RecoveryState::Enabled
-                    }
-                    matrix_sdk::encryption::recovery::RecoveryState::Incomplete => {
-                        RecoveryState::Incomplete
-                    }
-                    _ => RecoveryState::Unknown,
-                };
-                safe_call(|| obs.on_update(mapped));
-            }
+            s.core.drive_recovery_state(obs).await;
         })
     }
 
@@ -1902,39 +1475,8 @@ impl WasmClient {
         let obs: Arc<dyn BackupStateObserver> = Arc::new(JsBackupStateObserver(on_update));
         let s = state.clone();
         wasm_subscribe!(state, backup_state_subs, async move {
-            let mut stream = s.client().encryption().backups().state_stream();
-            while let Some(v) = stream.next().await {
-                let mapped = match v {
-                    Ok(matrix_sdk::encryption::backups::BackupState::Enabled) => {
-                        BackupState::Enabled
-                    }
-                    Ok(matrix_sdk::encryption::backups::BackupState::Creating) => {
-                        BackupState::Creating
-                    }
-                    Ok(matrix_sdk::encryption::backups::BackupState::Downloading) => {
-                        BackupState::Downloading
-                    }
-                    _ => BackupState::Unknown,
-                };
-                safe_call(|| obs.on_update(mapped));
-            }
+            s.core.drive_backup_state(obs).await;
         })
-    }
-
-    #[wasm_bindgen(js_name = sendQueueSetEnabled)]
-    pub async fn send_queue_set_enabled(&self, enabled: bool) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_unit(s.core.send_queue_set_enabled(enabled).await)
-    }
-
-    #[wasm_bindgen(js_name = setMarkUnread)]
-    pub async fn set_mark_unread(&self, room_id: String, unread: bool) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_unit(s.core.set_mark_unread(room_id, unread).await)
     }
 
     #[wasm_bindgen(js_name = setPinnedEvents)]
@@ -1953,14 +1495,6 @@ impl WasmClient {
         webffi_unit(s.core.set_pinned_events(room_id, event_ids).await)
     }
 
-    #[wasm_bindgen(js_name = roomTags)]
-    pub async fn room_tags(&self, room_id: String) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_option(s.core.room_tags(room_id).await)
-    }
-
     #[wasm_bindgen(js_name = getPinnedEvents)]
     pub async fn get_pinned_events(&self, room_id: String) -> JsValue {
         let Some(s) = self.state() else {
@@ -1970,14 +1504,6 @@ impl WasmClient {
             Some(ids) => to_json(&ids),
             None => JsValue::NULL,
         }
-    }
-
-    #[wasm_bindgen(js_name = roomNotificationMode)]
-    pub async fn room_notification_mode(&self, room_id: String) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_option(s.core.room_notification_mode(room_id).await)
     }
 
     #[wasm_bindgen(js_name = setRoomNotificationMode)]
@@ -2087,41 +1613,6 @@ impl WasmClient {
         }
     }
 
-    #[wasm_bindgen(js_name = sendThreadText)]
-    pub async fn send_thread_text(
-        &self,
-        room_id: String,
-        root_event_id: String,
-        body: String,
-        reply_to_event_id: Option<String>,
-        latest_event_id: Option<String>,
-        formatted_body: Option<String>,
-    ) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_unit(
-            s.core
-                .send_thread_text(
-                    room_id,
-                    root_event_id,
-                    body,
-                    reply_to_event_id,
-                    latest_event_id,
-                    formatted_body,
-                )
-                .await,
-        )
-    }
-
-    #[wasm_bindgen(js_name = reactionsBatch)]
-    pub async fn reactions_batch(&self, room_id: String, event_ids: Vec<String>) -> JsValue {
-        let Some(s) = self.state() else {
-            return to_json(&HashMap::<String, Vec<ReactionSummary>>::new());
-        };
-        to_json(&s.core.reactions_batch(room_id, event_ids).await)
-    }
-
     #[wasm_bindgen(js_name = roomDirectoryVisibility)]
     pub async fn room_directory_visibility(&self, room_id: String) -> JsValue {
         let Some(s) = self.state() else {
@@ -2187,14 +1678,6 @@ impl WasmClient {
             .set_room_canonical_alias(room_id, alias, alt_aliases)
             .await
             .is_ok()
-    }
-
-    #[wasm_bindgen(js_name = roomAliases)]
-    pub async fn room_aliases(&self, room_id: String) -> JsValue {
-        let Some(s) = self.state() else {
-            return to_json(&Vec::<String>::new());
-        };
-        to_json(&s.core.room_aliases(room_id).await)
     }
 
     #[wasm_bindgen(js_name = roomJoinRule)]
@@ -2542,13 +2025,7 @@ impl WasmClient {
         let obs: Arc<dyn ReceiptsObserver> = Arc::new(JsReceiptsObserver(on_changed));
         let s = state.clone();
         wasm_subscribe!(state, receipts_subs, async move {
-            let stream = s
-                .client()
-                .observe_room_events::<SyncReceiptEvent, matrix_sdk::room::Room>(&rid);
-            let mut sub = stream.subscribe();
-            while let Some((_ev, _room)) = sub.next().await {
-                safe_call(|| obs.on_changed());
-            }
+            s.core.drive_own_receipt(&rid, obs).await;
         })
     }
 
@@ -2567,7 +2044,14 @@ impl WasmClient {
 
         let client = state.client();
 
-        let setup = match state.sync_service.borrow().as_ref().cloned() {
+        let setup = match state
+            .core
+            .sync_service
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_ref()
+            .cloned()
+        {
             Some(svc) => NotificationProcessSetup::SingleProcess { sync_service: svc },
             None => NotificationProcessSetup::MultipleProcesses,
         };
@@ -2737,24 +2221,16 @@ impl WasmClient {
             source,
             format: MediaFormat::File,
         };
-        match state.client().media().get_media_content(&req, true).await {
-            Ok(data) => {
-                let b64 = match base64_encode(&data) {
-                    Ok(s) => s,
-                    Err(e) => {
-                        return webffi_err(&format!(
-                            "base64 encode failed: {:?}",
-                            e.as_string().unwrap_or_default()
-                        ));
-                    }
-                };
-                let mime = att
-                    .mime
-                    .unwrap_or_else(|| "application/octet-stream".to_string());
-                let data_uri = format!("data:{};base64,{}", mime, b64);
-                webffi_value(Ok::<String, String>(data_uri))
-            }
-            Err(e) => webffi_err(&format!("media download failed: {}", e)),
+        match media_data_url(
+            state.client(),
+            &req,
+            |_| att.mime.unwrap_or_else(|| "application/octet-stream".to_string()),
+            "media download",
+        )
+        .await
+        {
+            Ok(data_uri) => webffi_value(Ok::<String, String>(data_uri)),
+            Err(e) => e,
         }
     }
 
@@ -2784,16 +2260,16 @@ impl WasmClient {
             source,
             format: MediaFormat::File,
         };
-        match state.client().media().get_media_content(&req, true).await {
-            Ok(data) => {
-                let b64 = match base64_encode(&data) {
-                    Ok(s) => s,
-                    Err(_) => return webffi_err("base64 encode failed"),
-                };
-                let mime = info.mime.unwrap_or_else(|| "image/png".to_string());
-                JsValue::from_str(&format!("data:{};base64,{}", mime, b64))
-            }
-            Err(e) => webffi_err(&format!("media download failed: {}", e)),
+        match media_data_url(
+            state.client(),
+            &req,
+            |_| info.mime.unwrap_or_else(|| "image/png".to_string()),
+            "media download",
+        )
+        .await
+        {
+            Ok(url) => JsValue::from_str(&url),
+            Err(e) => e,
         }
     }
 
@@ -2836,16 +2312,9 @@ impl WasmClient {
             source,
             format: MediaFormat::Thumbnail(settings),
         };
-        match state.client().media().get_media_content(&req, true).await {
-            Ok(data) => {
-                let b64 = match base64_encode(&data) {
-                    Ok(s) => s,
-                    Err(_) => return webffi_err("base64 encode failed"),
-                };
-                let mime = sniff_image_mime(&data);
-                JsValue::from_str(&format!("data:{};base64,{}", mime, b64))
-            }
-            Err(e) => webffi_err(&format!("thumbnail fetch failed: {}", e)),
+        match media_data_url(state.client(), &req, sniff_image_mime, "thumbnail fetch").await {
+            Ok(url) => JsValue::from_str(&url),
+            Err(e) => e,
         }
     }
 
@@ -2866,16 +2335,9 @@ impl WasmClient {
             source: MediaSource::Plain(uri),
             format: MediaFormat::Thumbnail(settings),
         };
-        match state.client().media().get_media_content(&req, true).await {
-            Ok(data) => {
-                let b64 = match base64_encode(&data) {
-                    Ok(s) => s,
-                    Err(_) => return webffi_err("base64 encode failed"),
-                };
-                let mime = sniff_image_mime(&data);
-                JsValue::from_str(&format!("data:{};base64,{}", mime, b64))
-            }
-            Err(e) => webffi_err(&format!("mxc thumbnail failed: {}", e)),
+        match media_data_url(state.client(), &req, sniff_image_mime, "mxc thumbnail").await {
+            Ok(url) => JsValue::from_str(&url),
+            Err(e) => e,
         }
     }
 
@@ -3148,7 +2610,14 @@ impl WasmClient {
             return JsValue::NULL;
         };
         let _ = state.ensure_sync_service().await;
-        let setup = match state.sync_service.borrow().as_ref().cloned() {
+        let setup = match state
+            .core
+            .sync_service
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_ref()
+            .cloned()
+        {
             Some(svc) => NotificationProcessSetup::SingleProcess { sync_service: svc },
             None => NotificationProcessSetup::MultipleProcesses,
         };
@@ -3183,74 +2652,19 @@ impl WasmClient {
             return String::new();
         };
 
-        let me = match state.client().user_id() {
-            Some(u) => u,
-            None => {
-                call_js(
-                    &on_event,
-                    to_json(&VerifEvent::Error {
-                        message: "No user session".into(),
-                    }),
-                );
-                return String::new();
-            }
-        };
-
-        let device_id = OwnedDeviceId::from(target_device_id);
-        let device = match state.client().encryption().get_device(me, &device_id).await {
-            Ok(Some(d)) => d,
-            Ok(None) => {
-                call_js(
-                    &on_event,
-                    to_json(&VerifEvent::Error {
-                        message: "Device not found".into(),
-                    }),
-                );
-                return String::new();
-            }
+        let (flow_id, request) = match state
+            .core
+            .start_device_verification(target_device_id)
+            .await
+        {
+            Ok(v) => v,
             Err(e) => {
-                call_js(
-                    &on_event,
-                    to_json(&VerifEvent::Error {
-                        message: format!("Failed to get device: {e}"),
-                    }),
-                );
+                emit_verif_err(&on_event, e.to_string());
                 return String::new();
             }
         };
 
-        let request = match device.request_verification().await {
-            Ok(r) => r,
-            Err(e) => {
-                call_js(
-                    &on_event,
-                    to_json(&VerifEvent::Error {
-                        message: format!("Request verification failed: {e}"),
-                    }),
-                );
-                return String::new();
-            }
-        };
-
-        let flow_id = request.flow_id().to_owned();
-
-        let client = state.client().clone();
-        let fid = flow_id.clone();
-        wasm_bindgen_futures::spawn_local(async move {
-            let stream = drive_verification_request(request, true).await;
-            futures_util::pin_mut!(stream);
-            while let Some(event) = stream.next().await {
-                let json = serde_json::to_string(&event).unwrap_or_default();
-                let js_val = JsValue::from_str(&json);
-                call_js(&on_event, js_val);
-                if matches!(event, VerifEvent::Done)
-                    || matches!(event, VerifEvent::Cancelled { .. })
-                {
-                    break;
-                }
-            }
-        });
-
+        spawn_verif_drive(drive_verification_request(request, true), on_event);
         flow_id
     }
 
@@ -3260,64 +2674,15 @@ impl WasmClient {
             return String::new();
         };
 
-        let uid = match user_id.parse::<OwnedUserId>() {
-            Ok(u) => u,
-            Err(_) => {
-                call_js(
-                    &on_event,
-                    to_json(&VerifEvent::Error {
-                        message: "Invalid user ID".into(),
-                    }),
-                );
-                return String::new();
-            }
-        };
-
-        let identity = match state.client().encryption().get_user_identity(&uid).await {
-            Ok(Some(i)) => i,
-            _ => {
-                call_js(
-                    &on_event,
-                    to_json(&VerifEvent::Error {
-                        message: "User identity not found".into(),
-                    }),
-                );
-                return String::new();
-            }
-        };
-
-        let request = match identity.request_verification().await {
-            Ok(r) => r,
+        let (flow_id, request) = match state.core.start_user_verification(user_id).await {
+            Ok(v) => v,
             Err(e) => {
-                call_js(
-                    &on_event,
-                    to_json(&VerifEvent::Error {
-                        message: format!("Request verification failed: {e}"),
-                    }),
-                );
+                emit_verif_err(&on_event, e.to_string());
                 return String::new();
             }
         };
 
-        let flow_id = request.flow_id().to_owned();
-
-        let client = state.client().clone();
-        let fid = flow_id.clone();
-        wasm_bindgen_futures::spawn_local(async move {
-            let stream = drive_verification_request(request, true).await;
-            futures_util::pin_mut!(stream);
-            while let Some(event) = stream.next().await {
-                let json = serde_json::to_string(&event).unwrap_or_default();
-                let js_val = JsValue::from_str(&json);
-                call_js(&on_event, js_val);
-                if matches!(event, VerifEvent::Done)
-                    || matches!(event, VerifEvent::Cancelled { .. })
-                {
-                    break;
-                }
-            }
-        });
-
+        spawn_verif_drive(drive_verification_request(request, true), on_event);
         flow_id
     }
 
@@ -3326,22 +2691,7 @@ impl WasmClient {
         let Some(state) = self.state() else {
             return false;
         };
-
-        let me = match state.client().user_id() {
-            Some(u) => u,
-            None => return false,
-        };
-
-        if let Some(Verification::SasV1(sas)) = state
-            .client()
-            .encryption()
-            .get_verification(me, &flow_id)
-            .await
-        {
-            sas.confirm().await.is_ok()
-        } else {
-            false
-        }
+        state.core.confirm_sas(flow_id, None).await
     }
 
     #[wasm_bindgen(js_name = confirmSasWithUser)]
@@ -3349,25 +2699,7 @@ impl WasmClient {
         let Some(state) = self.state() else {
             return false;
         };
-
-        let user = match other_user_id.parse::<OwnedUserId>() {
-            Ok(u) => u,
-            Err(e) => {
-                tracing::warn!("verification with invalid user id {other_user_id}: {e:?}");
-                return false;
-            }
-        };
-
-        if let Some(Verification::SasV1(sas)) = state
-            .client()
-            .encryption()
-            .get_verification(&user, &flow_id)
-            .await
-        {
-            sas.confirm().await.is_ok()
-        } else {
-            false
-        }
+        state.core.confirm_sas(flow_id, Some(other_user_id)).await
     }
 
     #[wasm_bindgen(js_name = cancelVerification)]
@@ -3375,32 +2707,7 @@ impl WasmClient {
         let Some(state) = self.state() else {
             return false;
         };
-
-        let me = match state.client().user_id() {
-            Some(u) => u,
-            None => return false,
-        };
-
-        if let Some(v) = state
-            .client()
-            .encryption()
-            .get_verification(me, &flow_id)
-            .await
-        {
-            match v {
-                Verification::SasV1(sas) => sas.cancel().await.is_ok(),
-                _ => false,
-            }
-        } else if let Some(req) = state
-            .client()
-            .encryption()
-            .get_verification_request(me, &flow_id)
-            .await
-        {
-            req.cancel().await.is_ok()
-        } else {
-            false
-        }
+        state.core.cancel_verification(flow_id, None).await
     }
 
     #[wasm_bindgen(js_name = cancelVerificationWithUser)]
@@ -3412,50 +2719,18 @@ impl WasmClient {
         let Some(state) = self.state() else {
             return false;
         };
-
-        let user = match other_user_id.parse::<OwnedUserId>() {
-            Ok(u) => u,
-            Err(e) => {
-                tracing::warn!("verification with invalid user id {other_user_id}: {e:?}");
-                return false;
-            }
-        };
-
-        if let Some(v) = state
-            .client()
-            .encryption()
-            .get_verification(&user, &flow_id)
+        state
+            .core
+            .cancel_verification(flow_id, Some(other_user_id))
             .await
-        {
-            match v {
-                Verification::SasV1(sas) => sas.cancel().await.is_ok(),
-                _ => false,
-            }
-        } else if let Some(req) = state
-            .client()
-            .encryption()
-            .get_verification_request(&user, &flow_id)
-            .await
-        {
-            req.cancel().await.is_ok()
-        } else {
-            false
-        }
     }
 
     #[wasm_bindgen(js_name = isUserVerified)]
     pub async fn is_user_verified(&self, user_id: String) -> bool {
-        let Ok(uid) = user_id.parse::<OwnedUserId>() else {
-            return false;
-        };
         let Some(state) = self.state() else {
             return false;
         };
-
-        match state.client().encryption().get_user_identity(&uid).await {
-            Ok(Some(identity)) => identity.is_verified(),
-            _ => false,
-        }
+        state.core.is_user_verified(user_id).await
     }
 
     #[wasm_bindgen(js_name = acceptVerificationRequest)]
@@ -3467,27 +2742,10 @@ impl WasmClient {
         let Some(state) = self.state() else {
             return false;
         };
-
-        let uid = match other_user_id.parse::<OwnedUserId>() {
-            Ok(u) => u,
-            Err(e) => {
-                tracing::warn!("verification with invalid user id {other_user_id}: {e:?}");
-                return false;
-            }
-        };
-
-        for _ in 0..30 {
-            if let Some(req) = state
-                .client()
-                .encryption()
-                .get_verification_request(&uid, &flow_id)
-                .await
-            {
-                return req.accept().await.is_ok();
-            }
-            sleep(Duration::from_millis(200)).await;
-        }
-        false
+        state
+            .core
+            .accept_verification_request(flow_id, Some(other_user_id))
+            .await
     }
 
     #[wasm_bindgen(js_name = acceptSas)]
@@ -3495,29 +2753,7 @@ impl WasmClient {
         let Some(state) = self.state() else {
             return false;
         };
-
-        let uid = match other_user_id.parse::<OwnedUserId>() {
-            Ok(u) => u,
-            Err(e) => {
-                tracing::warn!("verification with invalid user id {other_user_id}: {e:?}");
-                return false;
-            }
-        };
-
-        for _ in 0..30 {
-            if let Some(verification) = state
-                .client()
-                .encryption()
-                .get_verification(&uid, &flow_id)
-                .await
-            {
-                if let Some(sas) = verification.sas() {
-                    return sas.accept().await.is_ok();
-                }
-            }
-            sleep(Duration::from_millis(200)).await;
-        }
-        false
+        state.core.accept_sas(flow_id, Some(other_user_id)).await
     }
 
     #[wasm_bindgen(js_name = acceptAndObserveVerification)]
@@ -3531,68 +2767,20 @@ impl WasmClient {
             return false;
         };
 
-        let uid = match other_user_id.parse::<OwnedUserId>() {
-            Ok(u) => u,
-            Err(_) => {
-                call_js(
-                    &on_event,
-                    to_json(&VerifEvent::Error {
-                        message: "Invalid user ID".into(),
-                    }),
-                );
-                return false;
-            }
-        };
-
         let request = match state
-            .client()
-            .encryption()
-            .get_verification_request(&uid, &flow_id)
+            .core
+            .observation_request(flow_id, other_user_id)
             .await
         {
-            Some(req) => req,
-            None => {
-                call_js(
-                    &on_event,
-                    to_json(&VerifEvent::Error {
-                        message: "Verification request not found".into(),
-                    }),
-                );
+            Ok(req) => req,
+            Err(e) => {
+                emit_verif_err(&on_event, e.to_string());
                 return false;
             }
         };
 
-        wasm_bindgen_futures::spawn_local(async move {
-            let stream = drive_incoming_verification(request).await;
-            futures_util::pin_mut!(stream);
-            while let Some(event) = stream.next().await {
-                let json = serde_json::to_string(&event).unwrap_or_default();
-                call_js(&on_event, JsValue::from_str(&json));
-                if matches!(event, VerifEvent::Done)
-                    || matches!(event, VerifEvent::Cancelled { .. })
-                {
-                    break;
-                }
-            }
-        });
-
+        spawn_verif_drive(drive_incoming_verification(request), on_event);
         true
-    }
-
-    #[wasm_bindgen(js_name = isReactionNotificationsEnabled)]
-    pub async fn is_reaction_notifications_enabled(&self) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_value(s.core.is_reaction_notifications_enabled().await)
-    }
-
-    #[wasm_bindgen(js_name = setReactionNotificationsEnabled)]
-    pub async fn set_reaction_notifications_enabled(&self, enabled: bool) -> JsValue {
-        let Some(s) = self.state() else {
-            return webffi_not_init();
-        };
-        webffi_unit(s.core.set_reaction_notifications_enabled(enabled).await)
     }
 
     #[wasm_bindgen(js_name = isPushRuleEnabled)]

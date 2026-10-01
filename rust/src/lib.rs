@@ -49,6 +49,7 @@ mod core;
 mod errors;
 mod image_packs;
 mod macros;
+mod observe;
 mod platform;
 mod types;
 mod verification_flow;
@@ -78,13 +79,12 @@ use matrix_sdk::{
 };
 use matrix_sdk::{
     encryption::BackupDownloadStrategy,
-    ruma::{
-        OwnedDeviceId, OwnedEventId, OwnedRoomId, OwnedUserId,
-        events::call::invite::OriginalSyncCallInviteEvent, events::receipt::SyncReceiptEvent,
-    },
+    ruma::{OwnedEventId, OwnedRoomId},
 };
+#[cfg(not(target_family = "wasm"))]
+use matrix_sdk::ruma::OwnedUserId;
 use matrix_sdk::{
-    encryption::{EncryptionSettings, verification::Verification},
+    encryption::EncryptionSettings,
     ruma,
 };
 use matrix_sdk_ui::{
@@ -131,7 +131,7 @@ static RT: Lazy<Runtime> = Lazy::new(|| {
         .expect("tokio runtime")
 });
 
-delegate_unit_result! {
+delegate! { unit;
     send_queue_set_enabled(enabled: bool);
     set_typing(room_id: String, typing: bool);
     send_message(room_id: String, body: String, formatted_body: Option<String>);
@@ -195,81 +195,104 @@ delegate_unit_result! {
     decline_knock_request(room_id: String, user_id: String, reason: Option<String>);
 }
 
-#[uniffi::export]
-impl Client {
-    pub fn start_live_location(
-        &self,
-        room_id: String,
-        duration_ms: u64,
-        description: Option<String>,
-    ) -> Result<String, FfiError> {
-        RT.block_on(
-            self.core
-                .start_live_location(room_id, duration_ms, description),
-        )
-    }
-}
-
-delegate_result! { bool; is_user_ignored(user_id: String); is_space(room_id: String);
+delegate! { result bool; is_user_ignored(user_id: String); is_space(room_id: String);
     paginate_backwards(room_id: String, count: u16);
     paginate_forwards(room_id: String, count: u16);
     mark_room_seen_latest(room_id: String, send_public_receipt: bool);
 }
 
-delegate_result! { Vec<MemberSummary>; list_members(room_id: String); }
-delegate_result! { Vec<MemberSummary>; list_banned_members(room_id: String); }
-delegate_result! { Vec<RoomProfile>; list_invited(); }
-delegate_result! { Vec<String>; ignored_users(); }
-delegate_result! { Vec<DirectoryUser>; search_users(search_term: String, limit: u64); }
-delegate_result! { DirectoryUser; get_user_profile(user_id: String); }
-delegate_result! { MutualRooms; mutual_rooms(user_id: String); }
-delegate_result! { PublicRoomsPage; public_rooms(server: Option<String>, search: Option<String>, limit: u32, since: Option<String>); }
-delegate_result! { RoomPowerLevels; room_power_levels(room_id: String); }
-delegate_result! { RoomDirectoryVisibility; room_directory_visibility(room_id: String); }
-delegate_result! { RoomJoinRule; room_join_rule(room_id: String); }
-delegate_result! { Vec<String>; room_join_rule_allow_list(room_id: String); }
-delegate_result! { RoomHistoryVisibility; room_history_visibility(room_id: String); }
-delegate_option! { String; room_inviter(room_id: String); }
-delegate_result! { Vec<SeenByEntry>; seen_by_for_event(room_id: String, event_id: String, limit: u32); }
-delegate_result! { OwnProfile; own_profile(); }
-delegate_result! { String; upgrade_room(room_id: String, new_version: String); ensure_dm(user_id: String); ensure_dm_if_allowed(room_id: String, user_id: String); }
-delegate_result! { RoomActionState; room_action_state(room_id: String); }
-delegate_result! { MemberActionState; member_action_state(room_id: String, user_id: String); }
-delegate_result! { MessageActionState; message_action_state(room_id: String, event_id: String, sender_user_id: String); }
-delegate_result! { Vec<KnockRequestSummary>; list_knock_requests(room_id: String); }
-delegate_result! { bool; can_user_ban(room_id: String, user_id: String); can_user_invite(room_id: String, user_id: String); can_user_redact_other(room_id: String, user_id: String); }
+delegate! { result Vec<MemberSummary>; list_members(room_id: String); }
+delegate! { result Vec<MemberSummary>; list_banned_members(room_id: String); }
+delegate! { result Vec<RoomProfile>; list_invited(); }
+delegate! { result Vec<String>; ignored_users(); }
+delegate! { result Vec<DirectoryUser>; search_users(search_term: String, limit: u64); }
+delegate! { result DirectoryUser; get_user_profile(user_id: String); }
+delegate! { result MutualRooms; mutual_rooms(user_id: String); }
+delegate! { result PublicRoomsPage; public_rooms(server: Option<String>, search: Option<String>, limit: u32, since: Option<String>); }
+delegate! { result RoomPowerLevels; room_power_levels(room_id: String); }
+delegate! { result RoomDirectoryVisibility; room_directory_visibility(room_id: String); }
+delegate! { result RoomJoinRule; room_join_rule(room_id: String); }
+delegate! { result Vec<String>; room_join_rule_allow_list(room_id: String); }
+delegate! { result RoomHistoryVisibility; room_history_visibility(room_id: String); }
+delegate! { option String; room_inviter(room_id: String); }
+delegate! { result Vec<SeenByEntry>; seen_by_for_event(room_id: String, event_id: String, limit: u32); }
+delegate! { result OwnProfile; own_profile(); }
+delegate! { result String; upgrade_room(room_id: String, new_version: String); ensure_dm(user_id: String); ensure_dm_if_allowed(room_id: String, user_id: String); }
+delegate! { result RoomActionState; room_action_state(room_id: String); }
+delegate! { result MemberActionState; member_action_state(room_id: String, user_id: String); }
+delegate! { result MessageActionState; message_action_state(room_id: String, event_id: String, sender_user_id: String); }
+delegate! { result Vec<KnockRequestSummary>; list_knock_requests(room_id: String); }
+delegate! { result bool; can_user_ban(room_id: String, user_id: String); can_user_invite(room_id: String, user_id: String); can_user_redact_other(room_id: String, user_id: String); }
 
-delegate_option! { FfiRoomNotificationMode; room_notification_mode(room_id: String); }
-delegate_result! { bool; is_push_rule_enabled(kind: FfiPushRuleKind, rule_id: String); }
-delegate_result! { bool; is_reaction_notifications_enabled(); }
-delegate_result! { bool; can_set_profile_fields(); }
-delegate_result! { Vec<ProfileField>; own_profile_fields(); }
-delegate_option! { bool; invite_blocked(); }
-delegate_result! { FfiRoomNotificationMode; get_default_room_notification_mode(is_encrypted: bool, is_one_to_one: bool); }
-delegate_option! { UnreadStats; room_unread_stats(room_id: String); }
-delegate_option! { RoomCallState; room_call_state(room_id: String); }
-delegate_option! { RoomInfoSnapshot; room_info_snapshot(room_id: String); }
-delegate_option! { RoomTags; room_tags(room_id: String); }
-delegate_option! { String; dm_peer_user_id(room_id: String); resolve_room_id(id_or_alias: String); account_management_url(); }
-delegate_option! { SuccessorRoomInfo; room_successor(room_id: String); }
-delegate_option! { PredecessorRoomInfo; room_predecessor(room_id: String); }
-delegate_option! { bool; is_marked_unread(room_id: String); }
+delegate! { option FfiRoomNotificationMode; room_notification_mode(room_id: String); }
+delegate! { result bool; is_push_rule_enabled(kind: FfiPushRuleKind, rule_id: String); }
+delegate! { result bool; is_reaction_notifications_enabled(); }
+delegate! { result bool; can_set_profile_fields(); }
+delegate! { result Vec<ProfileField>; own_profile_fields(); }
+delegate! { option bool; invite_blocked(); }
+delegate! { result FfiRoomNotificationMode; get_default_room_notification_mode(is_encrypted: bool, is_one_to_one: bool); }
+delegate! { option UnreadStats; room_unread_stats(room_id: String); }
+delegate! { option RoomCallState; room_call_state(room_id: String); }
+delegate! { option RoomInfoSnapshot; room_info_snapshot(room_id: String); }
+delegate! { option RoomTags; room_tags(room_id: String); }
+delegate! { option String; dm_peer_user_id(room_id: String); resolve_room_id(id_or_alias: String); account_management_url(); }
+delegate! { option SuccessorRoomInfo; room_successor(room_id: String); }
+delegate! { option PredecessorRoomInfo; room_predecessor(room_id: String); }
+delegate! { option bool; is_marked_unread(room_id: String); }
 
-delegate_plain! { Vec<MessageEvent>; recent_events(room_id: String, limit: u32); }
-delegate_plain! { (); apply_sync_presence(state: Presence); }
-delegate_option! { MediaPreviewMode; media_preview_config(); }
-delegate_option! { LinkPreview; get_link_preview(url: String); }
-delegate_unit_result! { set_media_preview_config(previews: MediaPreviewMode); }
-delegate_result! { Option<MessageEvent>; event_details(room_id: String, event_id: String); }
-delegate_result! { ForwardResult; forward_event(source_room_id: String, event_id: String, target_room_ids: Vec<String>); }
-delegate_plain_option! { Vec<String>; get_pinned_events(room_id: String); }
-delegate_plain! { Vec<String>; room_aliases(room_id: String); }
-delegate_plain! { i64; get_user_power_level(room_id: String, user_id: String); }
-delegate_plain! { OwnReceipt; own_last_read(room_id: String); }
-delegate_plain! { HashMap<String, Vec<ReactionSummary>>; reactions_batch(room_id: String, event_ids: Vec<String>); }
-delegate_plain! { Vec<ReactionSummary>; reactions_for_event(room_id: String, event_id: String); }
-delegate_plain! { Vec<SpaceInfo>; my_spaces(); }
-delegate_plain! { Vec<RoomSummary>; rooms(); }
+delegate! { plain Vec<MessageEvent>; recent_events(room_id: String, limit: u32); }
+delegate! { plain (); apply_sync_presence(state: Presence); }
+delegate! { option MediaPreviewMode; media_preview_config(); }
+delegate! { option LinkPreview; get_link_preview(url: String); }
+delegate! { unit; set_media_preview_config(previews: MediaPreviewMode); }
+delegate! { result Option<MessageEvent>; event_details(room_id: String, event_id: String); }
+delegate! { result ForwardResult; forward_event(source_room_id: String, event_id: String, target_room_ids: Vec<String>); }
+delegate! { plain_option Vec<String>; get_pinned_events(room_id: String); }
+delegate! { plain Vec<String>; room_aliases(room_id: String); }
+delegate! { plain i64; get_user_power_level(room_id: String, user_id: String); }
+delegate! { plain OwnReceipt; own_last_read(room_id: String); }
+delegate! { plain HashMap<String, Vec<ReactionSummary>>; reactions_batch(room_id: String, event_ids: Vec<String>); }
+delegate! { plain Vec<ReactionSummary>; reactions_for_event(room_id: String, event_id: String); }
+delegate! { plain Vec<SpaceInfo>; my_spaces(); }
+delegate! { plain Vec<RoomSummary>; rooms(); }
+
+delegate! { unit;
+    set_image_pack_enabled(room_id: String, state_key: String, enabled: bool);
+    remove_image_pack(room_id: String, state_key: String);
+    record_emoji_use(emoji: String);
+    send_sticker_mxc(room_id: String, mxc_url: String, body: String, info_json: Option<String>, thread_root_event_id: Option<String>);
+    join_by_id_or_alias(id_or_alias: String, via: Vec<String>);
+}
+
+delegate! { result String;
+    send_poll_start(room_id: String, def: PollDefinition);
+    create_room(name: Option<String>, topic: Option<String>, invitees: Vec<String>, is_public: bool, room_alias: Option<String>);
+    create_space(name: String, topic: Option<String>, is_public: bool, invitees: Vec<String>);
+    save_image_pack(room_id: String, write_json: String);
+    upload_bytes(bytes: Vec<u8>, mime: String);
+    start_live_location(room_id: String, duration_ms: u64, description: Option<String>);
+}
+
+delegate! { result RoomPreview; room_preview(id_or_alias: String, via: Vec<String>); }
+delegate! { result SpaceHierarchyPage; space_hierarchy(space_id: String, from: Option<String>, limit: u32, max_depth: Option<u32>, suggested_only: bool); }
+delegate! { result Vec<SpaceParentInfo>; room_parent_spaces(room_id: String); }
+delegate! { result Vec<ImagePackSummary>; list_image_packs(room_id: String); list_all_image_packs(refresh: bool); }
+delegate! { result bool; can_edit_image_packs(room_id: String); publish_room_alias(room_id: String, alias: String); unpublish_room_alias(room_id: String, alias: String); }
+delegate! { result Vec<String>; suggest_image_shortcodes(bases: Vec<String>, taken: Vec<String>); }
+delegate! { result Vec<RecentEmojiEntry>; recent_emoji(); }
+delegate! { result ThreadPage; thread_replies(room_id: String, root_event_id: String, from: Option<String>, limit: u32, direction_forward: bool); }
+delegate! { result ThreadSummary; thread_summary(room_id: String, root_event_id: String, per_page: u32, max_pages: u32); }
+delegate! { result PresenceInfo; get_presence(user_id: String); }
+delegate! { option RoomProfile; room_profile(room_id: String); }
+delegate! { plain Vec<SpaceUnread>; space_unread_counts(); }
+delegate! { plain_option RoomUpgradeLinks; room_upgrade_links(room_id: String); }
+delegate! { plain bool; backup_exists_on_server(fetch: bool); set_key_backup_enabled(enabled: bool); retry_by_txn(room_id: String, txn_id: String);
+    is_user_verified(user_id: String);
+    cancel_verification(flow_id: String, other_user_id: Option<String>);
+    confirm_sas(flow_id: String, other_user_id: Option<String>);
+    accept_verification_request(flow_id: String, other_user_id: Option<String>);
+    accept_sas(flow_id: String, other_user_id: Option<String>);
+}
 
 #[derive(Object)]
 pub struct Client {
@@ -869,113 +892,6 @@ impl Client {
         Self::persist_current_session(self).await;
     }
 
-    pub fn room_profile(&self, room_id: String) -> Result<Option<RoomProfile>, FfiError> {
-        RT.block_on(self.core.room_profile(room_id))
-    }
-
-    pub fn send_poll_start(
-        &self,
-        room_id: String,
-        def: PollDefinition,
-    ) -> Result<String, FfiError> {
-        RT.block_on(self.core.send_poll_start(room_id, def))
-    }
-
-    pub fn create_room(
-        &self,
-        name: Option<String>,
-        topic: Option<String>,
-        invitees: Vec<String>,
-        is_public: bool,
-        room_alias: Option<String>,
-    ) -> Result<String, FfiError> {
-        RT.block_on(
-            self.core
-                .create_room(name, topic, invitees, is_public, room_alias),
-        )
-    }
-
-    pub fn create_space(
-        &self,
-        name: String,
-        topic: Option<String>,
-        is_public: bool,
-        invitees: Vec<String>,
-    ) -> Result<String, FfiError> {
-        RT.block_on(self.core.create_space(name, topic, is_public, invitees))
-    }
-
-    pub fn room_preview(
-        &self,
-        id_or_alias: String,
-        via: Vec<String>,
-    ) -> Result<RoomPreview, FfiError> {
-        RT.block_on(self.core.room_preview(id_or_alias, via))
-    }
-
-    pub fn space_hierarchy(
-        &self,
-        space_id: String,
-        from: Option<String>,
-        limit: u32,
-        max_depth: Option<u32>,
-        suggested_only: bool,
-    ) -> Result<SpaceHierarchyPage, FfiError> {
-        RT.block_on(
-            self.core
-                .space_hierarchy(space_id, from, limit, max_depth, suggested_only),
-        )
-    }
-
-    pub fn room_parent_spaces(&self, room_id: String) -> Result<Vec<SpaceParentInfo>, FfiError> {
-        RT.block_on(self.core.room_parent_spaces(room_id))
-    }
-
-    pub fn space_unread_counts(&self) -> Vec<SpaceUnread> {
-        RT.block_on(self.core.space_unread_counts())
-    }
-
-    pub fn list_image_packs(&self, room_id: String) -> Result<Vec<ImagePackSummary>, FfiError> {
-        RT.block_on(self.core.list_image_packs(room_id))
-    }
-
-    pub fn list_all_image_packs(&self, refresh: bool) -> Result<Vec<ImagePackSummary>, FfiError> {
-        RT.block_on(self.core.list_all_image_packs(refresh))
-    }
-
-    pub fn set_image_pack_enabled(
-        &self,
-        room_id: String,
-        state_key: String,
-        enabled: bool,
-    ) -> Result<(), FfiError> {
-        RT.block_on(self.core.set_image_pack_enabled(room_id, state_key, enabled))
-    }
-
-    pub fn can_edit_image_packs(&self, room_id: String) -> Result<bool, FfiError> {
-        RT.block_on(self.core.can_edit_image_packs(room_id))
-    }
-
-    pub fn save_image_pack(
-        &self,
-        room_id: String,
-        write_json: String,
-    ) -> Result<String, FfiError> {
-        RT.block_on(self.core.save_image_pack(room_id, write_json))
-    }
-
-    pub fn remove_image_pack(&self, room_id: String, state_key: String) -> Result<(), FfiError> {
-        RT.block_on(self.core.remove_image_pack(room_id, state_key))
-    }
-
-    pub fn suggest_image_shortcodes(
-        &self,
-        bases: Vec<String>,
-        taken: Vec<String>,
-    ) -> Result<Vec<String>, FfiError> {
-        RT.block_on(self.core.suggest_image_shortcodes(bases, taken))
-    }
-
     /// Web has no filesystem to read a picked file from, so the wasm bridge
     /// takes the bytes directly and this is native-only.
     #[cfg_attr(target_family = "wasm", allow(unused_variables))]
@@ -1007,21 +923,8 @@ impl Client {
         {
             let bytes = std::fs::read(&path)
                 .map_err(|e| FfiError::Msg(format!("cannot read {path}: {e}")))?;
-            RT.block_on(self.core.set_avatar(bytes, &mime))
+            RT.block_on(self.core.set_avatar(bytes, mime))
         }
-    }
-
-    pub fn upload_bytes(&self, bytes: Vec<u8>, mime: String) -> Result<String, FfiError> {
-        crate::check_not_on_runtime(stringify!(upload_bytes))?;
-        RT.block_on(self.core.upload_bytes(bytes, &mime))
-    }
-
-    pub fn recent_emoji(&self) -> Result<Vec<RecentEmojiEntry>, FfiError> {
-        RT.block_on(self.core.recent_emoji())
-    }
-
-    pub fn record_emoji_use(&self, emoji: String) -> Result<(), FfiError> {
-        RT.block_on(self.core.record_emoji_use(emoji))
     }
 
     pub fn pack_image_to_cache(
@@ -1038,77 +941,6 @@ impl Client {
         std::fs::write(&path, &data)
             .map_err(|e| FfiError::Msg(format!("cache write failed: {e}")))?;
         Ok(path.to_string_lossy().into_owned())
-    }
-
-    pub fn send_sticker_mxc(
-        &self,
-        room_id: String,
-        mxc_url: String,
-        body: String,
-        info_json: Option<String>,
-        thread_root_event_id: Option<String>,
-    ) -> Result<(), FfiError> {
-        RT.block_on(self.core.send_sticker_mxc(
-            room_id,
-            mxc_url,
-            body,
-            info_json,
-            thread_root_event_id,
-        ))
-    }
-
-    pub fn thread_replies(
-        &self,
-        room_id: String,
-        root_event_id: String,
-        from: Option<String>,
-        limit: u32,
-        direction_forward: bool,
-    ) -> Result<ThreadPage, FfiError> {
-        RT.block_on(self.core.thread_replies(
-            room_id,
-            root_event_id,
-            from,
-            limit,
-            direction_forward,
-        ))
-    }
-
-    pub fn thread_summary(
-        &self,
-        room_id: String,
-        root_event_id: String,
-        per_page: u32,
-        max_pages: u32,
-    ) -> Result<ThreadSummary, FfiError> {
-        RT.block_on(
-            self.core
-                .thread_summary(room_id, root_event_id, per_page, max_pages),
-        )
-    }
-
-    pub fn get_presence(&self, user_id: String) -> Result<PresenceInfo, FfiError> {
-        RT.block_on(self.core.get_presence(user_id))
-    }
-
-    pub fn publish_room_alias(&self, room_id: String, alias: String) -> Result<bool, FfiError> {
-        RT.block_on(self.core.publish_room_alias(room_id, alias))
-    }
-
-    pub fn unpublish_room_alias(&self, room_id: String, alias: String) -> Result<bool, FfiError> {
-        RT.block_on(self.core.unpublish_room_alias(room_id, alias))
-    }
-
-    pub fn room_upgrade_links(&self, room_id: String) -> Option<RoomUpgradeLinks> {
-        RT.block_on(self.core.room_upgrade_links(room_id))
-    }
-
-    pub fn join_by_id_or_alias(
-        &self,
-        id_or_alias: String,
-        via: Vec<String>,
-    ) -> Result<(), FfiError> {
-        RT.block_on(self.core.join_by_id_or_alias(id_or_alias, via))
     }
 
     pub fn search_room(
@@ -1144,17 +976,7 @@ impl Client {
         let obs: Arc<dyn TypingObserver> = Arc::from(observer);
         let core = self.core.clone();
         sub_manager!(self, typing_subs, async move {
-            let Some((_guard, stream)) = core.typing_stream(&rid).await else {
-                return;
-            };
-            tokio::pin!(stream);
-            let mut last: Vec<String> = Vec::new();
-            while let Some(names) = stream.next().await {
-                if names != last {
-                    last = names.clone();
-                    safe_call(|| obs.on_update(names));
-                }
-            }
+            core.drive_typing(&rid, obs).await;
         })
     }
 
@@ -1169,12 +991,7 @@ impl Client {
         let obs: Arc<dyn ReceiptsObserver> = Arc::from(observer);
         let core = self.core.clone();
         sub_manager!(self, receipts_subs, async move {
-            let Some(mut stream) = core.receipts_changed_stream(&rid).await else {
-                return;
-            };
-            while let Some(()) = stream.next().await {
-                safe_call(|| obs.on_changed());
-            }
+            core.drive_receipts(&rid, obs).await;
         })
     }
 
@@ -1187,13 +1004,9 @@ impl Client {
             return 0;
         };
         let obs: Arc<dyn ReceiptsObserver> = Arc::from(observer);
-        let sdk = self.core.sdk.clone();
+        let core = self.core.clone();
         sub_manager!(self, receipts_subs, async move {
-            let stream = sdk.observe_room_events::<SyncReceiptEvent, matrix_sdk::room::Room>(&rid);
-            let mut sub = stream.subscribe();
-            while let Some((_ev, _room)) = sub.next().await {
-                safe_call(|| obs.on_changed());
-            }
+            core.drive_own_receipt(&rid, obs).await;
         })
     }
 
@@ -1234,146 +1047,7 @@ impl Client {
                 }
             }
 
-            {
-                let before = count_visible_room_view(&tl, &room_id, &me).await;
-                if before < 20 {
-                    let _ = paginate_backwards_visible(
-                        &tl,
-                        &room_id,
-                        &me,
-                        20usize.saturating_sub(before),
-                    )
-                    .await;
-                }
-            }
-
-            let (items, mut stream) = tl.subscribe().await;
-
-            let mut item_ids: Vec<String> = items
-                .iter()
-                .map(|item| item.unique_id().0.to_string())
-                .collect();
-
-            {
-                let mapped = map_timeline_items_to_events(&items, &room_id, &tl, &me);
-                info!(
-                    "observe_timeline Reset room={} cached_items={} mapped={}",
-                    room_id,
-                    items.len(),
-                    mapped.len()
-                );
-                safe_call(|| obs.on_diff(TimelineDiffKind::Reset { values: mapped }));
-            }
-
-            for it in items.iter() {
-                if let Some(ev) = it.as_event() {
-                    if let Some(eid) = missing_reply_event_id(ev) {
-                        let tlc = tl.clone();
-                        spawn_detached!(async move {
-                            let _ = tlc.fetch_details_for_event(eid.as_ref()).await;
-                        });
-                    }
-                }
-            }
-
-            while let Some(diffs) = stream.next().await {
-                for diff in diffs {
-                    match &diff {
-                        VectorDiff::Append { values } => {
-                            item_ids.extend(values.iter().map(|v| v.unique_id().0.to_string()));
-                        }
-                        VectorDiff::PushBack { value } => {
-                            item_ids.push(value.unique_id().0.to_string());
-                        }
-                        VectorDiff::PushFront { value } => {
-                            item_ids.insert(0, value.unique_id().0.to_string());
-                        }
-                        VectorDiff::Insert { index, value } => {
-                            let idx = (*index).min(item_ids.len());
-                            item_ids.insert(idx, value.unique_id().0.to_string());
-                        }
-                        VectorDiff::Set { index, value } => {
-                            if let Some(id) = item_ids.get_mut(*index) {
-                                *id = value.unique_id().0.to_string();
-                            }
-                        }
-                        VectorDiff::Remove { index } => {
-                            if *index < item_ids.len() {
-                                let removed = item_ids.remove(*index);
-                                safe_call(|| {
-                                    obs.on_diff(TimelineDiffKind::RemoveByItemId {
-                                        item_id: removed,
-                                    })
-                                });
-                            }
-                        }
-                        VectorDiff::PopBack => {
-                            if let Some(removed) = item_ids.pop() {
-                                safe_call(|| {
-                                    obs.on_diff(TimelineDiffKind::RemoveByItemId {
-                                        item_id: removed,
-                                    })
-                                });
-                            }
-                        }
-                        VectorDiff::PopFront => {
-                            if !item_ids.is_empty() {
-                                let removed = item_ids.remove(0);
-                                safe_call(|| {
-                                    obs.on_diff(TimelineDiffKind::RemoveByItemId {
-                                        item_id: removed,
-                                    })
-                                });
-                            }
-                        }
-                        VectorDiff::Truncate { length } => {
-                            let keep = (*length).min(item_ids.len());
-                            let removed: Vec<String> = item_ids.drain(keep..).collect();
-                            for item_id in removed {
-                                safe_call(|| {
-                                    obs.on_diff(TimelineDiffKind::RemoveByItemId { item_id })
-                                });
-                            }
-                        }
-                        VectorDiff::Clear => {
-                            item_ids.clear();
-                        }
-                        VectorDiff::Reset { .. } => {}
-                    }
-
-                    match diff {
-                        // Already emitted as RemoveByItemId above.
-                        VectorDiff::Remove { .. }
-                        | VectorDiff::PopBack
-                        | VectorDiff::PopFront
-                        | VectorDiff::Truncate { .. } => {}
-
-                        VectorDiff::Clear => {
-                            // Keep shadow lockstep: empty UI + empty shadow; later stream
-                            // ops rebuild. Never rewrite item_ids from tl.items() here.
-                            safe_call(|| {
-                                obs.on_diff(TimelineDiffKind::Reset { values: Vec::new() })
-                            });
-                        }
-
-                        VectorDiff::Reset { .. } => {
-                            let items = tl.items().await;
-                            item_ids = items
-                                .iter()
-                                .map(|it| it.unique_id().0.to_string())
-                                .collect();
-                            let mapped = map_timeline_items_to_events(&items, &room_id, &tl, &me);
-                            safe_call(|| obs.on_diff(TimelineDiffKind::Reset { values: mapped }));
-                        }
-
-                        other => {
-                            if let Some(mapped) = map_vec_diff(other, &room_id, &tl, &me) {
-                                safe_call(|| obs.on_diff(mapped));
-                            }
-                        }
-                    }
-                }
-            }
+            crate::observe::drive_timeline(tl, &room_id, &me, obs).await;
         });
         self.timeline_sub_rooms
             .lock()
@@ -1551,20 +1225,9 @@ impl Client {
 
     pub fn start_call_inbox(&self, observer: Box<dyn CallObserver>) -> u64 {
         let obs: Arc<dyn CallObserver> = Arc::from(observer);
-        let sdk = self.core.sdk.clone();
+        let core = self.core.clone();
         sub_manager!(self, call_subs, async move {
-            let handler = sdk.observe_events::<OriginalSyncCallInviteEvent, Room>();
-            let mut sub = handler.subscribe();
-            while let Some((ev, room)) = sub.next().await {
-                let invite = CallInvite {
-                    room_id: room.room_id().to_string(),
-                    sender: ev.sender.to_string(),
-                    call_id: ev.content.call_id.to_string(),
-                    is_video: ev.content.offer.sdp.contains("m=video"),
-                    ts_ms: ev.origin_server_ts.0.into(),
-                };
-                safe_call(|| obs.on_invite(invite));
-            }
+            core.drive_call_inbox(obs).await;
         })
     }
 
@@ -1582,29 +1245,9 @@ impl Client {
             return 0;
         };
         let obs: Arc<dyn RoomCallStateObserver> = Arc::from(observer);
-        let sdk = self.core.sdk.clone();
+        let core = self.core.clone();
         sub_manager!(self, call_subs, async move {
-            let Some(room) = sdk.get_room(&rid) else {
-                return;
-            };
-            let mut rx = room.subscribe_to_updates();
-            let mut last = CoreClient::snapshot_room_call_state(&room);
-            safe_call(|| obs.on_update(last.clone()));
-            loop {
-                match rx.recv().await {
-                    Ok(_) => {}
-                    Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
-                    Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
-                        // Fall through to the re-read below: the snapshot heals the gap.
-                        warn!(room_id = %rid, skipped, "room call-state updates lagged; re-reading snapshot");
-                    }
-                }
-                let next = CoreClient::snapshot_room_call_state(&room);
-                if next != last {
-                    last = next.clone();
-                    safe_call(|| obs.on_update(next));
-                }
-            }
+            core.drive_room_call_state(&rid, obs).await;
         })
     }
 
@@ -1620,35 +1263,7 @@ impl Client {
         let obs: Arc<dyn RoomInfoObserver> = Arc::from(observer);
         let core = self.core.clone();
         sub_manager!(self, call_subs, async move {
-            let Some(room) = core.sdk.get_room(&rid) else {
-                return;
-            };
-            let mut rx = room.subscribe_to_updates();
-            match core.build_room_info_snapshot(&room).await {
-                Ok(first) => {
-                    let mut last = first.clone();
-                    safe_call(|| obs.on_update(first));
-                    loop {
-                        match rx.recv().await {
-                            Ok(_) => {}
-                            Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
-                            Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
-                                warn!(room_id = %rid, skipped, "room info updates lagged; re-reading snapshot");
-                            }
-                        }
-                        let Ok(next) = core.build_room_info_snapshot(&room).await else {
-                            continue;
-                        };
-                        if next != last {
-                            last = next.clone();
-                            safe_call(|| obs.on_update(next));
-                        }
-                    }
-                }
-                Err(e) => {
-                    warn!(room_id = %rid, "observe_room_info: initial snapshot failed: {e}");
-                }
-            }
+            core.drive_room_info(&rid, obs).await;
         })
     }
 
@@ -1671,26 +1286,9 @@ impl Client {
             return 0;
         };
         let obs: Arc<dyn CallDeclineObserver> = Arc::from(observer);
-        let sdk = self.core.sdk.clone();
+        let core = self.core.clone();
         sub_manager!(self, call_subs, async move {
-            let Some(room) = sdk.get_room(&rid) else {
-                return;
-            };
-            let (_guard, mut rx) = room.subscribe_to_call_decline_events(&eid);
-            loop {
-                match rx.recv().await {
-                    Ok(decliner) => safe_call(|| obs.on_decline(decliner.to_string())),
-                    // Lagged means we may have missed a decline: keep listening
-                    // (future declines still arrive). The ringing timeout and the
-                    // room call-state observer remain as backstops. Only Closed
-                    // ends the stream.
-                    Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
-                        warn!(room_id = %rid, notification_event_id = %eid, skipped, "call-decline updates lagged; a decline may have been missed");
-                        continue;
-                    }
-                    Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
-                }
-            }
+            core.drive_call_decline(&rid, &eid, obs).await;
         })
     }
 
@@ -1707,67 +1305,9 @@ impl Client {
             return 0;
         };
         let obs: Arc<dyn LiveLocationObserver> = Arc::from(observer);
-        let sdk = self.core.sdk.clone();
+        let core = self.core.clone();
         sub_manager!(self, live_location_subs, async move {
-            let Some(room) = sdk.get_room(&rid) else {
-                return;
-            };
-            let observable = room.live_locations_observer().await;
-            let (initial_shares, stream) = observable.subscribe();
-            // Keep observable alive so its event handlers stay registered.
-            let _observable = observable;
-            let mut all_shares: Vec<LiveLocationShareInfo> =
-                initial_shares.iter().map(map_live_location_share).collect();
-            safe_call(|| obs.on_update(all_shares.clone()));
-            let mut stream = stream;
-            while let Some(diffs) = stream.next().await {
-                for diff in diffs {
-                    if let Some(mapped) = map_live_location_vec_diff(diff) {
-                        match mapped {
-                            VectorDiff::Insert { index, value } => {
-                                let idx = index.min(all_shares.len());
-                                if idx != index {
-                                    warn!("live-location Insert OOB: {index}");
-                                }
-                                all_shares.insert(idx, value);
-                            }
-                            VectorDiff::Set { index, value } => {
-                                if let Some(slot) = all_shares.get_mut(index) {
-                                    *slot = value;
-                                } else {
-                                    warn!("live-location Set OOB: {index}");
-                                }
-                            }
-                            VectorDiff::Remove { index } => {
-                                if index < all_shares.len() {
-                                    all_shares.remove(index);
-                                } else {
-                                    warn!("live-location Remove OOB: {index}");
-                                }
-                            }
-                            VectorDiff::PushBack { value } => all_shares.push(value),
-                            VectorDiff::PopBack => {
-                                all_shares.pop();
-                            }
-                            VectorDiff::PushFront { value } => all_shares.insert(0, value),
-                            VectorDiff::PopFront => {
-                                if !all_shares.is_empty() {
-                                    all_shares.remove(0);
-                                } else {
-                                    warn!("live-location PopFront on empty");
-                                }
-                            }
-                            VectorDiff::Clear => all_shares.clear(),
-                            VectorDiff::Truncate { length } => all_shares.truncate(length),
-                            VectorDiff::Append { values } => all_shares.extend(values),
-                            VectorDiff::Reset { values } => {
-                                all_shares = values.into_iter().collect();
-                            }
-                        }
-                    }
-                }
-                safe_call(|| obs.on_update(all_shares.clone()));
-            }
+            core.drive_live_location(&rid, obs).await;
         })
     }
 
@@ -1857,24 +1397,9 @@ impl Client {
 
     pub fn observe_recovery_state(&self, observer: Box<dyn RecoveryStateObserver>) -> u64 {
         let obs: Arc<dyn RecoveryStateObserver> = Arc::from(observer);
-        let sdk = self.core.sdk.clone();
+        let core = self.core.clone();
         sub_manager!(self, recovery_state_subs, async move {
-            let mut stream = sdk.encryption().recovery().state_stream();
-            while let Some(state) = stream.next().await {
-                let mapped = match state {
-                    matrix_sdk::encryption::recovery::RecoveryState::Disabled => {
-                        RecoveryState::Disabled
-                    }
-                    matrix_sdk::encryption::recovery::RecoveryState::Enabled => {
-                        RecoveryState::Enabled
-                    }
-                    matrix_sdk::encryption::recovery::RecoveryState::Incomplete => {
-                        RecoveryState::Incomplete
-                    }
-                    _ => RecoveryState::Unknown,
-                };
-                safe_call(|| obs.on_update(mapped));
-            }
+            core.drive_recovery_state(obs).await;
         })
     }
 
@@ -1884,39 +1409,9 @@ impl Client {
 
     pub fn observe_backup_state(&self, observer: Box<dyn BackupStateObserver>) -> u64 {
         let obs: Arc<dyn BackupStateObserver> = Arc::from(observer);
-        let sdk = self.core.sdk.clone();
+        let core = self.core.clone();
         sub_manager!(self, backup_state_subs, async move {
-            let mut stream = sdk.encryption().backups().state_stream();
-            while let Some(state) = stream.next().await {
-                let mapped = match state {
-                    Ok(matrix_sdk::encryption::backups::BackupState::Unknown) => {
-                        BackupState::Unknown
-                    }
-                    Ok(matrix_sdk::encryption::backups::BackupState::Creating) => {
-                        BackupState::Creating
-                    }
-                    Ok(matrix_sdk::encryption::backups::BackupState::Enabling) => {
-                        BackupState::Enabling
-                    }
-                    Ok(matrix_sdk::encryption::backups::BackupState::Resuming) => {
-                        BackupState::Resuming
-                    }
-                    Ok(matrix_sdk::encryption::backups::BackupState::Enabled) => {
-                        BackupState::Enabled
-                    }
-                    Ok(matrix_sdk::encryption::backups::BackupState::Downloading) => {
-                        BackupState::Downloading
-                    }
-                    Ok(matrix_sdk::encryption::backups::BackupState::Disabling) => {
-                        BackupState::Disabling
-                    }
-                    Err(e) => {
-                        warn!("backup state query failed: {e:?}");
-                        BackupState::Unknown
-                    }
-                };
-                safe_call(|| obs.on_update(mapped));
-            }
+            core.drive_backup_state(obs).await;
         })
     }
 
@@ -2959,33 +2454,8 @@ impl Client {
         })
     }
 
-    pub fn is_user_verified(&self, user_id: String) -> bool {
-        RT.block_on(async {
-            let Ok(uid) = user_id.parse::<OwnedUserId>() else {
-                return false;
-            };
-            let Ok(Some(identity)) = self.core.sdk.encryption().get_user_identity(&uid).await
-            else {
-                return false;
-            };
-            identity.is_verified()
-        })
-    }
-
     pub fn setup_recovery(&self, observer: Box<dyn RecoveryObserver>) -> bool {
         self.enable_recovery(observer)
-    }
-
-    pub fn backup_exists_on_server(&self, fetch: bool) -> bool {
-        RT.block_on(self.core.backup_exists_on_server(fetch))
-    }
-
-    pub fn set_key_backup_enabled(&self, enabled: bool) -> bool {
-        RT.block_on(self.core.set_key_backup_enabled(enabled))
-    }
-
-    pub fn retry_by_txn(&self, room_id: String, txn_id: String) -> bool {
-        RT.block_on(self.core.retry_by_txn(room_id, txn_id))
     }
 
     pub fn send_attachment_from_path(
@@ -3450,13 +2920,28 @@ impl Client {
                 source: MediaSource::Plain(mxc_uri.clone().into()),
                 format: MediaFormat::Thumbnail(settings),
             };
-            let bytes = self
+            let bytes = match self
                 .core
                 .sdk
                 .media()
                 .get_media_content(&req, true)
                 .await
-                .ffi()?;
+            {
+                Ok(b) => b,
+                Err(thumb_err) => {
+                    // Federated or thumbnail-hostile media frequently has no
+                    // server-side thumb, so fall back to the original exactly
+                    // like `thumbnail_to_cache` does.
+                    let full = MediaRequestParameters {
+                        source: MediaSource::Plain(mxc_uri.clone().into()),
+                        format: MediaFormat::File,
+                    };
+                    match self.core.sdk.media().get_media_content(&full, true).await {
+                        Ok(b) => b,
+                        Err(_) => return Err(FfiError::Msg(thumb_err.to_string())),
+                    }
+                }
+            };
             let ext = if bytes.starts_with(&[0x89, b'P', b'N', b'G']) {
                 "png"
             } else if bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
@@ -3513,66 +2998,19 @@ impl Client {
         listener: Box<dyn VerifEventListener>,
     ) -> String {
         let lis: Arc<dyn VerifEventListener> = Arc::from(listener);
-        let emit_err = |lis: &Arc<dyn VerifEventListener>, msg: String| {
-            let err = serde_json::to_string(&crate::verification_flow::VerifEvent::Error {
-                message: msg,
-            })
-            .unwrap_or_default();
-            lis.on_event(err);
-        };
-
-        let me = match self.core.sdk.user_id() {
-            Some(u) => u,
-            None => {
-                emit_err(&lis, "No user session".into());
-                return String::new();
-            }
-        };
-        let device_id_owned = OwnedDeviceId::from(device_id);
-        let device = match RT.block_on(self.core.sdk.encryption().get_device(me, &device_id_owned))
-        {
-            Ok(Some(d)) => d,
-            Ok(None) => {
-                emit_err(&lis, "Device not found".into());
-                return String::new();
+        match RT.block_on(self.core.start_device_verification(device_id)) {
+            Ok((flow_id, request)) => {
+                self.spawn_verif_drive(
+                    crate::verification_flow::drive_verification_request(request, true),
+                    lis,
+                );
+                flow_id
             }
             Err(e) => {
-                emit_err(&lis, format!("Failed to get device: {e}"));
-                return String::new();
+                lis.on_event(crate::verification_flow::error_json(e.to_string()));
+                String::new()
             }
-        };
-        let request = match RT.block_on(device.request_verification()) {
-            Ok(r) => r,
-            Err(e) => {
-                emit_err(&lis, format!("Request verification failed: {e}"));
-                return String::new();
-            }
-        };
-        let flow_id = request.flow_id().to_owned();
-        let req = request;
-        let lis2 = lis.clone();
-
-        let h = spawn_task!(async move {
-            let stream = crate::verification_flow::drive_verification_request(req, true).await;
-            futures_util::pin_mut!(stream);
-            while let Some(event) = stream.next().await {
-                let json = serde_json::to_string(&event).unwrap_or_default();
-                lis2.on_event(json);
-                if matches!(event, crate::verification_flow::VerifEvent::Done)
-                    || matches!(
-                        event,
-                        crate::verification_flow::VerifEvent::Cancelled { .. }
-                    )
-                {
-                    break;
-                }
-            }
-        });
-        self.guards
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .push(h);
-        flow_id
+        }
     }
 
     pub fn start_user_verification(
@@ -3581,202 +3019,19 @@ impl Client {
         listener: Box<dyn VerifEventListener>,
     ) -> String {
         let lis: Arc<dyn VerifEventListener> = Arc::from(listener);
-        let emit_err = |lis: &Arc<dyn VerifEventListener>, msg: String| {
-            let err = serde_json::to_string(&crate::verification_flow::VerifEvent::Error {
-                message: msg,
-            })
-            .unwrap_or_default();
-            lis.on_event(err);
-        };
-
-        let Ok(uid) = user_id.parse::<OwnedUserId>() else {
-            emit_err(&lis, "Invalid user ID".into());
-            return String::new();
-        };
-        let identity = match RT.block_on(self.core.sdk.encryption().get_user_identity(&uid)) {
-            Ok(Some(i)) => i,
-            Ok(None) => {
-                emit_err(&lis, "User identity not found".into());
-                return String::new();
+        match RT.block_on(self.core.start_user_verification(user_id)) {
+            Ok((flow_id, request)) => {
+                self.spawn_verif_drive(
+                    crate::verification_flow::drive_verification_request(request, true),
+                    lis,
+                );
+                flow_id
             }
             Err(e) => {
-                emit_err(&lis, format!("Failed to get user identity: {e}"));
-                return String::new();
+                lis.on_event(crate::verification_flow::error_json(e.to_string()));
+                String::new()
             }
-        };
-        let request = match RT.block_on(identity.request_verification()) {
-            Ok(r) => r,
-            Err(e) => {
-                emit_err(&lis, format!("Request verification failed: {e}"));
-                return String::new();
-            }
-        };
-        let flow_id = request.flow_id().to_owned();
-        let req = request;
-        let lis2 = lis.clone();
-
-        let h = spawn_task!(async move {
-            let stream = crate::verification_flow::drive_verification_request(req, true).await;
-            futures_util::pin_mut!(stream);
-            while let Some(event) = stream.next().await {
-                let json = serde_json::to_string(&event).unwrap_or_default();
-                lis2.on_event(json);
-                if matches!(event, crate::verification_flow::VerifEvent::Done)
-                    || matches!(
-                        event,
-                        crate::verification_flow::VerifEvent::Cancelled { .. }
-                    )
-                {
-                    break;
-                }
-            }
-        });
-        self.guards
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .push(h);
-        flow_id
-    }
-
-    pub fn cancel_verification(&self, flow_id: String, other_user_id: Option<String>) -> bool {
-        let uid = match other_user_id {
-            Some(u) => match u.parse::<OwnedUserId>() {
-                Ok(uid) => uid,
-                Err(e) => {
-                    warn!("verification with invalid user id {u}: {e:?}");
-                    return false;
-                }
-            },
-            None => match self.core.sdk.user_id() {
-                Some(u) => u.to_owned(),
-                None => return false,
-            },
-        };
-
-        RT.block_on(async {
-            if let Some(v) = self
-                .core
-                .sdk
-                .encryption()
-                .get_verification(&uid, &flow_id)
-                .await
-            {
-                match v {
-                    Verification::SasV1(sas) => sas.cancel().await.is_ok(),
-                    _ => false,
-                }
-            } else if let Some(req) = self
-                .core
-                .sdk
-                .encryption()
-                .get_verification_request(&uid, &flow_id)
-                .await
-            {
-                req.cancel().await.is_ok()
-            } else {
-                false
-            }
-        })
-    }
-
-    pub fn confirm_sas(&self, flow_id: String, other_user_id: Option<String>) -> bool {
-        let uid = match other_user_id {
-            Some(u) => match u.parse::<OwnedUserId>() {
-                Ok(uid) => uid,
-                Err(e) => {
-                    warn!("verification with invalid user id {u}: {e:?}");
-                    return false;
-                }
-            },
-            None => match self.core.sdk.user_id() {
-                Some(u) => u.to_owned(),
-                None => return false,
-            },
-        };
-
-        RT.block_on(async {
-            if let Some(Verification::SasV1(sas)) = self
-                .core
-                .sdk
-                .encryption()
-                .get_verification(&uid, &flow_id)
-                .await
-            {
-                sas.confirm().await.is_ok()
-            } else {
-                false
-            }
-        })
-    }
-
-    pub fn accept_verification_request(
-        &self,
-        flow_id: String,
-        other_user_id: Option<String>,
-    ) -> bool {
-        let uid = match other_user_id {
-            Some(u) => match u.parse::<OwnedUserId>() {
-                Ok(uid) => uid,
-                Err(e) => {
-                    warn!("verification with invalid user id {u}: {e:?}");
-                    return false;
-                }
-            },
-            None => match self.core.sdk.user_id() {
-                Some(u) => u.to_owned(),
-                None => return false,
-            },
-        };
-
-        RT.block_on(async {
-            for _ in 0..30 {
-                if let Some(req) = self
-                    .core
-                    .sdk
-                    .encryption()
-                    .get_verification_request(&uid, &flow_id)
-                    .await
-                {
-                    return req.accept().await.is_ok();
-                }
-                sleep(Duration::from_millis(200)).await;
-            }
-            false
-        })
-    }
-
-    pub fn accept_sas(&self, flow_id: String, other_user_id: Option<String>) -> bool {
-        let uid = match other_user_id {
-            Some(u) => match u.parse::<OwnedUserId>() {
-                Ok(uid) => uid,
-                Err(e) => {
-                    warn!("verification with invalid user id {u}: {e:?}");
-                    return false;
-                }
-            },
-            None => match self.core.sdk.user_id() {
-                Some(u) => u.to_owned(),
-                None => return false,
-            },
-        };
-
-        RT.block_on(async {
-            for _ in 0..30 {
-                if let Some(verification) = self
-                    .core
-                    .sdk
-                    .encryption()
-                    .get_verification(&uid, &flow_id)
-                    .await
-                {
-                    if let Some(sas) = verification.sas() {
-                        return sas.accept().await.is_ok();
-                    }
-                }
-                sleep(Duration::from_millis(200)).await;
-            }
-            false
-        })
+        }
     }
 
     pub fn accept_and_observe_verification(
@@ -3786,49 +3041,19 @@ impl Client {
         listener: Box<dyn VerifEventListener>,
     ) -> bool {
         let lis: Arc<dyn VerifEventListener> = Arc::from(listener);
-
-        let uid = match other_user_id.parse::<OwnedUserId>() {
-            Ok(u) => u,
-            Err(e) => {
-                warn!(
-                    "accept_and_observe_verification with invalid user id {other_user_id}: {e:?}"
+        match RT.block_on(self.core.observation_request(flow_id, other_user_id)) {
+            Ok(request) => {
+                self.spawn_verif_drive(
+                    crate::verification_flow::drive_incoming_verification(request),
+                    lis,
                 );
-                return false;
+                true
             }
-        };
-
-        let request = match RT.block_on(
-            self.core
-                .sdk
-                .encryption()
-                .get_verification_request(&uid, &flow_id),
-        ) {
-            Some(req) => req,
-            None => return false,
-        };
-
-        let lis2 = lis.clone();
-        let h = spawn_task!(async move {
-            let stream = crate::verification_flow::drive_incoming_verification(request).await;
-            futures_util::pin_mut!(stream);
-            while let Some(event) = stream.next().await {
-                let json = serde_json::to_string(&event).unwrap_or_default();
-                lis2.on_event(json);
-                if matches!(event, crate::verification_flow::VerifEvent::Done)
-                    || matches!(
-                        event,
-                        crate::verification_flow::VerifEvent::Cancelled { .. }
-                    )
-                {
-                    break;
-                }
+            Err(e) => {
+                lis.on_event(crate::verification_flow::error_json(e.to_string()));
+                false
             }
-        });
-        self.guards
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .push(h);
-        true
+        }
     }
 
     pub fn shutdown(&self) {
@@ -3837,6 +3062,28 @@ impl Client {
 }
 
 impl Client {
+    fn track_task(&self, handle: tokio::task::JoinHandle<()>) {
+        self.guards
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .push(handle);
+    }
+
+    fn spawn_verif_drive<F, S>(&self, build: F, listener: Arc<dyn VerifEventListener>)
+    where
+        F: futures_util::Future<Output = S> + SpawnBound + 'static,
+        S: futures_util::Stream<Item = crate::verification_flow::VerifEvent> + SpawnBound + 'static,
+    {
+        let h = spawn_task!(async move {
+            let stream = build.await;
+            crate::verification_flow::drive_and_emit(stream, move |json| {
+                listener.on_event(json.to_string());
+            })
+            .await;
+        });
+        self.track_task(h);
+    }
+
     fn shutdown_inner(&self) {
         for h in self
             .guards

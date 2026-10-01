@@ -14,8 +14,8 @@ macro_rules! abort_all_subs {
 }
 pub(crate) use abort_all_subs;
 
-macro_rules! delegate_unit_result {
-    ($($name:ident($($arg:ident : $ty:ty),* $(,)?));+ $(;)?) => {
+macro_rules! delegate {
+    (unit; $($name:ident($($arg:ident : $ty:ty),* $(,)?));+ $(;)?) => {
         #[uniffi::export]
         impl Client {
             $(
@@ -26,11 +26,7 @@ macro_rules! delegate_unit_result {
             )+
         }
     };
-}
-pub(crate) use delegate_unit_result;
-
-macro_rules! delegate_result {
-    ($ret:ty; $($name:ident($($arg:ident : $ty:ty),* $(,)?));+ $(;)?) => {
+    (result $ret:ty; $($name:ident($($arg:ident : $ty:ty),* $(,)?));+ $(;)?) => {
         #[uniffi::export]
         impl Client {
             $(
@@ -41,11 +37,7 @@ macro_rules! delegate_result {
             )+
         }
     };
-}
-pub(crate) use delegate_result;
-
-macro_rules! delegate_option {
-    ($ret:ty; $($name:ident($($arg:ident : $ty:ty),* $(,)?));+ $(;)?) => {
+    (option $ret:ty; $($name:ident($($arg:ident : $ty:ty),* $(,)?));+ $(;)?) => {
         #[uniffi::export]
         impl Client {
             $(
@@ -56,11 +48,7 @@ macro_rules! delegate_option {
             )+
         }
     };
-}
-pub(crate) use delegate_option;
-
-macro_rules! delegate_plain {
-    ($ret:ty; $($name:ident($($arg:ident : $ty:ty),* $(,)?));+ $(;)?) => {
+    (plain $ret:ty; $($name:ident($($arg:ident : $ty:ty),* $(,)?));+ $(;)?) => {
         #[uniffi::export]
         impl Client {
             $(
@@ -74,11 +62,7 @@ macro_rules! delegate_plain {
             )+
         }
     };
-}
-pub(crate) use delegate_plain;
-
-macro_rules! delegate_plain_option {
-    ($ret:ty; $($name:ident($($arg:ident : $ty:ty),* $(,)?));+ $(;)?) => {
+    (plain_option $ret:ty; $($name:ident($($arg:ident : $ty:ty),* $(,)?));+ $(;)?) => {
         #[uniffi::export]
         impl Client {
             $(
@@ -93,7 +77,7 @@ macro_rules! delegate_plain_option {
         }
     };
 }
-pub(crate) use delegate_plain_option;
+pub(crate) use delegate;
 
 macro_rules! sub_manager {
     ($self:expr, $subs:ident, $spawn:expr) => {{
@@ -132,6 +116,15 @@ macro_rules! spawn_task {
 pub(crate) use spawn_task;
 
 #[cfg(not(target_family = "wasm"))]
+pub(crate) trait SpawnBound: Send {}
+#[cfg(not(target_family = "wasm"))]
+impl<T: Send> SpawnBound for T {}
+#[cfg(target_family = "wasm")]
+pub(crate) trait SpawnBound {}
+#[cfg(target_family = "wasm")]
+impl<T> SpawnBound for T {}
+
+#[cfg(not(target_family = "wasm"))]
 macro_rules! spawn_detached {
     ($fut:expr) => {{
         let _ = tokio::spawn($fut);
@@ -145,121 +138,35 @@ macro_rules! spawn_detached {
 }
 pub(crate) use spawn_detached;
 
-/// Delegates async methods that return bool directly from core.
 #[cfg(target_family = "wasm")]
-macro_rules! wasm_delegate_bool {
-    ($( $js_name:literal => $method:ident($($arg:ident : $ty:ty),*) );+ $(;)?) => {
+macro_rules! wasm_delegate {
+    ($wrap:expr; $( $js_name:literal => $method:ident($($arg:ident : $ty:ty),*) or $default:expr ; )+ $(;)?) => {
+        #[wasm_bindgen]
+        impl WasmClient {
+            $(
+                #[wasm_bindgen(js_name = $js_name)]
+                pub async fn $method(&self, $($arg: $ty),*) -> JsValue {
+                    let Some(s) = self.state() else { return ($wrap)($default); };
+                    ($wrap)(s.core.$method($($arg),*).await)
+                }
+            )+
+        }
+    };
+    ($wrap:expr; $( $js_name:literal => $method:ident($($arg:ident : $ty:ty),*) ; )+ $(;)?) => {
         #[wasm_bindgen]
         impl WasmClient {
             $(
                 #[wasm_bindgen(js_name = $js_name)]
                 pub async fn $method(&self, $($arg: $ty),*) -> JsValue {
                     let Some(s) = self.state() else { return webffi_not_init(); };
-                    webffi_bool(s.core.$method($($arg),*).await)
+                    ($wrap)(s.core.$method($($arg),*).await)
                 }
             )+
         }
     };
 }
 #[cfg(target_family = "wasm")]
-pub(crate) use wasm_delegate_bool;
-
-/// Delegates async methods returning Result<(), _> as bool.
-#[cfg(target_family = "wasm")]
-macro_rules! wasm_delegate_result_bool {
-    ($( $js_name:literal => $method:ident($($arg:ident : $ty:ty),*) );+ $(;)?) => {
-        #[wasm_bindgen]
-        impl WasmClient {
-            $(
-                #[wasm_bindgen(js_name = $js_name)]
-                pub async fn $method(&self, $($arg: $ty),*) -> JsValue {
-                    let Some(s) = self.state() else { return webffi_not_init(); };
-                    webffi_unit(s.core.$method($($arg),*).await)
-                }
-            )+
-        }
-    };
-}
-#[cfg(target_family = "wasm")]
-pub(crate) use wasm_delegate_result_bool;
-
-/// Delegates async methods returning Result<bool, FfiError> as bool.
-#[cfg(target_family = "wasm")]
-macro_rules! wasm_delegate_result_bool_as_bool {
-    ($( $js_name:literal => $method:ident($($arg:ident : $ty:ty),*) );+ $(;)?) => {
-        #[wasm_bindgen]
-        impl WasmClient {
-            $(
-                #[wasm_bindgen(js_name = $js_name)]
-                pub async fn $method(&self, $($arg: $ty),*) -> JsValue {
-                    let Some(s) = self.state() else { return webffi_not_init(); };
-                    webffi_bool(s.core.$method($($arg),*).await)
-                }
-            )+
-        }
-    };
-}
-#[cfg(target_family = "wasm")]
-pub(crate) use wasm_delegate_result_bool_as_bool;
-
-/// Delegates async methods returning a value, serialized to JsValue.
-/// Requires a default expression for when state is None.
-#[cfg(target_family = "wasm")]
-macro_rules! wasm_delegate_json {
-    ($( $js_name:literal => $method:ident($($arg:ident : $ty:ty),*) or $default:expr );+ $(;)?) => {
-        #[wasm_bindgen]
-        impl WasmClient {
-            $(
-                #[wasm_bindgen(js_name = $js_name)]
-                pub async fn $method(&self, $($arg: $ty),*) -> JsValue {
-                    let Some(s) = self.state() else { return to_json(&$default); };
-                    to_json(&s.core.$method($($arg),*).await)
-                }
-            )+
-        }
-    };
-}
-#[cfg(target_family = "wasm")]
-pub(crate) use wasm_delegate_json;
-
-/// Delegates async methods returning Result<T, _> -> JsValue or NULL on error.
-#[cfg(target_family = "wasm")]
-macro_rules! wasm_delegate_result_json {
-    ($( $js_name:literal => $method:ident($($arg:ident : $ty:ty),*) );+ $(;)?) => {
-        #[wasm_bindgen]
-        impl WasmClient {
-            $(
-                #[wasm_bindgen(js_name = $js_name)]
-                pub async fn $method(&self, $($arg: $ty),*) -> JsValue {
-                    let Some(s) = self.state() else { return webffi_not_init(); };
-                    webffi_value(s.core.$method($($arg),*).await)
-                }
-            )+
-        }
-    };
-}
-#[cfg(target_family = "wasm")]
-pub(crate) use wasm_delegate_result_json;
-
-/// Delegates async methods returning Option<T> -> JsValue or NULL.
-#[cfg(target_family = "wasm")]
-macro_rules! wasm_delegate_option_json {
-    ($( $js_name:literal => $method:ident($($arg:ident : $ty:ty),*) );+ $(;)?) => {
-        #[wasm_bindgen]
-        impl WasmClient {
-            $(
-                #[wasm_bindgen(js_name = $js_name)]
-                pub async fn $method(&self, $($arg: $ty),*) -> JsValue {
-                    let Some(s) = self.state() else { return webffi_not_init(); };
-                    webffi_option(s.core.$method($($arg),*).await)
-                }
-            )+
-        }
-    };
-}
-
-#[cfg(target_family = "wasm")]
-pub(crate) use wasm_delegate_option_json;
+pub(crate) use wasm_delegate;
 
 /// Generates unobserve methods that abort a subscription handle.
 #[cfg(target_family = "wasm")]

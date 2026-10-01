@@ -2397,17 +2397,26 @@ impl CoreClient {
         member.avatar_url().map(|mxc| mxc.to_string())
     }
 
+    fn member_action_target(
+        &self,
+        room_id: &str,
+        user_id: &str,
+    ) -> Result<(Room, OwnedUserId), FfiError> {
+        let room = self
+            .room(room_id)
+            .ok_or_else(|| FfiError::Msg("room not found".into()))?;
+        let uid = OwnedUserId::try_from(user_id)
+            .map_err(|_| FfiError::Msg("invalid user id".into()))?;
+        Ok((room, uid))
+    }
+
     pub async fn ban_user(
         &self,
         room_id: String,
         user_id: String,
         reason: Option<String>,
     ) -> Result<(), FfiError> {
-        let room = self
-            .room(&room_id)
-            .ok_or_else(|| FfiError::Msg("room not found".into()))?;
-        let uid = OwnedUserId::try_from(user_id.as_str())
-            .map_err(|_| FfiError::Msg("invalid user id".into()))?;
+        let (room, uid) = self.member_action_target(&room_id, &user_id)?;
         room.ban_user(uid.as_ref(), reason.as_deref()).await.ffi()
     }
 
@@ -2417,11 +2426,7 @@ impl CoreClient {
         user_id: String,
         reason: Option<String>,
     ) -> Result<(), FfiError> {
-        let room = self
-            .room(&room_id)
-            .ok_or_else(|| FfiError::Msg("room not found".into()))?;
-        let uid = OwnedUserId::try_from(user_id.as_str())
-            .map_err(|_| FfiError::Msg("invalid user id".into()))?;
+        let (room, uid) = self.member_action_target(&room_id, &user_id)?;
         room.unban_user(uid.as_ref(), reason.as_deref()).await.ffi()
     }
 
@@ -2431,20 +2436,12 @@ impl CoreClient {
         user_id: String,
         reason: Option<String>,
     ) -> Result<(), FfiError> {
-        let room = self
-            .room(&room_id)
-            .ok_or_else(|| FfiError::Msg("room not found".into()))?;
-        let uid = OwnedUserId::try_from(user_id.as_str())
-            .map_err(|_| FfiError::Msg("invalid user id".into()))?;
+        let (room, uid) = self.member_action_target(&room_id, &user_id)?;
         room.kick_user(uid.as_ref(), reason.as_deref()).await.ffi()
     }
 
     pub async fn invite_user(&self, room_id: String, user_id: String) -> Result<(), FfiError> {
-        let room = self
-            .room(&room_id)
-            .ok_or_else(|| FfiError::Msg("room not found".into()))?;
-        let uid = OwnedUserId::try_from(user_id.as_str())
-            .map_err(|_| FfiError::Msg("invalid user id".into()))?;
+        let (room, uid) = self.member_action_target(&room_id, &user_id)?;
         map_invite_result(room.invite_user_by_id(uid.as_ref()).await)
     }
 
@@ -2688,7 +2685,7 @@ impl CoreClient {
     /// The spec wants a spoiler's plaintext `body` fallback to point at a
     /// placeholder image so the redacted text is absent from notifications and
     /// from clients that only read `body`.
-    pub async fn upload_bytes(&self, bytes: Vec<u8>, mime: &str) -> Result<String, FfiError> {
+    pub async fn upload_bytes(&self, bytes: Vec<u8>, mime: String) -> Result<String, FfiError> {
         let parsed: mime::Mime = mime
             .parse()
             .map_err(|_| FfiError::Msg(format!("unsupported media type {mime:?}")))?;
@@ -4341,13 +4338,8 @@ impl CoreClient {
         self.sdk.account().set_display_name(name.as_deref()).await.ffi()
     }
 
-    pub async fn set_avatar(&self, bytes: Vec<u8>, mime: &str) -> Result<String, FfiError> {
-        let parsed: mime::Mime = mime
-            .parse()
-            .map_err(|_| FfiError::Msg(format!("unsupported image type {mime:?}")))?;
-        if parsed.type_() != "image" {
-            return Err(FfiError::Msg(format!("{mime} is not an image")));
-        }
+    pub async fn set_avatar(&self, bytes: Vec<u8>, mime: String) -> Result<String, FfiError> {
+        let parsed = crate::image_packs::parse_image_mime(&mime)?;
 
         let mxc = self
             .sdk

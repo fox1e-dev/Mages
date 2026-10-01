@@ -1628,7 +1628,9 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         emptyList()
 
     override suspend fun mxcThumbnailToCache(mxcUri: String, width: Int, height: Int, crop: Boolean): String =
-        requireClient().mxcThumbnailToCache(mxcUri, width.toDouble(), height.toDouble(), crop).awaitString() ?: ""
+        requireClient().mxcThumbnailToCache(mxcUri, width.toDouble(), height.toDouble(), crop)
+            .awaitDataUri()
+            ?: error("mxc thumbnail fetch failed")
 
     override suspend fun getLinkPreview(url: String): LinkPreview? =
         requireClient().getLinkPreview(url).awaitValue()

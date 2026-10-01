@@ -290,6 +290,16 @@ pub struct UploadedPackImage {
     pub info_json: String,
 }
 
+pub(crate) fn parse_image_mime(mime: &str) -> Result<mime::Mime, FfiError> {
+    let parsed: mime::Mime = mime
+        .parse()
+        .map_err(|_| FfiError::Msg(format!("unsupported image type {mime:?}")))?;
+    if parsed.type_() != "image" {
+        return Err(FfiError::Msg(format!("{mime} is not an image")));
+    }
+    Ok(parsed)
+}
+
 /// Upload one image for a pack and describe it for the pack's `info`.
 ///
 /// Pack media is never encrypted: the MSC puts E2EE of packs explicitly out
@@ -303,12 +313,7 @@ pub(crate) async fn upload_pack_image(
     bytes: Vec<u8>,
     mime: &str,
 ) -> Result<UploadedPackImage, FfiError> {
-    let parsed: mime::Mime = mime
-        .parse()
-        .map_err(|_| FfiError::Msg(format!("unsupported image type {mime:?}")))?;
-    if parsed.type_() != "image" {
-        return Err(FfiError::Msg(format!("{mime} is not an image")));
-    }
+    let parsed = parse_image_mime(mime)?;
 
     let byte_len = bytes.len();
     let dimensions = imagesize::blob_size(&bytes).ok();

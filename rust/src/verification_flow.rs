@@ -1,8 +1,12 @@
+use crate::{CoreClient, FfiError};
 use futures_util::StreamExt;
 use matrix_sdk::encryption::verification::{
     SasState as SdkSasState, Verification, VerificationRequest, VerificationRequestState,
 };
+use matrix_sdk::ruma::{OwnedDeviceId, OwnedUserId};
+use matrix_sdk::sleep::sleep;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "phase")]
@@ -33,7 +37,201 @@ pub struct EmojiEntry {
     pub description: String,
 }
 
-/// Outgoing: we created the request, we start SAS after Ready.
+impl CoreClient {
+    pub async fn start_device_verification(
+        &self,
+        device_id: String,
+    ) -> Result<(String, VerificationRequest), FfiError> {
+        let me = self
+            .sdk
+            .user_id()
+            .ok_or_else(|| FfiError::Msg("No user session".into()))?;
+        let device_id = OwnedDeviceId::from(device_id);
+        let device = self
+            .sdk
+            .encryption()
+            .get_device(me, &device_id)
+            .await
+            .map_err(|e| FfiError::Msg(format!("Failed to get device: {e}")))?
+            .ok_or_else(|| FfiError::Msg("Device not found".into()))?;
+        let request = device
+            .request_verification()
+            .await
+            .map_err(|e| FfiError::Msg(format!("Request verification failed: {e}")))?;
+        let flow_id = request.flow_id().to_owned();
+        Ok((flow_id, request))
+    }
+
+    pub async fn start_user_verification(
+        &self,
+        user_id: String,
+    ) -> Result<(String, VerificationRequest), FfiError> {
+        let uid: OwnedUserId = user_id
+            .parse()
+            .map_err(|_| FfiError::Msg("Invalid user ID".into()))?;
+        let identity = self
+            .sdk
+            .encryption()
+            .get_user_identity(&uid)
+            .await
+            .map_err(|e| FfiError::Msg(format!("Failed to get user identity: {e}")))?
+            .ok_or_else(|| FfiError::Msg("User identity not found".into()))?;
+        let request = identity
+            .request_verification()
+            .await
+            .map_err(|e| FfiError::Msg(format!("Request verification failed: {e}")))?;
+        let flow_id = request.flow_id().to_owned();
+        Ok((flow_id, request))
+    }
+
+    pub async fn observation_request(
+        &self,
+        flow_id: String,
+        other_user_id: String,
+    ) -> Result<VerificationRequest, FfiError> {
+        let uid: OwnedUserId = other_user_id.parse().map_err(|e| {
+            tracing::warn!(
+                "accept_and_observe_verification with invalid user id {other_user_id}: {e:?}"
+            );
+            FfiError::Msg("Invalid user ID".into())
+        })?;
+        self.sdk
+            .encryption()
+            .get_verification_request(&uid, &flow_id)
+            .await
+            .ok_or_else(|| FfiError::Msg("Verification request not found".into()))
+    }
+
+    fn verif_uid(&self, other_user_id: Option<&str>) -> Option<OwnedUserId> {
+        match other_user_id {
+            Some(u) => match u.parse::<OwnedUserId>() {
+                Ok(uid) => Some(uid),
+                Err(e) => {
+                    tracing::warn!("verification with invalid user id {u}: {e:?}");
+                    None
+                }
+            },
+            None => self.sdk.user_id().map(|u| u.to_owned()),
+        }
+    }
+
+    pub async fn cancel_verification(&self, flow_id: String, other_user_id: Option<String>) -> bool {
+        let Some(uid) = self.verif_uid(other_user_id.as_deref()) else {
+            return false;
+        };
+        if let Some(v) = self
+            .sdk
+            .encryption()
+            .get_verification(&uid, &flow_id)
+            .await
+        {
+            match v {
+                Verification::SasV1(sas) => sas.cancel().await.is_ok(),
+                _ => false,
+            }
+        } else if let Some(req) = self
+            .sdk
+            .encryption()
+            .get_verification_request(&uid, &flow_id)
+            .await
+        {
+            req.cancel().await.is_ok()
+        } else {
+            false
+        }
+    }
+
+    pub async fn confirm_sas(&self, flow_id: String, other_user_id: Option<String>) -> bool {
+        let Some(uid) = self.verif_uid(other_user_id.as_deref()) else {
+            return false;
+        };
+        if let Some(Verification::SasV1(sas)) = self
+            .sdk
+            .encryption()
+            .get_verification(&uid, &flow_id)
+            .await
+        {
+            sas.confirm().await.is_ok()
+        } else {
+            false
+        }
+    }
+
+    pub async fn accept_verification_request(
+        &self,
+        flow_id: String,
+        other_user_id: Option<String>,
+    ) -> bool {
+        let Some(uid) = self.verif_uid(other_user_id.as_deref()) else {
+            return false;
+        };
+        for _ in 0..30 {
+            if let Some(req) = self
+                .sdk
+                .encryption()
+                .get_verification_request(&uid, &flow_id)
+                .await
+            {
+                return req.accept().await.is_ok();
+            }
+            sleep(Duration::from_millis(200)).await;
+        }
+        false
+    }
+
+    pub async fn accept_sas(&self, flow_id: String, other_user_id: Option<String>) -> bool {
+        let Some(uid) = self.verif_uid(other_user_id.as_deref()) else {
+            return false;
+        };
+        for _ in 0..30 {
+            if let Some(verification) = self
+                .sdk
+                .encryption()
+                .get_verification(&uid, &flow_id)
+                .await
+            {
+                if let Some(sas) = verification.sas() {
+                    return sas.accept().await.is_ok();
+                }
+            }
+            sleep(Duration::from_millis(200)).await;
+        }
+        false
+    }
+
+    pub async fn is_user_verified(&self, user_id: String) -> bool {
+        let Ok(uid) = user_id.parse::<OwnedUserId>() else {
+            return false;
+        };
+        match self.sdk.encryption().get_user_identity(&uid).await {
+            Ok(Some(identity)) => identity.is_verified(),
+            _ => false,
+        }
+    }
+}
+
+pub fn error_json(message: impl Into<String>) -> String {
+    serde_json::to_string(&VerifEvent::Error {
+        message: message.into(),
+    })
+    .unwrap_or_default()
+}
+
+pub async fn drive_and_emit<S, F>(stream: S, emit: F)
+where
+    S: futures_util::Stream<Item = VerifEvent>,
+    F: Fn(&str),
+{
+    futures_util::pin_mut!(stream);
+    while let Some(event) = stream.next().await {
+        let json = serde_json::to_string(&event).unwrap_or_default();
+        emit(&json);
+        if matches!(event, VerifEvent::Done) || matches!(event, VerifEvent::Cancelled { .. }) {
+            break;
+        }
+    }
+}
+
 pub async fn drive_verification_request(
     request: VerificationRequest,
     we_start_sas: bool,
