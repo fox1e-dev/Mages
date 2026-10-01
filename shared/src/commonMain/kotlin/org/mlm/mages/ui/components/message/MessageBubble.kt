@@ -222,7 +222,8 @@ fun MessageBubble(
                                                 formattedBody = attachment.captionFormattedBody,
                                                 fallbackBody = attachment.caption,
                                                 color = bubbleTextColor,
-                                                containerColor = bubbleContainerColor
+                                                containerColor = bubbleContainerColor,
+                                                emotePaths = emotePaths
                                             )
                                         }
                                     } else {
@@ -243,7 +244,8 @@ fun MessageBubble(
                                         isMine = isMine,
                                         onOpen = onOpenAttachment,
                                         timestamp = timestampContent,
-                                        containerColor = bubbleContainerColor
+                                        containerColor = bubbleContainerColor,
+                                        emotePaths = emotePaths
                                     )
                                 }
                                 is MessageAttachmentUi.Video -> {
@@ -252,7 +254,8 @@ fun MessageBubble(
                                         isMine = isMine,
                                         onOpen = onOpenAttachment,
                                         timestamp = timestampContent,
-                                        containerColor = bubbleContainerColor
+                                        containerColor = bubbleContainerColor,
+                                        emotePaths = emotePaths
                                     )
                                 }
                                 null -> { /* no attachment */ }
@@ -277,7 +280,8 @@ fun MessageBubble(
                                                 formattedBody = attachment.captionFormattedBody,
                                                 fallbackBody = attachment.caption,
                                                 color = bubbleTextColor,
-                                                containerColor = bubbleContainerColor
+                                                containerColor = bubbleContainerColor,
+                                                emotePaths = emotePaths
                                             )
                                         }
                                     } else {
@@ -680,6 +684,7 @@ private fun ImageAttachmentBubble(
     onOpen: (() -> Unit)?,
     timestamp: @Composable () -> Unit,
     containerColor: Color,
+    emotePaths: Map<String, String> = emptyMap(),
 ) {
     val contentColor = if (isMine) MaterialTheme.colorScheme.onPrimaryContainer
     else MaterialTheme.colorScheme.onSecondaryContainer
@@ -742,7 +747,8 @@ private fun ImageAttachmentBubble(
                         formattedBody = attachment.captionFormattedBody,
                         fallbackBody = attachment.caption!!,
                         color = contentColor,
-                        containerColor = containerColor
+                        containerColor = containerColor,
+                        emotePaths = emotePaths
                     )
                 }
             }
@@ -762,6 +768,7 @@ private fun VideoAttachmentBubble(
     onOpen: (() -> Unit)?,
     timestamp: @Composable () -> Unit,
     containerColor: Color,
+    emotePaths: Map<String, String> = emptyMap(),
 ) {
     val contentColor = if (isMine) MaterialTheme.colorScheme.onPrimaryContainer
     else MaterialTheme.colorScheme.onSecondaryContainer
@@ -829,7 +836,8 @@ private fun VideoAttachmentBubble(
                         formattedBody = attachment.captionFormattedBody,
                         fallbackBody = attachment.caption!!,
                         color = contentColor,
-                        containerColor = containerColor
+                        containerColor = containerColor,
+                        emotePaths = emotePaths
                     )
                 }
             }

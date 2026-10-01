@@ -1567,6 +1567,10 @@ private fun MessageItem(
 
         val isSelected = state.isSelectionMode && event.eventId in state.selectedEventIds
 
+        LaunchedEffect(event.eventId, state.emotePathByMxc.size) {
+            viewModel.ensureEmotes(event)
+        }
+
         LaunchedEffect(
             event.eventId,
             event.thumbKey?.let { state.thumbByEvent[it] },

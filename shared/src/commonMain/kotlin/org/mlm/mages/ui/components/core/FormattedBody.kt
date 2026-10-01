@@ -35,28 +35,26 @@ import com.fleeksoft.ksoup.nodes.Node
 import com.fleeksoft.ksoup.nodes.TextNode
 import org.mlm.mages.LocalMessageFontSize
 
-private val EMOTE_IMG_TAG = Regex("""<img[^>]*data-mx-emoticon[^>]*>""", RegexOption.IGNORE_CASE)
-private val SRC_ATTR = Regex("""\ssrc\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
+private val MXC_SRC_ATTR = Regex("""\ssrc\s*=\s*["']?(mxc://[^"'\s>]+)""", RegexOption.IGNORE_CASE)
 
 /** Bounds the work a single hostile message can ask a client to do. */
 private const val MAX_EMOTES_PER_MESSAGE = 32
 
 /**
- * The mxc URIs of the custom emotes a `formatted_body` references.
+ * The mxc URIs of the inline images a `formatted_body` references.
  *
- * A cheap tag scan used to decide what to prefetch. It is not a substitute for
- * [parseFormattedBody], which performs the authoritative parse, but it repeats
- * the mxc-only rule so a crafted body cannot make a client fetch a
- * non-mxc URI during prefetch.
+ * Keyed on `src` rather than `data-mx-emoticon`: matrix-sdk sanitizes every
+ * timeline message, and the spec's attribute allow-list for `img` is
+ * `width|height|alt|title|src`, so `data-mx-emoticon` is dropped before the
+ * event ever reaches a client. The mxc scheme is part of the pattern itself, so
+ * a crafted body cannot make a client prefetch a non-mxc URI.
  */
 fun emoteMxcUrisFrom(formattedBody: String?): List<String> {
-    if (formattedBody == null || !formattedBody.contains("data-mx-emoticon")) return emptyList()
+    if (formattedBody == null || !formattedBody.contains("mxc://")) return emptyList()
 
     val out = LinkedHashSet<String>()
-    for (match in EMOTE_IMG_TAG.findAll(formattedBody)) {
-        val src = SRC_ATTR.find(match.value)?.groupValues?.get(1)?.trim() ?: continue
-        if (!src.startsWith("mxc://")) continue
-        out += src
+    for (match in MXC_SRC_ATTR.findAll(formattedBody)) {
+        out += match.groupValues[1]
         if (out.size >= MAX_EMOTES_PER_MESSAGE) break
     }
     return out.toList()
@@ -102,7 +100,7 @@ private val BLOCKED_SCHEMES = listOf("javascript:", "data:", "vbscript:", "file:
 
 private val WHITESPACE_RUN = Regex("[ \\t\\u000B\\u000C\\r]+")
 
-/** An `<img data-mx-emoticon>`. [path] is the resolved local file, if fetched. */
+/** An inline `<img src="mxc://…">`. [path] is the resolved local file, if fetched. */
 data class EmoteRef(
     val mxcUri: String,
     val alt: String?,
@@ -332,10 +330,11 @@ private class Builder(
         c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9'
 
     private fun appendEmote(element: Element) {
-        if (!element.hasAttr("data-mx-emoticon")) return
-
         val mxcUri = element.attr("src").trim()
-        if (!mxcUri.startsWith("mxc://")) return
+        if (!mxcUri.startsWith("mxc://")) {
+            element.attr("alt").trim().ifEmpty { null }?.let { text.append(it) }
+            return
+        }
 
         val ref = EmoteRef(
             mxcUri = mxcUri,
@@ -344,8 +343,12 @@ private class Builder(
             path = emotePaths[mxcUri]
         )
 
-        // The mxc URI doubles as the inline-content key, so an emote repeated
-        // in one message reuses a single entry.
+        val path = ref.path
+        if (path == null) {
+            text.append(ref.label)
+            return
+        }
+
         inlineContent.getOrPut(mxcUri) {
             InlineTextContent(
                 placeholder = Placeholder(

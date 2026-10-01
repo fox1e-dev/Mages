@@ -913,6 +913,7 @@ class RoomViewModel(
         get() = reactionShortcodesFrom(currentState.imagePacks)
 
     private val reactionImageFetchInFlight = mutableSetOf<String>()
+    private val emoteFetchInFlight = mutableSetOf<String>()
 
     /** Caches the images behind MSC4027 image reactions so the chips can render them. */
     fun ensureReactionImages(chips: List<ReactionSummary>) {
@@ -3011,26 +3012,35 @@ class RoomViewModel(
     }
 
     /**
-     * Discovers the custom emotes in a `formatted_body` and caches them locally.
+     * Discovers the inline images in a `formatted_body` and caches them locally.
      *
-     * The tag scan is only a cheap pre-filter; `parseFormattedBody` performs the
+     * The `src` scan is only a cheap pre-filter; `parseFormattedBody` performs the
      * authoritative parse and repeats the scheme check, so a message crafted to
      * fool this regex still cannot cause a non-mxc fetch.
      */
-    private fun ensureEmotes(event: MessageEvent) {
+    fun ensureEmotes(event: MessageEvent) {
+        val uris = emoteMxcUrisFrom(event.formattedBody)
+        if (uris.isEmpty()) return
         if (!mediaPreviewsAllowed()) return
-        val missing = emoteMxcUrisFrom(event.formattedBody)
+        val missing = uris
             .filterNot { currentState.emotePathByMxc.containsKey(it) }
+            .filter { emoteFetchInFlight.add(it) }
         if (missing.isEmpty()) return
 
         launch {
-            val resolved = missing.mapNotNull { mxc ->
-                runCatching { service.port.mxcThumbnailToCache(mxc, EMOTE_PX, EMOTE_PX, false) }
-                    .getOrNull()
-                    ?.let { mxc to it }
-            }.toMap()
-            if (resolved.isEmpty()) return@launch
-            updateState { copy(emotePathByMxc = emotePathByMxc + resolved) }
+            try {
+                val resolved = missing.mapNotNull { mxc ->
+                    runCatching { service.port.mxcThumbnailToCache(mxc, EMOTE_PX, EMOTE_PX, false) }
+                        .getOrNull()
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { mxc to it }
+                }.toMap()
+                if (resolved.isNotEmpty()) {
+                    updateState { copy(emotePathByMxc = emotePathByMxc + resolved) }
+                }
+            } finally {
+                missing.forEach { emoteFetchInFlight.remove(it) }
+            }
         }
     }
 
