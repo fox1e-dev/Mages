@@ -51,7 +51,8 @@ var showWindow by remember { mutableStateOf(!startInTray || initialDeepLink != n
     val windowState = rememberWindowState()
 
     var tray by remember { mutableStateOf<SystemTray?>(null) }
-    var showItem by remember { mutableStateOf<MenuItem?>(null) }
+    var trayIcons by remember { mutableStateOf<TrayIcons?>(null) }
+    val unreadRooms by NotifierImpl.unreadRooms.collectAsState()
 
     LaunchedEffect(Unit) {
         val computedTray = withContext(Dispatchers.IO) {
@@ -74,16 +75,13 @@ var showWindow by remember { mutableStateOf(!startInTray || initialDeepLink != n
     DisposableEffect(tray) {
         val t = tray ?: return@DisposableEffect onDispose { }
 
-        val iconBytes = runBlocking { Res.readBytes("files/tray.png") }
-        t.setImage(iconBytes.inputStream())
+        trayIcons = TrayIcons(runBlocking { Res.readBytes("files/tray.png") })
 
-        val showMenuItem = MenuItem("Show").apply {
+        t.menu.add(MenuItem("Show").apply {
             setCallback {
                 SwingUtilities.invokeLater { showWindow = true }
             }
-        }
-        showItem = showMenuItem
-        t.menu.add(showMenuItem)
+        })
 
         t.menu.add(dorkbox.systemTray.Separator())
 
@@ -120,14 +118,11 @@ var showWindow by remember { mutableStateOf(!startInTray || initialDeepLink != n
         onDispose { t.shutdown() }
     }
 
-    LaunchedEffect(tray) {
-        if (tray == null) return@LaunchedEffect
-        NotifierImpl.unreadRooms.collect { unread ->
-            val status = if (unread > 0) "Mages ($unread unread)" else "Mages"
-            tray?.setStatus(status)
-            tray?.setTooltip(status)
-            showItem?.text = if (unread > 0) "Show ($unread unread)" else "Show"
-        }
+    LaunchedEffect(tray, trayIcons, unreadRooms) {
+        val t = tray ?: return@LaunchedEffect
+        t.setTooltip(if (unreadRooms > 0) "Mages ($unreadRooms unread)" else "Mages")
+        val icons = trayIcons ?: return@LaunchedEffect
+        t.setImage(icons.forUnread(unreadRooms) ?: return@LaunchedEffect)
     }
 
     LaunchedEffect(Unit) {
