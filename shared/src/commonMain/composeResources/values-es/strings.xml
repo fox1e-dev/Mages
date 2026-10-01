@@ -547,6 +547,10 @@
     <string name="setting_send_public_read_receipts_description">Al activarlo, otras personas pueden ver cuándo has leído sus mensajes</string>
     <string name="setting_send_typing_indicators">Enviar indicadores de escritura</string>
     <string name="setting_send_typing_indicators_description">Al desactivarlo, Mages no enviará notificaciones de escritura</string>
+    <string name="setting_block_invites">Bloquear invitaciones a salas</string>
+    <string name="setting_block_invites_description">Rechazar automáticamente todas las invitaciones a salas que recibas. Sincronizado con tus otros dispositivos</string>
+    <string name="setting_link_previews">Mostrar vista previa de enlaces</string>
+    <string name="setting_link_previews_description">Pide a tu servidor de inicio que muestre una vista previa de los enlaces publicados en los mensajes. Se le entrega la URL para hacerlo, por lo que las salas cifradas quedan sin vista previa a menos que elijas Siempre</string>
     <string name="setting_presence">Presencia</string>
     <string name="setting_presence_description">Definir un estado de presencia global</string>
     <string name="setting_app_lock">Bloqueo de la aplicación</string>
@@ -683,6 +687,11 @@
         <item>Solo en DMs</item>
         <item>Nunca</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Siempre</item>
+        <item>Excepto en salas cifradas</item>
+        <item>Nunca</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">Las salas en espacios están ocultas</string>
     <string name="rooms_hidden_in_spaces_subtitle">Abre los Espacios para ver las salas de tus espacios</string>
     <string name="find_users_and_public_rooms">Buscar usuarios y salas públicas</string>
@@ -695,6 +704,14 @@
     <string name="profile_change_photo">Cambiar foto</string>
     <string name="profile_remove_photo">Eliminar foto</string>
     <string name="profile_load_failed">No se pudo cargar tu perfil</string>
+    <string name="profile_fields">Campos del perfil</string>
+    <string name="add_profile_field">Añadir campo del perfil</string>
+    <string name="edit_profile_field">Editar campo del perfil</string>
+    <string name="profile_field_name">Nombre del campo</string>
+    <string name="profile_field_value">Valor</string>
+    <string name="time_zone">Zona horaria</string>
+    <string name="profile_field_was_rejected">El campo del perfil fue rechazado</string>
+    <string name="profile_field_could_not_be_removed">No se pudo eliminar el campo del perfil</string>
     <string name="picker_no_sticker_packs">No hay paquetes de stickers disponibles</string>
     <string name="picker_no_reaction_images">No hay emojis ni stickers para reaccionar</string>
     <string name="picker_search_images">Buscar emojis y stickers</string>
@@ -896,6 +913,8 @@
     <string name="failed_to_send_attachment">Error al enviar el adjunto</string>
     <string name="failed_to_send_check_your_internet">Error al enviar. ¿Revisas tu conexión?</string>
     <string name="failed_to_send_invitation">Error al enviar la invitación</string>
+    <string name="invite_blocked">Este usuario no acepta invitaciones</string>
+    <string name="user_limit_exceeded">Tu cuenta ha alcanzado un límite en tu servidor.</string>
     <string name="failed_to_send_message">Error al enviar el mensaje</string>
     <string name="failed_to_send_sticker">Error al enviar el sticker</string>
     <string name="failed_to_share_location">Error al compartir la ubicación</string>
@@ -1334,6 +1353,10 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d respuesta</item>        <item quantity="other">%1$d respuestas</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d sala común</item>
+        <item quantity="other">%1$d salas comunes</item>
     </plurals>
     <string name="call">Llamada</string>
     <string name="dms">DM</string>

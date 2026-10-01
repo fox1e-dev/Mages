@@ -145,6 +145,54 @@ fun parseFormattedBody(
     return builder.build()
 }
 
+private fun trimUrlTail(url: String): String {
+    var end = url.length
+    while (end > 0) {
+        val last = url[end - 1]
+        when {
+            last in TRAILING_PUNCTUATION -> end--
+            last in UNBALANCED_CLOSERS -> {
+                val opener = UNBALANCED_CLOSERS.getValue(last)
+                val head = url.substring(0, end)
+                if (head.count { it == last } > head.count { it == opener }) end-- else break
+            }
+            else -> break
+        }
+    }
+    return url.substring(0, end)
+}
+
+private fun absoluteUrl(url: String): String =
+    if (url.startsWith("www.", ignoreCase = true)) "http://$url" else url
+
+private fun isPreviewableUrl(url: String): Boolean =
+    url.startsWith("http://", ignoreCase = true) || url.startsWith("https://", ignoreCase = true)
+
+private fun firstAnchorHref(node: Node): String? {
+    if (node !is Element) return null
+    val tag = node.normalName()
+    if (tag in DROPPED_TAGS) return null
+    if (tag == "a") {
+        val href = absoluteUrl(node.attr("href").trim())
+        if (isPreviewableUrl(href)) return href
+    }
+    for (child in node.childNodes()) {
+        firstAnchorHref(child)?.let { return it }
+    }
+    return null
+}
+
+/** The first link a message renders as: the formatted anchor when there is one, else the bare URL. */
+fun firstLinkIn(body: String?, formattedBody: String?): String? {
+    val fromHtml = formattedBody
+        ?.takeIf { it.contains("href", ignoreCase = true) }
+        ?.let { firstAnchorHref(Ksoup.parse(it).body()) }
+    val fromText = body
+        ?.let { BARE_URL.find(it)?.value }
+        ?.let { absoluteUrl(trimUrlTail(it)) }
+    return fromHtml ?: fromText?.takeIf { isPreviewableUrl(it) }
+}
+
 private class Builder(
     private val emotePaths: Map<String, String>,
     private val conceal: Color?,
@@ -282,26 +330,6 @@ private class Builder(
 
     private fun isAsciiLetterOrDigit(c: Char): Boolean =
         c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9'
-
-    private fun trimUrlTail(url: String): String {
-        var end = url.length
-        while (end > 0) {
-            val last = url[end - 1]
-            when {
-                last in TRAILING_PUNCTUATION -> end--
-                last in UNBALANCED_CLOSERS -> {
-                    val opener = UNBALANCED_CLOSERS.getValue(last)
-                    val head = url.substring(0, end)
-                    if (head.count { it == last } > head.count { it == opener }) end-- else break
-                }
-                else -> break
-            }
-        }
-        return url.substring(0, end)
-    }
-
-    private fun absoluteUrl(url: String): String =
-        if (url.startsWith("www.", ignoreCase = true)) "http://$url" else url
 
     private fun appendEmote(element: Element) {
         if (!element.hasAttr("data-mx-emoticon")) return

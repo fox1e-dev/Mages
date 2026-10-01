@@ -10,12 +10,14 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.await
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.decodeFromJsonElement
 import org.mlm.mages.AttachmentInfo
+import org.mlm.mages.LinkPreview
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.RoomSummary
 import org.mlm.mages.StickerInfo
@@ -56,6 +58,13 @@ data class ResultWithError(val ok: Boolean, val error: String?) {
     }
 }
 
+/** Maps a Rust `FfiError` message back to the typed exception the shared code checks for. */
+private fun ffiException(error: String?): Exception = when (error) {
+    INVITE_BLOCKED_MESSAGE -> InviteBlockedException()
+    USER_LIMIT_EXCEEDED_MESSAGE -> UserLimitExceededException()
+    else -> IllegalStateException(error ?: "Unknown error")
+}
+
 
 private suspend fun Promise<JsAny?>.awaitResult(): ResultWithError {
     val obj = await<JsAny?>()?.toJsonObject()
@@ -72,7 +81,7 @@ private suspend fun Promise<JsAny?>.awaitBool(): Boolean =
 /** Envelope -> Result<Unit>. */
 private suspend fun Promise<JsAny?>.awaitUnitResult(): Result<Unit> {
     val result = awaitResult()
-    return if (result.ok) Result.success(Unit) else Result.failure(Exception(result.error ?: "Unknown error"))
+    return if (result.ok) Result.success(Unit) else Result.failure(ffiException(result.error))
 }
 
 /** Synchronous envelope -> Result<Unit>, for non-Promise WASM exports. */
@@ -82,7 +91,7 @@ private fun JsAny?.toUnitResult(label: String): Result<Unit> {
     val ok = (obj["ok"] as? JsonPrimitive)?.booleanOrNull == true
     if (ok) return Result.success(Unit)
     val error = (obj["error"] as? JsonPrimitive)?.contentOrNull
-    return Result.failure(IllegalStateException(error ?: "$label failed"))
+    return Result.failure(ffiException(error ?: "$label failed"))
 }
 
 /** Envelope -> Result<Boolean> (reads inner "value" bool). */
@@ -93,7 +102,7 @@ private suspend fun Promise<JsAny?>.awaitBoolResult(): Result<Boolean> {
     val ok = (obj["ok"] as? JsonPrimitive)?.booleanOrNull == true
     if (!ok) {
         val error = (obj["error"] as? JsonPrimitive)?.contentOrNull
-        return Result.failure(Exception(error ?: "Unknown error"))
+        return Result.failure(ffiException(error ?: "Unknown error"))
     }
 
     val value = (obj["value"] as? JsonPrimitive)?.booleanOrNull
@@ -112,6 +121,7 @@ private suspend inline fun <reified T> Promise<JsAny?>.awaitValue(): T? {
         return null
     }
     val value = obj["value"] ?: return null
+    if (value is JsonNull) return null
     return wasmJson.decodeFromJsonElement(value)
 }
 
@@ -131,7 +141,7 @@ private suspend fun Promise<JsAny?>.awaitStringResult(): Result<String> {
     val ok = (obj["ok"] as? JsonPrimitive)?.booleanOrNull == true
     if (!ok) {
         val error = (obj["error"] as? JsonPrimitive)?.contentOrNull
-        return Result.failure(Exception(error ?: "Unknown error"))
+        return Result.failure(ffiException(error ?: "Unknown error"))
     }
     val value = (obj["value"] as? JsonPrimitive)?.contentOrNull
         ?: return Result.failure(Exception("Missing value"))
@@ -349,7 +359,7 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
 
     private fun unitResult(ok: Boolean, action: String, error: String?): Result<Unit> =
         if (ok) Result.success(Unit)
-        else Result.failure(IllegalStateException(error ?: "Failed to $action"))
+        else Result.failure(ffiException(error ?: "Failed to $action"))
 
     private fun decodeStringList(value: JsAny?): List<String> =
         decodeValueOrNull<List<String>>(value) ?: emptyList()
@@ -378,7 +388,7 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         val result = requireClient().loginAsync(user, password, deviceDisplayName).await<JsAny?>()
         val error = result.toJsonPrimitive()?.contentOrNull
         if (error != null) {
-            throw IllegalStateException(error)
+            throw ffiException(error)
         }
         if (!isLoggedIn()) {
             throw IllegalStateException("Login failed")
@@ -389,7 +399,7 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         val result = requireClient().loginEmail(email, password, deviceDisplayName).await<JsAny?>()
         val error = result.toJsonPrimitive()?.contentOrNull
         if (error != null) {
-            throw IllegalStateException(error)
+            throw ffiException(error)
         }
         if (!isLoggedIn()) {
             throw IllegalStateException("Login failed")
@@ -400,7 +410,7 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         val result = requireClient().loginPhone(country, phone, password, deviceDisplayName).await<JsAny?>()
         val error = result.toJsonPrimitive()?.contentOrNull
         if (error != null) {
-            throw IllegalStateException(error)
+            throw ffiException(error)
         }
         if (!isLoggedIn()) {
             throw IllegalStateException("Login failed")
@@ -1085,6 +1095,9 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
     override suspend fun getUserProfile(userId: String): DirectoryUser? =
         decodeValueOrNull(requireClient().getUserProfile(userId), "getUserProfile")
 
+    override suspend fun mutualRooms(userId: String): MutualRooms? =
+        requireClient().mutualRooms(userId).awaitValue()
+
     override suspend fun publicRooms(
         server: String?,
         search: String?,
@@ -1345,8 +1358,10 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         requireClient().spaceHierarchy(spaceId, from, limit.toDouble(), maxDepth?.toDouble(), suggestedOnly)
             .awaitValue<SpaceHierarchyPage>()
 
-    override suspend fun spaceInviteUser(spaceId: String, userId: String): Result<Unit> =
-        requireClient().spaceInviteUser(spaceId, userId).awaitUnitResult()
+    override suspend fun spaceInviteUser(spaceId: String, userId: String): Result<Unit> {
+        val result = requireClient().spaceInviteUser(spaceId, userId).awaitResult()
+        return unitResult(result.ok, "invite user", result.error)
+    }
 
     override suspend fun setPresence(presence: Presence, status: String?): Result<Unit> {
         val result = requireClient().setPresence(presence.name, status).awaitResult()
@@ -1366,22 +1381,34 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
             ?: return Result.failure(IllegalStateException("image no longer available"))
         return requireClient()
             .setAvatarBytes(bytes.toJsUint8Array(), mime)
-            .awaitStringValue()
-            ?.let { Result.success(it) }
-            ?: Result.failure(IllegalStateException("avatar upload failed"))
+            .awaitStringResult()
     }
 
     override suspend fun uploadBytes(bytes: ByteArray, mime: String): Result<String> {
         return requireClient()
             .uploadBytes(bytes.toJsUint8Array(), mime)
-            .awaitStringValue()
-            ?.let { Result.success(it) }
-            ?: Result.failure(IllegalStateException("media upload failed"))
+            .awaitStringResult()
     }
 
     override suspend fun removeAvatar(): Result<Unit> {
         val result = requireClient().removeAvatar().awaitResult()
         return unitResult(result.ok, "remove avatar", result.error)
+    }
+
+    override suspend fun canSetProfileFields(): Boolean =
+        requireClient().canSetProfileFields().awaitPlainBool()
+
+    override suspend fun ownProfileFields(): List<ProfileField> =
+        requireClient().ownProfileFields().awaitValue() ?: emptyList()
+
+    override suspend fun setProfileField(name: String, value: String): Result<Unit> {
+        val result = requireClient().setProfileField(name, value).awaitResult()
+        return unitResult(result.ok, "set profile field", result.error)
+    }
+
+    override suspend fun deleteProfileField(name: String): Result<Unit> {
+        val result = requireClient().deleteProfileField(name).awaitResult()
+        return unitResult(result.ok, "delete profile field", result.error)
     }
 
     override suspend fun applySyncPresence(presence: Presence) {
@@ -1396,6 +1423,14 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
             .setMediaPreviewConfig(previews.name)
             .awaitResult()
         return unitResult(result.ok, "set media preview config", result.error)
+    }
+
+    override suspend fun inviteBlocked(): Boolean? =
+        requireClient().inviteBlocked().awaitValue()
+
+    override suspend fun setInviteBlocked(blocked: Boolean): Result<Unit> {
+        val result = requireClient().setInviteBlocked(blocked).awaitResult()
+        return unitResult(result.ok, "set invite blocked", result.error)
     }
 
     override suspend fun getPresence(userId: String): Pair<Presence, String?>? =
@@ -1594,6 +1629,9 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
 
     override suspend fun mxcThumbnailToCache(mxcUri: String, width: Int, height: Int, crop: Boolean): String =
         requireClient().mxcThumbnailToCache(mxcUri, width.toDouble(), height.toDouble(), crop).awaitString() ?: ""
+
+    override suspend fun getLinkPreview(url: String): LinkPreview? =
+        requireClient().getLinkPreview(url).awaitValue()
 
     override suspend fun loadRoomListCache(): List<RoomListEntry> =
         wasmJson.decodeFromJsonElement(requireClient().loadRoomListCache().toJsonArray())

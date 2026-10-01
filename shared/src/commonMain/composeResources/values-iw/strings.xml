@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">הצטרפות אוטומטית לחדרים בעת הזמנה</string>
     <string name="setting_send_public_read_receipts_description">כשהאפשרות פעילה, אחרים יכולים לראות מתי קראת את ההודעות שלהם</string>
     <string name="setting_send_typing_indicators_description">כשהאפשרות כבויה, Mages אינה שולחת התראות הקלדה</string>
+    <string name="setting_block_invites">חסימת הזמנות לחדרים</string>
+    <string name="setting_block_invites_description">לדחות אוטומטית את כל הזמנות החדרים שנשלחות אליך. מסונכרן עם המכשירים האחרים שלך</string>
+    <string name="setting_link_previews">הצגת תצוגות מקדימות של קישורים</string>
+    <string name="setting_link_previews_description">בקש מהבית שרת להציג תצוגה מקדימה של קישורים שנשלחים בהודעות. ה-URL נמסר לו לשם כך, ולכן חדרים מוצפנים נותרים ללא תצוגה מקדימה אלא אם תבחר תמיד</string>
     <string name="setting_presence_description">קביעת סטטוס נוכחות גלובלי</string>
     <string name="setting_app_lock_description">דרישת ביומטריה או PIN של המכשיר לפתיחה</string>
     <string name="setting_app_lock_timeout_description">נעילה לאחר פרק זמן זה ברקע</string>
@@ -567,6 +571,11 @@
         <item>רק ב-DMs</item>
         <item>לעולם</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>תמיד</item>
+        <item>למעט בחדרים מוצפנים</item>
+        <item>לעולם</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">חדרים במרחבים מוסתרים</string>
     <string name="rooms_hidden_in_spaces_subtitle">פתח מרחבים כדי לעיין בחדרים שבמרחבים שלך</string>
     <string name="find_users_and_public_rooms">חיפוש משתמשים וחדרים ציבוריים</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">שינוי תמונה</string>
     <string name="profile_remove_photo">הסרת תמונה</string>
     <string name="profile_load_failed">לא ניתן היה לטעון את הפרופיל שלך</string>
+    <string name="profile_fields">שדות פרופיל</string>
+    <string name="add_profile_field">הוספת שדה פרופיל</string>
+    <string name="edit_profile_field">עריכת שדה פרופיל</string>
+    <string name="profile_field_name">שם השדה</string>
+    <string name="profile_field_value">ערך</string>
+    <string name="time_zone">אזור זמן</string>
+    <string name="profile_field_was_rejected">שדה הפרופיל נדחה</string>
+    <string name="profile_field_could_not_be_removed">לא ניתן להסיר את שדה הפרופיל</string>
     <string name="picker_no_sticker_packs">אין חבילות מדבקות זמינות</string>
     <string name="picker_no_reaction_images">אין אימוג׳ים או מדבקות להגיב איתם</string>
     <string name="picker_search_images">חיפוש אימוג׳ים ומדבקות</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">שליחת הקובץ המצורף נכשלה</string>
     <string name="failed_to_send_check_your_internet">השליחה נכשלה. בדוק את החיבור לאינטרנט?</string>
     <string name="failed_to_send_invitation">שליחת ההזמנה נכשלה</string>
+    <string name="invite_blocked">משתמש זה אינו מקבל הזמנות</string>
+    <string name="user_limit_exceeded">החשבון שלך הגיע למגבלה בשרת הבית שלך.</string>
     <string name="failed_to_send_message">שליחת ההודעה נכשלה</string>
     <string name="failed_to_send_sticker">שליחת המדבקה נכשלה</string>
     <string name="failed_to_share_location">שיתוף המיקום נכשל</string>
@@ -1218,6 +1237,12 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d תשובה</item>        <item quantity="two">%1$d תשובות</item>        <item quantity="many">%1$d תשובות</item>        <item quantity="other">%1$d תשובות</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d חדר משותף</item>
+        <item quantity="two">%1$d חדרים משותפים</item>
+        <item quantity="many">%1$d חדרים משותפים</item>
+        <item quantity="other">%1$d חדרים משותפים</item>
     </plurals>
     <string name="call">שיחה</string>
     <string name="dms">DMs</string>

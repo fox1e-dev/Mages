@@ -484,6 +484,7 @@ wasm_delegate_result_bool_as_bool! {
     "canUserBan"           => can_user_ban(room_id: String, user_id: String);
     "canUserInvite"        => can_user_invite(room_id: String, user_id: String);
     "canUserRedactOther"   => can_user_redact_other(room_id: String, user_id: String);
+    "canSetProfileFields"  => can_set_profile_fields();
 }
 
 wasm_delegate_result_bool! {
@@ -504,6 +505,9 @@ wasm_delegate_result_bool! {
     "editCaption"          => edit_caption(room_id: String, target_event_id: String, caption: Option<String>, formatted_caption: Option<String>);
     "setDisplayName"       => set_display_name(name: Option<String>);
     "removeAvatar"         => remove_avatar();
+    "setInviteBlocked"     => set_invite_blocked(blocked: bool);
+    "setProfileField"      => set_profile_field(name: String, value: String);
+    "deleteProfileField"   => delete_profile_field(name: String);
 }
 
 wasm_delegate_json! {
@@ -532,6 +536,8 @@ wasm_delegate_result_json! {
     "listAllImagePacks" => list_all_image_packs(refresh: bool);
     "sendStickerMxc"   => send_sticker_mxc(room_id: String, mxc_url: String, body: String, info_json: Option<String>, thread_root_event_id: Option<String>);
     "ownProfile"       => own_profile();
+    "ownProfileFields" => own_profile_fields();
+    "mutualRooms"      => mutual_rooms(user_id: String);
 }
 
 wasm_delegate_option_json! {
@@ -541,6 +547,8 @@ wasm_delegate_option_json! {
     "roomSuccessor"    => room_successor(room_id: String);
     "roomPredecessor"  => room_predecessor(room_id: String);
     "eventDetails"     => event_details(room_id: String, event_id: String);
+    "inviteBlocked"    => invite_blocked();
+    "getLinkPreview"   => get_link_preview(url: String);
 }
 
 wasm_unobserve! {

@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">الانضمام تلقائيًا إلى الغرف عند دعوتها</string>
     <string name="setting_send_public_read_receipts_description">عند التمكين، يمكن للمستخدمين الآخرين رؤية متى قرأت رسائلهم</string>
     <string name="setting_send_typing_indicators_description">عند التعطيل، لن يرسل السحرة إشعارات الكتابة</string>
+    <string name="setting_block_invites">حظر دعوات الغرف</string>
+    <string name="setting_block_invites_description">رفض كل دعوات الغرف المرسلة إليك تلقائيًا. تتم مزامنتها مع أجهزتك الأخرى</string>
+    <string name="setting_link_previews">عرض معاينات الروابط</string>
+    <string name="setting_link_previews_description">اطلب من خادم المنزل عرض معاينة للروابط المنشورة في الرسائل. يتم تزويد الرابط الخاص بذلك الغرض، لذلك تبقى الغرف المشفرة غير معروضة ما لم تختر دائمًا</string>
     <string name="setting_presence_description">تعيين حالة وجود عالمية</string>
     <string name="setting_app_lock_description">يتطلب فتح القياسات الحيوية أو رقم التعريف الشخصي للجهاز</string>
     <string name="setting_app_lock_timeout_description">اقفل بعد هذا الوقت الطويل في الخلفية</string>
@@ -567,6 +571,11 @@
         <item>فقط في DMs</item>
         <item>أبدًا</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>دائمًا</item>
+        <item>باستثناء الغرف المشفرة</item>
+        <item>أبدًا</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">الغرف في المساحات مخفية</string>
     <string name="rooms_hidden_in_spaces_subtitle">افتح المساحات لتصفح الغرف داخل مساحاتك</string>
     <string name="find_users_and_public_rooms">العثور على المستخدمين والغرف العامة</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">تغيير الصورة</string>
     <string name="profile_remove_photo">إزالة الصورة</string>
     <string name="profile_load_failed">تعذر تحميل ملفك الشخصي</string>
+    <string name="profile_fields">حقول الملف الشخصي</string>
+    <string name="add_profile_field">إضافة حقل ملف شخصي</string>
+    <string name="edit_profile_field">تعديل حقل الملف الشخصي</string>
+    <string name="profile_field_name">اسم الحقل</string>
+    <string name="profile_field_value">القيمة</string>
+    <string name="time_zone">المنطقة الزمنية</string>
+    <string name="profile_field_was_rejected">تم رفض حقل الملف الشخصي</string>
+    <string name="profile_field_could_not_be_removed">تعذّر إزالة حقل الملف الشخصي</string>
     <string name="picker_no_sticker_packs">لا توجد حزم ملصقات متاحة</string>
     <string name="picker_no_reaction_images">لا توجد رموز تعبيرية أو ملصقات للتفاعل بها</string>
     <string name="picker_search_images">البحث عن الرموز التعبيرية والملصقات</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">فشل إرسال المرفق</string>
     <string name="failed_to_send_check_your_internet">فشل الإرسال. تحقق من اتصالك بالإنترنت؟</string>
     <string name="failed_to_send_invitation">فشل إرسال الدعوة</string>
+    <string name="invite_blocked">هذا المستخدم لا يقبل الدعوات</string>
+    <string name="user_limit_exceeded">لقد وصل حسابك إلى حد مسموح به على خادمك المنزلي.</string>
     <string name="failed_to_send_message">فشل إرسال الرسالة</string>
     <string name="failed_to_send_sticker">فشل إرسال الملصق</string>
     <string name="failed_to_share_location">فشل مشاركة الموقع</string>
@@ -1218,6 +1237,14 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="zero">%1$d رد</item>        <item quantity="one">%1$d رد</item>        <item quantity="two">%1$d ردان</item>        <item quantity="few">%1$d ردود</item>        <item quantity="many">%1$d ردًّا</item>        <item quantity="other">%1$d رد</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="zero">%1$d غرفة مشتركة</item>
+        <item quantity="one">%1$d غرفة مشتركة</item>
+        <item quantity="two">%1$d غرفتان مشتركتان</item>
+        <item quantity="few">%1$d غرف مشتركة</item>
+        <item quantity="many">%1$d غرفة مشتركة</item>
+        <item quantity="other">%1$d غرفة مشتركة</item>
     </plurals>
     <string name="call">مكالمة</string>
     <string name="dms">الرسائل المباشرة</string>

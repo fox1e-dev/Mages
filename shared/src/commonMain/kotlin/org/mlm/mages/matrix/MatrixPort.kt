@@ -7,6 +7,7 @@ import mages.shared.generated.resources.*
 import org.mlm.mages.AttachmentInfo
 import org.mlm.mages.AttachmentKind
 import org.mlm.mages.EncFile
+import org.mlm.mages.LinkPreview
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.RoomSummary
 import org.mlm.mages.StickerInfo
@@ -775,6 +776,14 @@ data class OwnProfile(
     val canChangeAvatar: Boolean = true
 )
 
+/** One MSC4133 extended profile field, with its value as plain text. */
+@Serializable
+data class ProfileField(val name: String, val value: String)
+
+/** MSC2666: rooms the local user and another user are both joined to. */
+@Serializable
+data class MutualRooms(val count: Long, val roomIds: List<String>)
+
 @Serializable
 data class SpaceHierarchyPage(
     val children: List<SpaceChildInfo>,
@@ -1126,6 +1135,7 @@ interface MatrixPort {
 
     suspend fun searchUsers(term: String, limit: Int = 20): List<DirectoryUser>
     suspend fun getUserProfile(userId: String): DirectoryUser?
+    suspend fun mutualRooms(userId: String): MutualRooms?
     suspend fun publicRooms(server: String? = null, search: String? = null, limit: Int = 50, since: String? = null): PublicRoomsPage
     suspend fun roomPreview(idOrAlias: String, via: List<String> = emptyList()): Result<RoomPreview>
     suspend fun forwardEvent(sourceRoomId: String, eventId: String, targetRoomIds: List<String>): Result<ForwardResult>
@@ -1251,8 +1261,8 @@ interface MatrixPort {
     /**
      * Uploads one image for a pack and describes it for the pack's `info`.
      *
-     * Pack media is never encrypted — the spec puts E2EE of packs explicitly
-     * out of scope — so this is always a plain upload. On web a picked file is
+     * Pack media is never encrypted: the spec puts E2EE of packs explicitly
+     * out of scope, so this is always a plain upload. On web a picked file is
      * staged as a blob rather than a path on disk, so [path] is whatever the
      * picker produced and the platform resolves it.
      */
@@ -1319,9 +1329,19 @@ interface MatrixPort {
 
     suspend fun removeAvatar(): Result<Unit>
 
+    /** MSC4133: false when the homeserver has no `m.profile_fields` capability. */
+    suspend fun canSetProfileFields(): Boolean
+    suspend fun ownProfileFields(): List<ProfileField>
+    suspend fun setProfileField(name: String, value: String): Result<Unit>
+    suspend fun deleteProfileField(name: String): Result<Unit>
+
     suspend fun applySyncPresence(presence: Presence)
     suspend fun mediaPreviewConfig(): MediaPreviewMode?
     suspend fun setMediaPreviewConfig(previews: MediaPreviewMode): Result<Unit>
+
+    /** Null when the account has never chosen, which must not overwrite the local value. */
+    suspend fun inviteBlocked(): Boolean?
+    suspend fun setInviteBlocked(blocked: Boolean): Result<Unit>
     suspend fun getPresence(userId: String): Pair<Presence, String?>?
 
     suspend fun ignoreUser(userId: String): Result<Unit>
@@ -1381,6 +1401,10 @@ interface MatrixPort {
     suspend fun seenByForEvent(roomId: String, eventId: String, limit: Int): List<SeenByEntry>
 
     suspend fun mxcThumbnailToCache(mxcUri: String, width: Int, height: Int, crop: Boolean): String
+
+    /** `null` when the homeserver has no preview worth showing for the URL. */
+    suspend fun getLinkPreview(url: String): LinkPreview?
+
     suspend fun loadRoomListCache(): List<RoomListEntry>
 
     suspend fun sendPollResponse(roomId: String, pollEventId: String, answers: List<String>): Result<Unit>

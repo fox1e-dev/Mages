@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">收到邀请时自动加入房间</string>
     <string name="setting_send_public_read_receipts_description">启用后，其他人可以看到你何时读过他们的消息</string>
     <string name="setting_send_typing_indicators_description">停用后，Mages 不会发送正在输入通知</string>
+    <string name="setting_block_invites">屏蔽房间邀请</string>
+    <string name="setting_block_invites_description">自动拒绝发给你的所有房间邀请。与其他设备同步</string>
+    <string name="setting_link_previews">显示链接预览</string>
+    <string name="setting_link_previews_description">请求您的家庭服务器预览消息中发布的链接。为此会将 URL 交给它，因此加密房间不会生成预览，除非您选择始终</string>
     <string name="setting_presence_description">设置全局在线状态</string>
     <string name="setting_app_lock_description">打开时需要生物识别或设备 PIN</string>
     <string name="setting_app_lock_timeout_description">在后台经过此时间后锁定</string>
@@ -567,6 +571,11 @@
         <item>仅在私聊中</item>
         <item>从不</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>始终</item>
+        <item>加密房间除外</item>
+        <item>从不</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">房间在空间中被隐藏</string>
     <string name="rooms_hidden_in_spaces_subtitle">打开空间以浏览其中的房间</string>
     <string name="find_users_and_public_rooms">查找用户和公共房间</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">更换头像</string>
     <string name="profile_remove_photo">移除头像</string>
     <string name="profile_load_failed">无法加载您的个人资料</string>
+    <string name="profile_fields">个人资料字段</string>
+    <string name="add_profile_field">添加个人资料字段</string>
+    <string name="edit_profile_field">编辑个人资料字段</string>
+    <string name="profile_field_name">字段名称</string>
+    <string name="profile_field_value">值</string>
+    <string name="time_zone">时区</string>
+    <string name="profile_field_was_rejected">个人资料字段被拒绝</string>
+    <string name="profile_field_could_not_be_removed">无法删除个人资料字段</string>
     <string name="picker_no_sticker_packs">没有可用的贴纸包</string>
     <string name="picker_no_reaction_images">没有可用于回应的表情或贴纸</string>
     <string name="picker_search_images">搜索表情和贴纸</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">发送附件失败</string>
     <string name="failed_to_send_check_your_internet">发送失败。请检查网络连接。</string>
     <string name="failed_to_send_invitation">发送邀请失败</string>
+    <string name="invite_blocked">该用户不接受邀请</string>
+    <string name="user_limit_exceeded">您的账户已达到所属服务器的上限。</string>
     <string name="failed_to_send_message">发送消息失败</string>
     <string name="failed_to_send_sticker">发送贴纸失败</string>
     <string name="failed_to_share_location">分享位置失败</string>
@@ -1218,6 +1237,9 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="other">%1$d 条回复</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="other">%1$d 个共同房间</item>
     </plurals>
     <string name="call">通话</string>
     <string name="dms">私聊</string>

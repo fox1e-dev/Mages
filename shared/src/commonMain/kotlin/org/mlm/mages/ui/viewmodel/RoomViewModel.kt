@@ -48,6 +48,7 @@ import org.mlm.mages.ui.components.composer.composerToPlainBody
 import org.mlm.mages.ui.components.composer.parseComposerMarkdown
 import org.mlm.mages.ui.components.composer.emoteSuggestionsFrom
 import org.mlm.mages.ui.components.core.emoteMxcUrisFrom
+import org.mlm.mages.ui.components.core.firstLinkIn
 import org.mlm.mages.ui.components.message.mxcReactionKeys
 import org.mlm.mages.ui.components.message.reactionShortcodesFrom
 import org.mlm.mages.matrix.ReactionSummary
@@ -258,6 +259,7 @@ class RoomViewModel(
     private var liveLocationBeaconToken: ULong? = null
     private val paginateLock = Mutex()
     private val thumbnailFetchInFlight = mutableSetOf<String>()
+    private val linkPreviewFetchInFlight = mutableSetOf<String>()
     private val previewPathByMxc = mutableMapOf<String, String>()
     private val previewLock = Mutex()
     private val previewInFlight = mutableMapOf<String, CompletableDeferred<String?>>()
@@ -2304,6 +2306,7 @@ class RoomViewModel(
         recomputeThreadCountsFromTimeline()
 
         prefetchThumbnailsForEvents(visible.takeLast(8))
+        prefetchLinkPreviews(visible.takeLast(8))
         prefetchSenderAvatars(newEvents)
         prefetchReactionUserAvatars(newEvents)
         prefetchAudioForEvents(visible.takeLast(8))
@@ -2893,12 +2896,58 @@ class RoomViewModel(
     private fun mediaPreviewsAllowed(): Boolean =
         settings.value.mediaPreviews.allowsMediaPreviews(currentState.isDm)
 
+    private fun linkPreviewsAllowed(): Boolean =
+        settings.value.linkPreviews.allowsLinkPreviews(currentState.isRoomEncrypted)
+
     private fun prefetchThumbnailsForEvents(events: List<MessageEvent>) {
         if (!mediaPreviewsAllowed()) return
 
         events.forEach { ev ->
             ensureThumbnail(ev)
         }
+    }
+
+    private fun prefetchLinkPreviews(events: List<MessageEvent>) {
+        if (!linkPreviewsAllowed()) return
+
+        events.forEach { ev ->
+            ensureLinkPreview(ev)
+        }
+    }
+
+    fun ensureLinkPreview(event: MessageEvent) {
+        if (!linkPreviewsAllowed()) return
+        if (event.isRedacted || event.eventId.isBlank()) return
+        if (currentState.linkPreviewByEvent.containsKey(event.eventId)) return
+        if (!linkPreviewFetchInFlight.add(event.eventId)) return
+
+        val link = firstLinkIn(event.body, event.formattedBody)
+        if (link == null) {
+            rememberLinkPreview(event.eventId, null)
+            linkPreviewFetchInFlight.remove(event.eventId)
+            return
+        }
+
+        launch {
+            try {
+                val preview = service.linkPreviews.resolve(link)
+                rememberLinkPreview(event.eventId, preview)
+
+                val mxc = preview?.imageMxcUri ?: return@launch
+                if (!mediaPreviewsAllowed()) return@launch
+                val path = service.avatars.resolve(mxc, px = LINK_PREVIEW_IMAGE_PX, crop = false)
+                    ?: return@launch
+                updateState {
+                    copy(linkPreviewImageByEvent = linkPreviewImageByEvent + (event.eventId to path))
+                }
+            } finally {
+                linkPreviewFetchInFlight.remove(event.eventId)
+            }
+        }
+    }
+
+    private fun rememberLinkPreview(eventId: String, preview: LinkPreview?) = updateState {
+        copy(linkPreviewByEvent = linkPreviewByEvent + (eventId to preview))
     }
 
     fun ensureThumbnail(event: MessageEvent) {

@@ -18,11 +18,35 @@ pub enum FfiError {
     TlsUnavailable(String),
     #[error("Location permission denied")]
     LocationPermissionDenied,
+    #[error("The invite was blocked")]
+    InviteBlocked,
+    #[error("The homeserver reported that an account limit was exceeded")]
+    UserLimitExceeded,
+}
+
+/// MSC4335 surfaces `M_USER_LIMIT_EXCEEDED` as a typed error so callers can explain the
+/// limit; every other SDK failure keeps the raw text it had before.
+fn sdk_error(
+    kind: Option<&matrix_sdk::ruma::api::error::ErrorKind>,
+    raw: &dyn std::fmt::Debug,
+) -> FfiError {
+    use matrix_sdk::ruma::api::error::ErrorKind;
+
+    if matches!(kind, Some(ErrorKind::UserLimitExceeded(_))) {
+        FfiError::UserLimitExceeded
+    } else {
+        FfiError::Msg(format!("matrix_sdk error: {raw:?}"))
+    }
 }
 
 impl From<matrix_sdk::Error> for FfiError {
     fn from(e: matrix_sdk::Error) -> Self {
-        FfiError::Msg(format!("matrix_sdk error: {e:?}"))
+        sdk_error(e.client_api_error_kind(), &e)
+    }
+}
+impl From<matrix_sdk::HttpError> for FfiError {
+    fn from(e: matrix_sdk::HttpError) -> Self {
+        sdk_error(e.client_api_error_kind(), &e)
     }
 }
 impl From<matrix_sdk_ui::notification_client::Error> for FfiError {
@@ -609,6 +633,20 @@ pub struct OwnProfile {
     pub can_change_avatar: bool,
 }
 
+/// One MSC4133 extended profile field, with its value as plain text.
+#[derive(Clone, Serialize, Deserialize, Record)]
+pub struct ProfileField {
+    pub name: String,
+    pub value: String,
+}
+
+/// MSC2666: rooms the local user and another user are both joined to.
+#[derive(Clone, Serialize, Deserialize, Record)]
+pub struct MutualRooms {
+    pub count: u64,
+    pub room_ids: Vec<String>,
+}
+
 #[derive(Clone, Serialize, Deserialize, Record)]
 pub struct PublicRoom {
     pub room_id: String,
@@ -1041,6 +1079,21 @@ pub enum MediaPreviewMode {
     On,
     Private,
     Off,
+}
+
+/// OpenGraph fields the card renders; `og:image` is an MXC URI here, not an HTTP URL.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Record)]
+pub struct LinkPreview {
+    pub url: String,
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub site_name: Option<String>,
+    pub image_mxc_uri: Option<String>,
+    pub image_mime_type: Option<String>,
+    pub image_alt: Option<String>,
+    pub image_width: Option<u32>,
+    pub image_height: Option<u32>,
+    pub image_size_bytes: Option<u64>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Enum)]

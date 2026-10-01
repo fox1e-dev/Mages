@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">Tự động tham gia phòng khi được mời</string>
     <string name="setting_send_public_read_receipts_description">Khi bật, người khác có thể thấy khi nào bạn đã đọc tin nhắn của họ</string>
     <string name="setting_send_typing_indicators_description">Khi tắt, Mages không gửi thông báo đang nhập</string>
+    <string name="setting_block_invites">Chặn lời mời vào phòng</string>
+    <string name="setting_block_invites_description">Tự động từ chối mọi lời mời vào phòng gửi đến bạn. Đồng bộ với các thiết bị khác của bạn</string>
+    <string name="setting_link_previews">Hiển thị xem trước liên kết</string>
+    <string name="setting_link_previews_description">Yêu cầu máy chủ gia đình hiển thị xem trước các liên kết được đăng trong tin nhắn. URL được cung cấp cho máy chủ để làm việc này, vì vậy các phòng được mã hóa sẽ không được xem trước trừ khi bạn chọn Luôn</string>
     <string name="setting_presence_description">Đặt trạng thái hiện diện toàn cục</string>
     <string name="setting_app_lock_description">Yêu cầu sinh trắc học hoặc PIN thiết bị để mở</string>
     <string name="setting_app_lock_timeout_description">Khóa sau khoảng thời gian này ở chế độ nền</string>
@@ -567,6 +571,11 @@
         <item>Chỉ trong DM</item>
         <item>Không bao giờ</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Luôn</item>
+        <item>Ngoại trừ phòng đã mã hóa</item>
+        <item>Không bao giờ</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">Các phòng trong không gian đang bị ẩn</string>
     <string name="rooms_hidden_in_spaces_subtitle">Mở Không gian để duyệt các phòng bên trong không gian của bạn</string>
     <string name="find_users_and_public_rooms">Tìm người dùng và phòng công khai</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">Đổi ảnh</string>
     <string name="profile_remove_photo">Xóa ảnh</string>
     <string name="profile_load_failed">Không tải được hồ sơ của bạn</string>
+    <string name="profile_fields">Trường hồ sơ</string>
+    <string name="add_profile_field">Thêm trường hồ sơ</string>
+    <string name="edit_profile_field">Sửa trường hồ sơ</string>
+    <string name="profile_field_name">Tên trường</string>
+    <string name="profile_field_value">Giá trị</string>
+    <string name="time_zone">Múi giờ</string>
+    <string name="profile_field_was_rejected">Trường hồ sơ đã bị từ chối</string>
+    <string name="profile_field_could_not_be_removed">Không thể xóa trường hồ sơ</string>
     <string name="picker_no_sticker_packs">Không có gói hình dán nào</string>
     <string name="picker_no_reaction_images">Không có emoji hay hình dán để phản ứng</string>
     <string name="picker_search_images">Tìm emoji và hình dán</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">Không gửi được tệp đính kèm</string>
     <string name="failed_to_send_check_your_internet">Không gửi được. Kiểm tra kết nối mạng của bạn?</string>
     <string name="failed_to_send_invitation">Không gửi được lời mời</string>
+    <string name="invite_blocked">Người dùng này không chấp nhận lời mời</string>
+    <string name="user_limit_exceeded">Tài khoản của bạn đã đạt giới hạn trên máy chủ homeserver của bạn.</string>
     <string name="failed_to_send_message">Không gửi được tin nhắn</string>
     <string name="failed_to_send_sticker">Không gửi được hình dán</string>
     <string name="failed_to_share_location">Không chia sẻ được vị trí</string>
@@ -1218,6 +1237,10 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d câu trả lời</item>        <item quantity="other">%1$d câu trả lời</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d phòng chung</item>
+        <item quantity="other">%1$d phòng chung</item>
     </plurals>
     <string name="call">Cuộc gọi</string>
     <string name="dms">DM</string>

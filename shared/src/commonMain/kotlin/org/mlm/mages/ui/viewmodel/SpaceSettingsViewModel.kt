@@ -405,8 +405,8 @@ class SpaceSettingsViewModel(
 
             updateState { copy(children = children, isLoading = false) }
         } else {
-            val failedToLoadChildrenFallback2 = getString(Res.string.failed_to_load_children)
-            updateState { copy(isLoading = false, error = result.toUserMessage(failedToLoadChildrenFallback2)) }
+            val message = result.toUserMessage(getString(Res.string.failed_to_load_children))
+            updateState { copy(isLoading = false, error = message) }
         }
     }
 

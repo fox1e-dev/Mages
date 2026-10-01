@@ -10,6 +10,7 @@ import org.mlm.mages.accounts.MatrixAccount
 import org.mlm.mages.accounts.MatrixClients
 import org.mlm.mages.matrix.*
 import org.mlm.mages.storage.AvatarLoader
+import org.mlm.mages.storage.LinkPreviewLoader
 import kotlin.concurrent.Volatile
 import org.jetbrains.compose.resources.getString
 import mages.shared.generated.resources.Res
@@ -45,6 +46,17 @@ class MatrixService(
             if (loader != null && loader.port === currentPort) return loader
             loader?.shutdown()
             return AvatarLoader(currentPort).also { _avatars = it }
+        }
+
+    @Volatile
+    private var _linkPreviews: LinkPreviewLoader? = null
+    val linkPreviews: LinkPreviewLoader
+        get() {
+            val currentPort = clients.port
+            val loader = _linkPreviews
+            if (loader != null && loader.port === currentPort) return loader
+            loader?.shutdown()
+            return LinkPreviewLoader(currentPort).also { _linkPreviews = it }
         }
 
     suspend fun initFromDisk(proxyUrl: String? = null): Boolean =
@@ -97,6 +109,8 @@ class MatrixService(
         resetSyncState()
         _avatars?.shutdown()
         _avatars = null
+        _linkPreviews?.shutdown()
+        _linkPreviews = null
         val ok = clients.switchTo(account)
         return if (ok) {
             Result.success(Unit)
@@ -110,6 +124,8 @@ class MatrixService(
             resetSyncState()
             _avatars?.shutdown()
             _avatars = null
+            _linkPreviews?.shutdown()
+            _linkPreviews = null
         }
         clients.removeAccount(accountId)
     }

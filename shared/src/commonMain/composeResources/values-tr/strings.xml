@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">Davet edildiğinde odalara otomatik olarak katılma</string>
     <string name="setting_send_public_read_receipts_description">Etkinleştirildiğinde, diğer kullanıcılar mesajlarını ne zaman okuduğunuzu görebilir</string>
     <string name="setting_send_typing_indicators_description">Devre dışı bırakıldığında Büyücüler yazma bildirimi göndermez</string>
+    <string name="setting_block_invites">Oda davetlerini engelle</string>
+    <string name="setting_block_invites_description">Size gönderilen tüm oda davetlerini otomatik olarak reddet. Diğer cihazlarınla eşitlenir</string>
+    <string name="setting_link_previews">Bağlantı önizlemelerini göster</string>
+    <string name="setting_link_previews_description">Mesajlarda paylaşılan bağlantıların önizlemesini istemek için ev sunucusuna sor. Bunun için gerekli URL ev sunucusuna iletilir, bu nedenle şifreli odalar önizlenmez, Her zaman seçeneğini seçmediğiniz sürece</string>
     <string name="setting_presence_description">Küresel iletişim durumu ayarlama</string>
     <string name="setting_app_lock_description">Açmak için biyometrik bilgileri veya cihaz PIN'ini zorunlu kılın_</string>
     <string name="setting_app_lock_timeout_description">_Arka planda bu kadar süre kaldıktan sonra kilitleyin_</string>
@@ -567,6 +571,11 @@
         <item>Yalnızca DM'lerde</item>
         <item>Asla</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Her zaman</item>
+        <item>Şifreli odalar dışında</item>
+        <item>Asla</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">Alanlardaki odalar gizlidir</string>
     <string name="rooms_hidden_in_spaces_subtitle">Alanlarınızdaki odalara göz atmak için Alanları açın</string>
     <string name="find_users_and_public_rooms">Kullanıcıları ve Umumi Odaları Bul</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">Fotoğrafı değiştir</string>
     <string name="profile_remove_photo">Fotoğrafı kaldır</string>
     <string name="profile_load_failed">Profiliniz yüklenemedi</string>
+    <string name="profile_fields">Profil alanları</string>
+    <string name="add_profile_field">Profil alanı ekle</string>
+    <string name="edit_profile_field">Profil alanını düzenle</string>
+    <string name="profile_field_name">Alan adı</string>
+    <string name="profile_field_value">Değer</string>
+    <string name="time_zone">Saat dilimi</string>
+    <string name="profile_field_was_rejected">Profil alanı reddedildi</string>
+    <string name="profile_field_could_not_be_removed">Profil alanı silinemedi</string>
     <string name="picker_no_sticker_packs">Kullanılabilir çıkartma paketi yok</string>
     <string name="picker_no_reaction_images">Tepki vermek için emoji veya çıkartma yok</string>
     <string name="picker_search_images">Emoji ve çıkartmaları ara</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">Ek gönderilemedi</string>
     <string name="failed_to_send_check_your_internet">Gönderilemedi. İnternet bağlantınızı denetleyin.</string>
     <string name="failed_to_send_invitation">Davet gönderilemedi</string>
+    <string name="invite_blocked">Bu kullanıcı davetleri kabul etmiyor</string>
+    <string name="user_limit_exceeded">Hesabınız kendi sunucunuzda bir sınıra ulaştı.</string>
     <string name="failed_to_send_message">Mesaj gönderilemedi</string>
     <string name="failed_to_send_sticker">Çıkartma gönderilemedi</string>
     <string name="failed_to_share_location">Konum paylaşılamadı</string>
@@ -1218,6 +1237,10 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d yanıt</item>        <item quantity="other">%1$d yanıt</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d ortak oda</item>
+        <item quantity="other">%1$d ortak oda</item>
     </plurals>
     <string name="call">Arama</string>
     <string name="dms">DM\'ler</string>

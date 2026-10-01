@@ -11,11 +11,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import mages.shared.generated.resources.*
 import org.koin.core.component.inject
+import org.mlm.mages.LinkPreview
 import org.mlm.mages.MatrixService
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.ReplyPreviewKind
 import org.mlm.mages.matrix.ImagePackSummary
+import org.mlm.mages.matrix.LINK_PREVIEW_IMAGE_PX
 import org.mlm.mages.matrix.TimelineDiff
+import org.mlm.mages.matrix.allowsLinkPreviews
 import org.mlm.mages.matrix.allowsMediaPreviews
 import org.mlm.mages.emoji.RecentEmojiStore
 import org.mlm.mages.settings.AppSettings
@@ -27,6 +30,7 @@ import org.mlm.mages.ui.components.composer.composerToPlainBody
 import org.mlm.mages.ui.components.composer.parseComposerMarkdown
 import org.mlm.mages.ui.components.composer.emoteSuggestionsFrom
 import org.mlm.mages.ui.components.core.emoteMxcUrisFrom
+import org.mlm.mages.ui.components.core.firstLinkIn
 import org.mlm.mages.ui.components.message.mxcReactionKeys
 import org.mlm.mages.ui.components.message.reactionShortcodesFrom
 import org.mlm.mages.ui.util.downloadNameHint
@@ -244,6 +248,7 @@ class ThreadViewModel(
         prefetchSenderAvatars(events)
         prefetchReactionUserAvatars(events)
         prefetchReplyThumbnails(events)
+        prefetchLinkPreviews(events)
 
         val hasOnlyRootSnapshot = isReset && events.none { it.eventId != rootEventId }
 
@@ -281,6 +286,7 @@ class ThreadViewModel(
     private fun updateSingleEvent(event: MessageEvent) {
         seenItemIds.add(event.itemId)
         prefetchReplyThumbnails(listOf(event))
+        prefetchLinkPreviews(listOf(event))
 
         updateState {
             when {
@@ -305,6 +311,7 @@ class ThreadViewModel(
     private fun upsertSingleEvent(event: MessageEvent) {
         seenItemIds.add(event.itemId)
         prefetchReplyThumbnails(listOf(event))
+        prefetchLinkPreviews(listOf(event))
 
         updateState {
             when {
@@ -371,6 +378,7 @@ class ThreadViewModel(
             // Track all seen items
             allMessages.forEach { seenItemIds.add(it.itemId) }
             prefetchReplyThumbnails(allMessages)
+            prefetchLinkPreviews(allMessages)
 
             updateState {
                 // Merge with any existing data from timeline
@@ -434,6 +442,7 @@ class ThreadViewModel(
             // Track new items
             newReplies.forEach { seenItemIds.add(it.itemId) }
             prefetchReplyThumbnails(newReplies)
+            prefetchLinkPreviews(newReplies)
 
             updateState {
                 val merged = (newReplies + replies)
@@ -536,6 +545,9 @@ class ThreadViewModel(
     private fun mediaPreviewsAllowed(): Boolean =
         prefs.value.mediaPreviews.allowsMediaPreviews(isPrivateRoom = null)
 
+    private fun linkPreviewsAllowed(): Boolean =
+        prefs.value.linkPreviews.allowsLinkPreviews(currentState.isRoomEncrypted)
+
     private fun prefetchReplyThumbnails(events: List<MessageEvent>) {
         if (!mediaPreviewsAllowed()) return
         events.forEach {
@@ -545,7 +557,48 @@ class ThreadViewModel(
         }
     }
 
+    private fun prefetchLinkPreviews(events: List<MessageEvent>) {
+        if (!linkPreviewsAllowed()) return
+        events.forEach { ensureLinkPreview(it) }
+    }
+
+    fun ensureLinkPreview(event: MessageEvent) {
+        if (!linkPreviewsAllowed()) return
+        if (event.isRedacted || event.eventId.isBlank()) return
+        if (currentState.linkPreviewByEvent.containsKey(event.eventId)) return
+        if (!linkPreviewFetchInFlight.add(event.eventId)) return
+
+        val link = firstLinkIn(event.body, event.formattedBody)
+        if (link == null) {
+            rememberLinkPreview(event.eventId, null)
+            linkPreviewFetchInFlight.remove(event.eventId)
+            return
+        }
+
+        launch {
+            try {
+                val preview = service.linkPreviews.resolve(link)
+                rememberLinkPreview(event.eventId, preview)
+
+                val mxc = preview?.imageMxcUri ?: return@launch
+                if (!mediaPreviewsAllowed()) return@launch
+                val path = service.avatars.resolve(mxc, px = LINK_PREVIEW_IMAGE_PX, crop = false)
+                    ?: return@launch
+                updateState {
+                    copy(linkPreviewImageByEvent = linkPreviewImageByEvent + (event.eventId to path))
+                }
+            } finally {
+                linkPreviewFetchInFlight.remove(event.eventId)
+            }
+        }
+    }
+
+    private fun rememberLinkPreview(eventId: String, preview: LinkPreview?) = updateState {
+        copy(linkPreviewByEvent = linkPreviewByEvent + (eventId to preview))
+    }
+
     private val thumbnailFetchInFlight = mutableSetOf<String>()
+    private val linkPreviewFetchInFlight = mutableSetOf<String>()
 
     fun ensureThumbnail(event: MessageEvent) {
         if (!mediaPreviewsAllowed()) return

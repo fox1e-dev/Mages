@@ -327,6 +327,7 @@ class SecurityViewModel(
     fun loadProfile() {
         val version = accountDataVersion
         launch { fetchProfile(version) }
+        launch { fetchProfileFields(version) }
     }
 
     private suspend fun fetchProfile(version: Long) {
@@ -374,6 +375,49 @@ class SecurityViewModel(
             if (failure != null) _events.send(Event.ShowError(failure))
             else _events.send(Event.ShowSuccess(getString(Res.string.profile_updated)))
             fetchProfile(version)
+            fetchProfileFields(version)
+        }
+    }
+
+    private suspend fun fetchProfileFields(version: Long) {
+        val port = service.portOrNull ?: return
+        if (!port.canSetProfileFields()) {
+            updateStateIfCurrent(version) {
+                copy(canSetProfileFields = false, profileFields = emptyList())
+            }
+            return
+        }
+        val fields = runCatching { port.ownProfileFields() }.getOrDefault(emptyList())
+        updateStateIfCurrent(version) { copy(canSetProfileFields = true, profileFields = fields) }
+    }
+
+    fun saveProfileField(name: String, value: String) {
+        val version = accountDataVersion
+        launch {
+            val port = service.portOrNull ?: return@launch
+            updateStateIfCurrent(version) { copy(isSavingProfileField = true) }
+            val saved = port.setProfileField(name.trim(), value)
+            updateStateIfCurrent(version) { copy(isSavingProfileField = false) }
+            if (saved.isFailure) {
+                _events.send(Event.ShowError(getString(Res.string.profile_field_was_rejected)))
+            } else {
+                fetchProfileFields(version)
+            }
+        }
+    }
+
+    fun deleteProfileField(name: String) {
+        val version = accountDataVersion
+        launch {
+            val port = service.portOrNull ?: return@launch
+            updateStateIfCurrent(version) { copy(isSavingProfileField = true) }
+            val removed = port.deleteProfileField(name)
+            updateStateIfCurrent(version) { copy(isSavingProfileField = false) }
+            if (removed.isFailure) {
+                _events.send(Event.ShowError(getString(Res.string.profile_field_could_not_be_removed)))
+            } else {
+                fetchProfileFields(version)
+            }
         }
     }
 

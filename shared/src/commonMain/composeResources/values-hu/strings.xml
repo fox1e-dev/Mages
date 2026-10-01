@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">Meghívás esetén automatikusan csatlakozzon a szobákhoz</string>
     <string name="setting_send_public_read_receipts_description">Ha engedélyezve van, a többi felhasználó láthatja, mikor olvasta el az üzeneteiket</string>
     <string name="setting_send_typing_indicators_description">Ha le van tiltva, a Mages nem küld gépelési értesítéseket</string>
+    <string name="setting_block_invites">Szobameghívók blokkolása</string>
+    <string name="setting_block_invites_description">Automatikusan utasítsd vissza a kapott szobameghívókat. Szinkronizálva a többi eszközöddel</string>
+    <string name="setting_link_previews">Hivatkozások előnézetének megjelenítése</string>
+    <string name="setting_link_previews_description">Kérd meg a kiszolgálódat, hogy jelenítse meg az üzenetekben lévő hivatkozások előnézetét. Ehhez megkapja a URL-címet, így a titkosított szobák nem kapnak előnézetet, hacsak nem a Mindig lehetőséget választod</string>
     <string name="setting_presence_description">Globális jelenléti állapot beállítása</string>
     <string name="setting_app_lock_description">A megnyitáshoz biometrikus adatok vagy eszköz PIN-kódja szükséges</string>
     <string name="setting_app_lock_timeout_description">Ennyi idő után zárja le a háttérben</string>
@@ -567,6 +571,11 @@
         <item>Csak DMs-ben</item>
         <item>Soha</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Mindig</item>
+        <item>Titkosított szobák kivételével</item>
+        <item>Soha</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">A terek szobái el vannak rejtve</string>
     <string name="rooms_hidden_in_spaces_subtitle">Nyissa meg a tereket a bennük lévő szobák böngészéséhez</string>
     <string name="find_users_and_public_rooms">Felhasználók és nyilvános szobák keresése</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">Fénykép módosítása</string>
     <string name="profile_remove_photo">Fénykép eltávolítása</string>
     <string name="profile_load_failed">Nem sikerült betölteni a profilját</string>
+    <string name="profile_fields">Profilmezők</string>
+    <string name="add_profile_field">Profilmező hozzáadása</string>
+    <string name="edit_profile_field">Profilmező szerkesztése</string>
+    <string name="profile_field_name">Mező neve</string>
+    <string name="profile_field_value">Érték</string>
+    <string name="time_zone">Időzóna</string>
+    <string name="profile_field_was_rejected">A profilmezőt elutasították</string>
+    <string name="profile_field_could_not_be_removed">A profilmezőt nem sikerült eltávolítani</string>
     <string name="picker_no_sticker_packs">Nincs elérhető matricacsomag</string>
     <string name="picker_no_reaction_images">Nincs reakcióhoz használható emoji vagy matrica</string>
     <string name="picker_search_images">Emojik és matricák keresése</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">Nem sikerült elküldeni a mellékletet</string>
     <string name="failed_to_send_check_your_internet">A küldés nem sikerült. Ellenőrizze az internetkapcsolatot?</string>
     <string name="failed_to_send_invitation">Nem sikerült elküldeni a meghívást</string>
+    <string name="invite_blocked">Ez a felhasználó nem fogad el meghívókat</string>
+    <string name="user_limit_exceeded">Az ön fiója elérte a korlátot a saját kiszolgálóján.</string>
     <string name="failed_to_send_message">Nem sikerült elküldeni az üzenetet</string>
     <string name="failed_to_send_sticker">Nem sikerült elküldeni a matricát</string>
     <string name="failed_to_share_location">Nem sikerült megosztani a tartózkodási helyet</string>
@@ -1218,6 +1237,10 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d válasz</item>        <item quantity="other">%1$d válasz</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d közös szoba</item>
+        <item quantity="other">%1$d közös szoba</item>
     </plurals>
     <string name="call">Hívás</string>
     <string name="dms">DM-ek</string>

@@ -12,8 +12,9 @@ import org.mlm.mages.settings.AppSettings
 import org.mlm.mages.settings.AppSettingsSchema
 
 const val MEDIA_PREVIEWS_FIELD = "mediaPreviews"
+const val BLOCK_INVITES_FIELD = "blockInvites"
 
-/** MSC4278 account data, so the media preview choice follows the account. */
+/** MSC4278 media previews and MSC4380 invite blocking, so both follow the account. */
 class MatrixRemoteSettingsStore(
     private val port: () -> MatrixPort,
 ) : RemoteSettingsStore {
@@ -24,35 +25,59 @@ class MatrixRemoteSettingsStore(
     override val changes: Flow<Map<String, String>> = emptyFlow()
 
     /**
-     * A null [MatrixPort.mediaPreviewConfig] means the account never set one, which is absent
-     * rather than "On", and must not overwrite the local choice. A failure is left to
+     * A field the account never set is omitted rather than returned as a default, which is
+     * what keeps an absent remote from overwriting the local choice. A failure is left to
      * propagate so the sync reports it instead of mirroring a value it never read.
      */
     override suspend fun read(fields: List<String>): Map<String, String> {
         if (fields.isEmpty()) return emptyMap()
-        fields.forEach { require(it == MEDIA_PREVIEWS_FIELD) { "Unsupported remote field: $it" } }
+        fields.forEach { requireSupported(it) }
 
-        val config = port().mediaPreviewConfig()
-        return config?.let { mapOf(MEDIA_PREVIEWS_FIELD to it.name) } ?: emptyMap()
+        val values = mutableMapOf<String, String>()
+        if (MEDIA_PREVIEWS_FIELD in fields) {
+            port().mediaPreviewConfig()?.let { values[MEDIA_PREVIEWS_FIELD] = it.name }
+        }
+        if (BLOCK_INVITES_FIELD in fields) {
+            port().inviteBlocked()?.let { values[BLOCK_INVITES_FIELD] = it.toString() }
+        }
+        return values
     }
 
     override suspend fun write(field: String, value: String) {
-        require(field == MEDIA_PREVIEWS_FIELD) { "Unsupported remote field: $field" }
-        // The sync round-trips the settings enum's entry name, so [MediaPreviewMode] has to
-        // name its entries the same way or this throws rather than writing a wrong value.
-        val mode = runCatching { MediaPreviewMode.valueOf(value) }
-            .getOrElse { throw RemoteUnsupportedException("Unknown media preview mode: $value") }
-        port().setMediaPreviewConfig(mode).getOrThrow()
+        when (field) {
+            MEDIA_PREVIEWS_FIELD -> {
+                // The sync round-trips the settings enum's entry name, so [MediaPreviewMode] has
+                // to name its entries the same way or this throws rather than writing a wrong value.
+                val mode = runCatching { MediaPreviewMode.valueOf(value) }
+                    .getOrElse { throw RemoteUnsupportedException("Unknown media preview mode: $value") }
+                port().setMediaPreviewConfig(mode).getOrThrow()
+            }
+            BLOCK_INVITES_FIELD -> {
+                val blocked = value.toBooleanStrictOrNull()
+                    ?: throw RemoteUnsupportedException("Unknown invite block value: $value")
+                port().setInviteBlocked(blocked).getOrThrow()
+            }
+            else -> requireSupported(field)
+        }
+    }
+
+    private fun requireSupported(field: String) {
+        if (field != MEDIA_PREVIEWS_FIELD && field != BLOCK_INVITES_FIELD) {
+            throw RemoteUnsupportedException("Unsupported remote field: $field")
+        }
     }
 }
 
-fun mediaPreviewSettingsSync(
+fun accountDataSettingsSync(
     repository: SettingsRepository<AppSettings>,
     port: () -> MatrixPort,
 ): SettingsRemoteSync<AppSettings> = SettingsRemoteSync(
     repository = repository,
     schema = AppSettingsSchema,
     store = MatrixRemoteSettingsStore(port),
-    bindings = listOf(RemoteBinding(field = MEDIA_PREVIEWS_FIELD)),
+    bindings = listOf(
+        RemoteBinding(field = MEDIA_PREVIEWS_FIELD),
+        RemoteBinding(field = BLOCK_INVITES_FIELD),
+    ),
     pullPolicy = RemotePullPolicy.ONCE_PER_ATTACH,
 )

@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">초대되면 자동으로 회의실에 참여</string>
     <string name="setting_send_public_read_receipts_description">활성화되면 다른 사용자는 귀하가 메시지를 읽었는지 확인할 수 있습니다.</string>
     <string name="setting_send_typing_indicators_description">비활성화되면 Mages는 입력 알림을 보내지 않습니다.</string>
+    <string name="setting_block_invites">룸 초대 차단</string>
+    <string name="setting_block_invites_description">나에게 오는 모든 룸 초대를 자동으로 거부합니다. 다른 기기와 동기화됩니다</string>
+    <string name="setting_link_previews">링크 미리보기 표시</string>
+    <string name="setting_link_previews_description">메시지에 게시된 링크의 미리보기를 홈서버에 요청합니다. 미리보기 생성을 위해 URL이 홈서버에 전달되므로, 「항상」을 선택하지 않는 한 암호화된 룸은 미리보기가 생성되지 않습니다</string>
     <string name="setting_presence_description">글로벌 입지 상태 설정</string>
     <string name="setting_app_lock_description">열려면 생체 인식 또는 장치 PIN 필요</string>
     <string name="setting_app_lock_timeout_description">이 시간 이후 백그라운드에서 잠금</string>
@@ -567,6 +571,11 @@
         <item>DM에서만</item>
         <item>안 함</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>항상</item>
+        <item>암호화된 룸 제외</item>
+        <item>안 함</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">공간의 방이 숨겨짐</string>
     <string name="rooms_hidden_in_spaces_subtitle">공간 안의 방을 보려면 공간을 엽니다</string>
     <string name="find_users_and_public_rooms">사용자 및 공개 방 찾기</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">사진 변경</string>
     <string name="profile_remove_photo">사진 제거</string>
     <string name="profile_load_failed">프로필을 불러올 수 없습니다</string>
+    <string name="profile_fields">프로필 필드</string>
+    <string name="add_profile_field">프로필 필드 추가</string>
+    <string name="edit_profile_field">프로필 필드 편집</string>
+    <string name="profile_field_name">필드 이름</string>
+    <string name="profile_field_value">값</string>
+    <string name="time_zone">시간대</string>
+    <string name="profile_field_was_rejected">프로필 필드가 거부되었습니다</string>
+    <string name="profile_field_could_not_be_removed">프로필 필드를 삭제할 수 없습니다</string>
     <string name="picker_no_sticker_packs">사용할 수 있는 스티커 팩이 없습니다</string>
     <string name="picker_no_reaction_images">반응으로 사용할 이모티콘이나 스티커가 없습니다</string>
     <string name="picker_search_images">이모티콘 및 스티커 검색</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">첨부파일 전송 실패</string>
     <string name="failed_to_send_check_your_internet">전송에 실패했습니다. 인터넷 연결을 확인하세요.</string>
     <string name="failed_to_send_invitation">초대장 전송 실패</string>
+    <string name="invite_blocked">이 사용자는 초대를 수락하지 않습니다</string>
+    <string name="user_limit_exceeded">계정이 홈서버의 한도에 도달했습니다.</string>
     <string name="failed_to_send_message">메시지 전송 실패</string>
     <string name="failed_to_send_sticker">스티커 전송 실패</string>
     <string name="failed_to_share_location">위치 공유 실패</string>
@@ -1218,6 +1237,9 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="other">%1$d 답글</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="other">%1$d개의 공통 룸</item>
     </plurals>
     <string name="call">통화</string>
     <string name="dms">DM</string>

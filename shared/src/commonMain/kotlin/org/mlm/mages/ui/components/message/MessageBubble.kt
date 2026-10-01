@@ -344,6 +344,14 @@ fun MessageBubble(
                                 )
                             }
 
+                            model.linkPreview?.let { preview ->
+                                Spacer(Modifier.height(Spacing.xs))
+                                LinkPreviewCard(
+                                    preview = preview,
+                                    imagePath = model.linkPreviewImage,
+                                )
+                            }
+
                             if (isMine && model.sendState == SendState.Failed) {
                                 FailedIndicator()
                             }

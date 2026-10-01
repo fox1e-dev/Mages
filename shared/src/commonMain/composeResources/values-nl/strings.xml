@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">Automatisch deelnemen aan kamers wanneer u wordt uitgenodigd</string>
     <string name="setting_send_public_read_receipts_description">Indien ingeschakeld kunnen andere gebruikers zien wanneer u hun berichten hebt gelezen</string>
     <string name="setting_send_typing_indicators_description">Indien uitgeschakeld, verzendt Mages geen typemeldingen</string>
+    <string name="setting_block_invites">Uitnodigingen voor kamers blokkeren</string>
+    <string name="setting_block_invites_description">Weiger automatisch alle kameruitnodigingen die je ontvangt. Gesynchroniseerd met je andere apparaten</string>
+    <string name="setting_link_previews">Linkvoorbeelden tonen</string>
+    <string name="setting_link_previews_description">Vraag je thuisserver om de links in berichten te tonen. De URL wordt hiervoor aan de thuisserver doorgegeven, dus versleutelde kamers worden niet weergegeven, tenzij je kiest voor Altijd</string>
     <string name="setting_presence_description">Stel een globale aanwezigheidsstatus in</string>
     <string name="setting_app_lock_description">Vereist biometrie of pincode van apparaat om te openen</string>
     <string name="setting_app_lock_timeout_description">Vergrendel na zoveel tijd op de achtergrond</string>
@@ -567,6 +571,11 @@
         <item>Alleen in DMs</item>
         <item>Nooit</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Altijd</item>
+        <item>Behalve in versleutelde kamers</item>
+        <item>Nooit</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">Kamers in ruimtes zijn verborgen</string>
     <string name="rooms_hidden_in_spaces_subtitle">Open ruimtes om de kamers in uw ruimtes te bekijken</string>
     <string name="find_users_and_public_rooms">Gebruikers en openbare kamers vinden</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">Foto wijzigen</string>
     <string name="profile_remove_photo">Foto verwijderen</string>
     <string name="profile_load_failed">Kan uw profiel niet laden</string>
+    <string name="profile_fields">Profielvelden</string>
+    <string name="add_profile_field">Profielveld toevoegen</string>
+    <string name="edit_profile_field">Profielveld bewerken</string>
+    <string name="profile_field_name">Veldnaam</string>
+    <string name="profile_field_value">Waarde</string>
+    <string name="time_zone">Tijdzone</string>
+    <string name="profile_field_was_rejected">Het profielveld is geweigerd</string>
+    <string name="profile_field_could_not_be_removed">Het profielveld kon niet worden verwijderd</string>
     <string name="picker_no_sticker_packs">Geen stickerpakketten beschikbaar</string>
     <string name="picker_no_reaction_images">Geen emoticons of stickers om mee te reageren</string>
     <string name="picker_search_images">Zoek emoticons en stickers</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">Kan bijlage niet verzenden</string>
     <string name="failed_to_send_check_your_internet">Verzenden mislukt. Internetverbinding controleren?</string>
     <string name="failed_to_send_invitation">Kan uitnodiging niet verzenden</string>
+    <string name="invite_blocked">Deze gebruiker accepteert geen uitnodigingen</string>
+    <string name="user_limit_exceeded">Je account heeft een limiet op je homeserver bereikt.</string>
     <string name="failed_to_send_message">Kan bericht niet verzenden</string>
     <string name="failed_to_send_sticker">Kan sticker niet verzenden</string>
     <string name="failed_to_share_location">Kan locatie niet delen</string>
@@ -1218,6 +1237,10 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d antwoord</item>        <item quantity="other">%1$d antwoorden</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d gedeelde kamer</item>
+        <item quantity="other">%1$d gedeelde kamers</item>
     </plurals>
     <string name="call">Oproep</string>
     <string name="dms">DM\'s</string>

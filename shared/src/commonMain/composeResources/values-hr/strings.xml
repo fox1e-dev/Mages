@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">Automatski se pridružite sobama kada ste pozvani</string>
     <string name="setting_send_public_read_receipts_description">Kada je omogućeno, drugi korisnici mogu vidjeti kada ste pročitali njihove poruke</string>
     <string name="setting_send_typing_indicators_description">Kada je onemogućeno, Mages neće slati obavijesti o tipkanju</string>
+    <string name="setting_block_invites">Blokiraj pozive u sobe</string>
+    <string name="setting_block_invites_description">Automatski odbij sve pozive u sobe koje dobiješ. Sinkronizirano s tvojim drugim uređajima</string>
+    <string name="setting_link_previews">Prikaži pretpregled poveznica</string>
+    <string name="setting_link_previews_description">Zatraži od svog poslužitelja da pregleda poveznice objavljene u porukama. URL mu se proslijeđuje u tu svrhu, pa enkriptirane sobe ostaju bez pretpregleda osim ako odabereš Uvijek</string>
     <string name="setting_presence_description">Postavite status globalne prisutnosti</string>
     <string name="setting_app_lock_description">Zahtijevaj biometriju ili PIN uređaja za otvaranje</string>
     <string name="setting_app_lock_timeout_description">Zaključaj nakon ovoliko vremena u pozadini</string>
@@ -567,6 +571,11 @@
         <item>Samo u DM-ovima</item>
         <item>Nikad</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Uvijek</item>
+        <item>Osim u enkriptiranim sobama</item>
+        <item>Nikad</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">Sobe u prostorima su skrivene</string>
     <string name="rooms_hidden_in_spaces_subtitle">Otvori Prostore za pregled soba u svojim prostorima</string>
     <string name="find_users_and_public_rooms">Pronađi korisnike i javne sobe</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">Promijeni fotografiju</string>
     <string name="profile_remove_photo">Ukloni fotografiju</string>
     <string name="profile_load_failed">Nije moguće učitati vaš profil</string>
+    <string name="profile_fields">Polja profila</string>
+    <string name="add_profile_field">Dodaj polje profila</string>
+    <string name="edit_profile_field">Uredi polje profila</string>
+    <string name="profile_field_name">Naziv polja</string>
+    <string name="profile_field_value">Vrijednost</string>
+    <string name="time_zone">Vremenska zona</string>
+    <string name="profile_field_was_rejected">Polje profila je odbijeno</string>
+    <string name="profile_field_could_not_be_removed">Polje profila nije moguće ukloniti</string>
     <string name="picker_no_sticker_packs">Nema dostupnih paketa naljepnica</string>
     <string name="picker_no_reaction_images">Nema emotikona ni naljepnica za reakcije</string>
     <string name="picker_search_images">Pretraži emotikone i naljepnice</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">Slanje privitka nije uspjelo</string>
     <string name="failed_to_send_check_your_internet">Slanje nije uspjelo. Provjerite internetsku vezu.</string>
     <string name="failed_to_send_invitation">Slanje pozivnice nije uspjelo</string>
+    <string name="invite_blocked">Ovaj korisnik ne prihvaća pozive</string>
+    <string name="user_limit_exceeded">Vaš je račun dosegnuo ograničenje na vašem poslužitelju.</string>
     <string name="failed_to_send_message">Slanje poruke nije uspjelo</string>
     <string name="failed_to_send_sticker">Slanje naljepnice nije uspjelo</string>
     <string name="failed_to_share_location">Dijeljenje lokacije nije uspjelo</string>
@@ -1218,6 +1237,11 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d odgovor</item>        <item quantity="few">%1$d odgovora</item>        <item quantity="other">%1$d odgovora</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d zajednička soba</item>
+        <item quantity="few">%1$d zajedničke sobe</item>
+        <item quantity="other">%1$d zajedničkih soba</item>
     </plurals>
     <string name="call">Poziv</string>
     <string name="dms">DM-ovi</string>

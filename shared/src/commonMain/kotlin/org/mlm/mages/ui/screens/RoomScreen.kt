@@ -1587,6 +1587,7 @@ private fun MessageItem(
                     hasReplyMedia
                 )
             if (needsThumb) viewModel.ensureThumbnail(event)
+            viewModel.ensureLinkPreview(event)
         }
 
         // Swipe-to-reply state
@@ -1721,6 +1722,8 @@ private fun MessageItem(
                             },
                             resolvedAudioPath = state.audioFileByEvent[event.eventId],
                             resolvedAudioWaveform = state.waveformByEvent[event.eventId].orEmpty(),
+                            resolvedLinkPreview = state.linkPreviewByEvent[event.eventId],
+                            resolvedLinkPreviewImage = state.linkPreviewImageByEvent[event.eventId],
                             senderVisible = true,
                             isPinned = event.eventId in pinnedEventIdSet,
                         )

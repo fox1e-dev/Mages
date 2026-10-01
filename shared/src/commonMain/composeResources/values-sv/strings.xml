@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">Gå med automatiskt i rum när du bjuds in</string>
     <string name="setting_send_public_read_receipts_description">När det är aktiverat kan andra användare se när du har läst deras meddelanden</string>
     <string name="setting_send_typing_indicators_description">När den är inaktiverad kommer Mages inte att skicka skrivaviseringar</string>
+    <string name="setting_block_invites">Blockera rumsinbjudningar</string>
+    <string name="setting_block_invites_description">Avvisa automatiskt alla rumsinbjudningar som skickas till dig. Synkroniseras med dina andra enheter</string>
+    <string name="setting_link_previews">Visa länkförhandsvisningar</string>
+    <string name="setting_link_previews_description">Be din hemmaserver förhandsvisa länkar som postas i meddelanden. URL:en lämnas till den för ändamålet, så krypterade rum lämnas utan förhandsvisning om du inte väljer Alltid</string>
     <string name="setting_presence_description">Ställ in en global närvarostatus</string>
     <string name="setting_app_lock_description">Kräv biometri eller enhets-PIN för att öppna</string>
     <string name="setting_app_lock_timeout_description">Lås efter så lång tid i bakgrunden</string>
@@ -567,6 +571,11 @@
         <item>Endast i DM:er</item>
         <item>Aldrig</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Alltid</item>
+        <item>Förutom i krypterade rum</item>
+        <item>Aldrig</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">Rum i utrymmen är dolda</string>
     <string name="rooms_hidden_in_spaces_subtitle">Öppna utrymmen för att bläddra i rummen i dina utrymmen</string>
     <string name="find_users_and_public_rooms">Hitta användare och offentliga rum</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">Byt foto</string>
     <string name="profile_remove_photo">Ta bort foto</string>
     <string name="profile_load_failed">Det gick inte att läsa in din profil</string>
+    <string name="profile_fields">Profilfält</string>
+    <string name="add_profile_field">Lägg till profilfält</string>
+    <string name="edit_profile_field">Redigera profilfält</string>
+    <string name="profile_field_name">Fältnamn</string>
+    <string name="profile_field_value">Värde</string>
+    <string name="time_zone">Tidszon</string>
+    <string name="profile_field_was_rejected">Profilfältet avvisades</string>
+    <string name="profile_field_could_not_be_removed">Profilfältet kunde inte tas bort</string>
     <string name="picker_no_sticker_packs">Inga klistermärkespaket tillgängliga</string>
     <string name="picker_no_reaction_images">Inga emotes eller klistermärken att reagera med</string>
     <string name="picker_search_images">Sök emotes och klistermärken</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">Det gick inte att skicka bilagan</string>
     <string name="failed_to_send_check_your_internet">Det gick inte att skicka. Kontrollera din anslutning?</string>
     <string name="failed_to_send_invitation">Det gick inte att skicka inbjudan</string>
+    <string name="invite_blocked">Den här användaren tar inte emot inbjudningar</string>
+    <string name="user_limit_exceeded">Ditt konto har nått en gräns på din homeserver.</string>
     <string name="failed_to_send_message">Det gick inte att skicka meddelandet</string>
     <string name="failed_to_send_sticker">Det gick inte att skicka klistermärket</string>
     <string name="failed_to_share_location">Det gick inte att dela platsen</string>
@@ -1218,6 +1237,10 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d svar</item>        <item quantity="other">%1$d svar</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d delat rum</item>
+        <item quantity="other">%1$d delade rum</item>
     </plurals>
     <string name="call">Samtal</string>
     <string name="dms">DM:er</string>

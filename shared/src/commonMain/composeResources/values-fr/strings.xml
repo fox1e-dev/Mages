@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">Rejoignez automatiquement les salles lorsque vous y êtes invité</string>
     <string name="setting_send_public_read_receipts_description">Lorsqu'il est activé, les autres utilisateurs peuvent voir quand vous avez lu leurs messages</string>
     <string name="setting_send_typing_indicators_description">Lorsqu'ils sont désactivés, les mages n'enverront pas de notifications de saisie</string>
+    <string name="setting_block_invites">Bloquer les invitations aux salles</string>
+    <string name="setting_block_invites_description">Refuser automatiquement toutes les invitations aux salles que vous recevez. Synchronisé avec vos autres appareils</string>
+    <string name="setting_link_previews">Afficher les aperçus des liens</string>
+    <string name="setting_link_previews_description">Demandez à votre serveur maison d\'afficher un aperçu des liens publiés dans les messages. L\'URL lui est transmise à cette fin, aussi les salles chiffrées restent sans aperçu sauf si vous choisissez Toujours</string>
     <string name="setting_presence_description">Définir un statut de présence globale</string>
     <string name="setting_app_lock_description">Exiger la biométrie ou le code PIN de l'appareil pour ouvrir</string>
     <string name="setting_app_lock_timeout_description">Verrouiller après autant de temps en arrière-plan</string>
@@ -567,6 +571,11 @@
         <item>Uniquement dans les DMs</item>
         <item>Jamais</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Toujours</item>
+        <item>Sauf dans les salles chiffrées</item>
+        <item>Jamais</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">Les salles des espaces sont masquées</string>
     <string name="rooms_hidden_in_spaces_subtitle">Ouvrez les espaces pour parcourir les salles qu\'ils contiennent</string>
     <string name="find_users_and_public_rooms">Rechercher des utilisateurs et des salles publiques</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">Changer la photo</string>
     <string name="profile_remove_photo">Supprimer la photo</string>
     <string name="profile_load_failed">Impossible de charger votre profil</string>
+    <string name="profile_fields">Champs du profil</string>
+    <string name="add_profile_field">Ajouter un champ de profil</string>
+    <string name="edit_profile_field">Modifier le champ de profil</string>
+    <string name="profile_field_name">Nom du champ</string>
+    <string name="profile_field_value">Valeur</string>
+    <string name="time_zone">Fuseau horaire</string>
+    <string name="profile_field_was_rejected">Le champ du profil a été refusé</string>
+    <string name="profile_field_could_not_be_removed">Impossible de supprimer le champ du profil</string>
     <string name="picker_no_sticker_packs">Aucun paquet d\'autocollants disponible</string>
     <string name="picker_no_reaction_images">Aucun émoji ni autocollant pour réagir</string>
     <string name="picker_search_images">Rechercher des émojis et des autocollants</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">Échec de l\'envoi de la pièce jointe</string>
     <string name="failed_to_send_check_your_internet">Échec de l\'envoi. Vérifiez votre connexion Internet.</string>
     <string name="failed_to_send_invitation">Échec de l\'envoi de l\'invitation</string>
+    <string name="invite_blocked">Cet utilisateur n'accepte pas les invitations</string>
+    <string name="user_limit_exceeded">Votre compte a atteint une limite sur votre serveur.</string>
     <string name="failed_to_send_message">Échec de l\'envoi du message</string>
     <string name="failed_to_send_sticker">Échec de l\'envoi de l\'autocollant</string>
     <string name="failed_to_share_location">Échec du partage de la position</string>
@@ -1218,6 +1237,10 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d réponse</item>        <item quantity="other">%1$d réponses</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d salle commune</item>
+        <item quantity="other">%1$d salles communes</item>
     </plurals>
     <string name="call">Appel</string>
     <string name="dms">DM</string>

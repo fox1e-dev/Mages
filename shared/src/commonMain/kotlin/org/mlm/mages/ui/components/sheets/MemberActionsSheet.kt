@@ -15,6 +15,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import mages.shared.generated.resources.*
+import org.koin.compose.koinInject
+import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.ui.ActionAvailabilityUi
 import org.mlm.mages.ui.ActionPresentationUi
@@ -22,6 +24,7 @@ import org.mlm.mages.ui.components.core.Avatar
 import org.mlm.mages.ui.theme.AppColors
 import org.mlm.mages.ui.theme.Sizes
 import org.mlm.mages.ui.theme.Spacing
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import mages.shared.generated.resources.Res
 
@@ -49,6 +52,14 @@ fun MemberActionsSheet(
     var showKickDialog by remember { mutableStateOf(false) }
     var showBanDialog by remember { mutableStateOf(false) }
     var reason by remember { mutableStateOf("") }
+
+    val service: MatrixService = koinInject()
+    var sharedRoomCount by remember(member.userId) { mutableStateOf<Int?>(null) }
+    LaunchedEffect(member.userId) {
+        sharedRoomCount = runCatching {
+            service.portOrNull?.mutualRooms(member.userId)?.count?.toInt()
+        }.getOrNull()
+    }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -80,6 +91,13 @@ fun MemberActionsSheet(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    sharedRoomCount?.takeIf { it > 0 }?.let { count ->
+                        Text(
+                            pluralStringResource(Res.plurals.shared_rooms_count, count, count),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 

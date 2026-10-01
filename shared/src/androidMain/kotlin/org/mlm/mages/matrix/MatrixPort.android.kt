@@ -35,6 +35,8 @@ private inline fun <T> runWithFfiResult(block: () -> T): Result<T> =
                 is FfiException.BeaconNotFound -> ex
                 is FfiException.TlsUnavailable -> TlsUnavailableException(ex.v1)
                  is FfiException.LocationPermissionDenied -> IllegalStateException("Location permission denied")
+                is FfiException.InviteBlocked -> InviteBlockedException()
+                is FfiException.UserLimitExceeded -> UserLimitExceededException()
             }
         } ?: e as? Exception ?: IllegalStateException(e.toString())
         throw mapped
@@ -1148,6 +1150,16 @@ class RustMatrixPort : MatrixPort, VerificationService {
             }.getOrNull()
         }
 
+    override suspend fun mutualRooms(userId: String): MutualRooms? =
+        withContext(matrixDispatcher) {
+            runCatching {
+                withClient {
+                    val resp = it.mutualRooms(userId)
+                    MutualRooms(resp.count.toLong(), resp.roomIds)
+                }
+            }.getOrNull()
+        }
+
     override suspend fun publicRooms(
         server: String?,
         search: String?,
@@ -1710,6 +1722,28 @@ class RustMatrixPort : MatrixPort, VerificationService {
             runWithFfiResult { withClient { it.removeAvatar() } }.map { }
         }
 
+    override suspend fun canSetProfileFields(): Boolean =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.canSetProfileFields() } }.getOrDefault(false)
+        }
+
+    override suspend fun ownProfileFields(): List<ProfileField> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult {
+                withClient { it.ownProfileFields().map { f -> ProfileField(f.name, f.value) } }
+            }.getOrDefault(emptyList())
+        }
+
+    override suspend fun setProfileField(name: String, value: String): Result<Unit> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.setProfileField(name, value) } }.map { }
+        }
+
+    override suspend fun deleteProfileField(name: String): Result<Unit> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.deleteProfileField(name) } }.map { }
+        }
+
     override suspend fun applySyncPresence(presence: Presence) {
         withContext(matrixDispatcher) {
             withClient { it.applySyncPresence(presence.toFfi()) }
@@ -1732,6 +1766,15 @@ class RustMatrixPort : MatrixPort, VerificationService {
             runWithFfiResult {
                 withClient { it.setMediaPreviewConfig(previews.toFfi()) }
             }.map { }
+        }
+
+    override suspend fun inviteBlocked(): Boolean? = withContext(matrixDispatcher) {
+        runWithFfiResult { withClient { it.inviteBlocked() } }.getOrNull()
+    }
+
+    override suspend fun setInviteBlocked(blocked: Boolean): Result<Unit> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.setInviteBlocked(blocked) } }.map { }
         }
 
     override suspend fun getPresence(userId: String): Pair<Presence, String?>? =
@@ -2046,6 +2089,24 @@ class RustMatrixPort : MatrixPort, VerificationService {
         withClient {
             it.mxcThumbnailToCache(mxcUri, width.toUInt(), height.toUInt(), crop)
         }
+    }
+
+    override suspend fun getLinkPreview(url: String): LinkPreview? = withContext(mediaDispatcher) {
+        val preview = runWithFfiResult { withClient { client -> client.getLinkPreview(url) } }
+            .getOrNull()
+            ?: return@withContext null
+        LinkPreview(
+            url = preview.url,
+            title = preview.title,
+            description = preview.description,
+            siteName = preview.siteName,
+            imageMxcUri = preview.imageMxcUri,
+            imageMimeType = preview.imageMimeType,
+            imageAlt = preview.imageAlt,
+            imageWidth = preview.imageWidth?.toInt(),
+            imageHeight = preview.imageHeight?.toInt(),
+            imageSizeBytes = preview.imageSizeBytes?.toLong(),
+        )
     }
 
     override suspend fun loadRoomListCache(): List<RoomListEntry> =

@@ -1,5 +1,6 @@
 package org.mlm.mages.ui.components.message
 
+import org.mlm.mages.LinkPreview
 import org.mlm.mages.ReplyPreview
 import org.mlm.mages.matrix.PollData
 import org.mlm.mages.matrix.ReactionSummary
@@ -104,6 +105,8 @@ data class MessageBubbleRenderContext(
     val resolvedReplyPreviewPath: String? = null,
     val resolvedAudioPath: String? = null,
     val resolvedAudioWaveform: List<Float> = emptyList(),
+    val resolvedLinkPreview: LinkPreview? = null,
+    val resolvedLinkPreviewImage: String? = null,
     val senderVisible: Boolean = true,
     val isPinned: Boolean = false,
 )
@@ -134,5 +137,7 @@ data class MessageBubbleModel(
     val isRedacted: Boolean = false,
     val poll: PollData? = null,
     val thread: MessageThreadUi? = null,
+    val linkPreview: LinkPreview? = null,
+    val linkPreviewImage: String? = null,
     val variant: MessageBubbleVariant = MessageBubbleVariant.Timeline,
 )

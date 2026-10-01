@@ -93,7 +93,7 @@
     <string name="setting_hide_space_child_events_description">Зміни дочірніх просторів</string>
     <string name="setting_hide_other_state_events_description">Невідомі або некласифіковані оновлення стану кімнати</string>
     <string name="setting_auto_paginate_older_messages_description">Автоматично завантажувати старі повідомлення під час прокручування вгору</string>
-    <string name="setting_include_silent_unread_in_filter_description">Якщо ввімкнено, фільтр непрочитаних показує кімнати з будь-якими непрочитаними повідомленнями (спершу зі сповіщеннями); якщо вимкнено — лише кімнати зі сповіщеннями.</string>
+    <string name="setting_include_silent_unread_in_filter_description">Якщо ввімкнено, фільтр непрочитаних показує кімнати з будь-якими непрочитаними повідомленнями (спершу зі сповіщеннями); якщо вимкнено, лише кімнати зі сповіщеннями.</string>
     <string name="setting_show_space_badge_in_room_list">Показувати бейдж простору в списку кімнат</string>
     <string name="setting_show_space_badge_in_room_list_description">Показує маленький аватар простору поруч із кімнатами, що належать простору</string>
     <string name="setting_chat_bubbles_description">Відкрити системні налаштування, щоб увімкнути або вимкнути бульбашки чату</string>
@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">Автоматично приєднуватися до кімнат за запрошенням</string>
     <string name="setting_send_public_read_receipts_description">Якщо ввімкнено, інші бачать, коли ви прочитали їхні повідомлення</string>
     <string name="setting_send_typing_indicators_description">Якщо вимкнено, Mages не надсилає сповіщення про набор</string>
+    <string name="setting_block_invites">Блокувати запрошення до кімнат</string>
+    <string name="setting_block_invites_description">Автоматично відхиляти всі запрошення до кімнат, які вам надходять. Синхронізується з іншими пристроями</string>
+    <string name="setting_link_previews">Показувати попередній перегляд посилань</string>
+    <string name="setting_link_previews_description">Попросити ваш домашній сервер показувати попередній перегляд посилань, опублікованих у повідомленнях. Для цього йому передається URL-адреса, тому зашифровані кімнати не матимуть попереднього перегляду, якщо ви не виберете Завжди</string>
     <string name="setting_presence_description">Встановити глобальний статус присутності</string>
     <string name="setting_app_lock_description">Вимагати біометрію або PIN пристрою для відкриття</string>
     <string name="setting_app_lock_timeout_description">Блокувати після цього часу у тлі</string>
@@ -567,6 +571,11 @@
         <item>Тільки в DM</item>
         <item>Ніколи</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Завжди</item>
+        <item>Окрім зашифрованих кімнат</item>
+        <item>Ніколи</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">Кімнати в просторах приховані</string>
     <string name="rooms_hidden_in_spaces_subtitle">Відкрийте простори, щоб переглядати кімнати у ваших просторах</string>
     <string name="find_users_and_public_rooms">Знайти користувачів і публічні кімнати</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">Змінити фото</string>
     <string name="profile_remove_photo">Видалити фото</string>
     <string name="profile_load_failed">Не вдалося завантажити профіль</string>
+    <string name="profile_fields">Поля профілю</string>
+    <string name="add_profile_field">Додати поле профілю</string>
+    <string name="edit_profile_field">Змінити поле профілю</string>
+    <string name="profile_field_name">Назва поля</string>
+    <string name="profile_field_value">Значення</string>
+    <string name="time_zone">Часовий пояс</string>
+    <string name="profile_field_was_rejected">Поле профілю було відхилено</string>
+    <string name="profile_field_could_not_be_removed">Не вдалося видалити поле профілю</string>
     <string name="picker_no_sticker_packs">Немає доступних наборів наклейок</string>
     <string name="picker_no_reaction_images">Немає емодзі чи наклейок для реакцій</string>
     <string name="picker_search_images">Пошук емодзі та наклейок</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">Не вдалося надіслати вкладення</string>
     <string name="failed_to_send_check_your_internet">Не вдалося надіслати. Перевірте інтернет.</string>
     <string name="failed_to_send_invitation">Не вдалося надіслати запрошення</string>
+    <string name="invite_blocked">Цей користувач не приймає запрошення</string>
+    <string name="user_limit_exceeded">Ваш обліковий запис досяг ліміту на вашому домашньому сервері.</string>
     <string name="failed_to_send_message">Не вдалося надіслати повідомлення</string>
     <string name="failed_to_send_sticker">Не вдалося надіслати наклейку</string>
     <string name="failed_to_share_location">Не вдалося поділитися місцезнаходженням</string>
@@ -924,7 +943,7 @@
     <string name="oauth_failed_or_was_cancelled">OAuth не вдався або був скасований</string>
     <string name="oauth_failed_the_server_did_not_return_a_user_id_try_again">Не вдалося увійти через OAuth. Сервер не повернув ID користувача. Спробуйте ще раз.</string>
     <string name="objects">Об\'єкти</string>
-    <string name="offline_messages_queued">Офлайн — повідомлення в черзі</string>
+    <string name="offline_messages_queued">Офлайн - повідомлення в черзі</string>
     <string name="only_notify_when_mentioned_or_keywords_match">Сповіщувати лише за згадок або збігу ключових слів</string>
     <string name="options_minimum_2">Варіанти (щонайменше 2)</string>
     <string name="other">Інше</string>
@@ -1218,6 +1237,12 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d відповідь</item>        <item quantity="few">%1$d відповіді</item>        <item quantity="many">%1$d відповідей</item>        <item quantity="other">%1$d відповіді</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d спільна кімната</item>
+        <item quantity="few">%1$d спільні кімнати</item>
+        <item quantity="many">%1$d спільних кімнат</item>
+        <item quantity="other">%1$d спільної кімнати</item>
     </plurals>
     <string name="call">Дзвінок</string>
     <string name="dms">DM</string>

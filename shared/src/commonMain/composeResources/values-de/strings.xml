@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">Räume automatisch annehmen, wenn du eingeladen wirst</string>
     <string name="setting_send_public_read_receipts_description">Wenn aktiviert, können andere sehen, wann du ihre Nachrichten gelesen hast</string>
     <string name="setting_send_typing_indicators_description">Wenn deaktiviert, sendet Mages keine Tippbenachrichtigungen</string>
+    <string name="setting_block_invites">Raum-Einladungen blockieren</string>
+    <string name="setting_block_invites_description">Einladungen zu Räumen automatisch ablehnen. Mit deinen anderen Geräten synchronisiert</string>
+    <string name="setting_link_previews">Link-Vorschauen anzeigen</string>
+    <string name="setting_link_previews_description">Lass deinen Homeserver Vorschauen für in Nachrichten geteilte Links erstellen. Dafür wird ihm die URL übergeben, daher bleiben verschlüsselte Räume ohne Vorschau, solange du nicht Immer wählst</string>
     <string name="setting_presence_description">Globalen Anwesenheitsstatus festlegen</string>
     <string name="setting_app_lock_description">Biometrie oder Geräte-PIN zum Öffnen verlangen</string>
     <string name="setting_app_lock_timeout_description">Nach dieser Zeit im Hintergrund sperren</string>
@@ -567,6 +571,11 @@
         <item>Nur in DMs</item>
         <item>Nie</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Immer</item>
+        <item>Außer in verschlüsselten Räumen</item>
+        <item>Nie</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">Räume in Spaces werden ausgeblendet</string>
     <string name="rooms_hidden_in_spaces_subtitle">Öffnen Sie Spaces, um die Räume in Ihren Spaces zu durchsuchen</string>
     <string name="find_users_and_public_rooms">Benutzer und öffentliche Räume finden</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">Foto ändern</string>
     <string name="profile_remove_photo">Foto entfernen</string>
     <string name="profile_load_failed">Profil konnte nicht geladen werden</string>
+    <string name="profile_fields">Profilfelder</string>
+    <string name="add_profile_field">Profilfeld hinzufügen</string>
+    <string name="edit_profile_field">Profilfeld bearbeiten</string>
+    <string name="profile_field_name">Feldname</string>
+    <string name="profile_field_value">Wert</string>
+    <string name="time_zone">Zeitzone</string>
+    <string name="profile_field_was_rejected">Das Profilfeld wurde abgelehnt</string>
+    <string name="profile_field_could_not_be_removed">Das Profilfeld konnte nicht entfernt werden</string>
     <string name="picker_no_sticker_packs">Keine Aufkleberpakete verfügbar</string>
     <string name="picker_no_reaction_images">Keine Emojis oder Aufkleber für Reaktionen</string>
     <string name="picker_search_images">Emojis und Aufkleber suchen</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">Anhang konnte nicht gesendet werden</string>
     <string name="failed_to_send_check_your_internet">Senden fehlgeschlagen. Prüfen Sie Ihre Internetverbindung.</string>
     <string name="failed_to_send_invitation">Einladung konnte nicht gesendet werden</string>
+    <string name="invite_blocked">Diese Person nimmt keine Einladungen an</string>
+    <string name="user_limit_exceeded">Ihr Konto hat auf Ihrem Homeserver ein Limit erreicht.</string>
     <string name="failed_to_send_message">Nachricht konnte nicht gesendet werden</string>
     <string name="failed_to_send_sticker">Aufkleber konnte nicht gesendet werden</string>
     <string name="failed_to_share_location">Standort konnte nicht geteilt werden</string>
@@ -1218,6 +1237,10 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d Antwort</item>        <item quantity="other">%1$d Antworten</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d gemeinsamer Raum</item>
+        <item quantity="other">%1$d gemeinsame Räume</item>
     </plurals>
     <string name="call">Anruf</string>
     <string name="dms">DMs</string>

@@ -95,6 +95,8 @@ private val titleResources: Map<String, StringResource> = mapOf(
     MagesSettingsKeys.AUTO_JOIN_ROOM_INVITES to Res.string.setting_auto_join_room_invites,
     MagesSettingsKeys.SEND_PUBLIC_READ_RECEIPTS to Res.string.setting_send_public_read_receipts,
     MagesSettingsKeys.SEND_TYPING_INDICATORS to Res.string.setting_send_typing_indicators,
+    MagesSettingsKeys.BLOCK_INVITES to Res.string.setting_block_invites,
+    MagesSettingsKeys.LINK_PREVIEWS to Res.string.setting_link_previews,
     MagesSettingsKeys.PRESENCE to Res.string.setting_presence,
     MagesSettingsKeys.STATUS_MESSAGE to Res.string.setting_status_message,
     MagesSettingsKeys.APP_LOCK to Res.string.setting_app_lock,
@@ -160,6 +162,8 @@ private val descriptionResources: Map<String, StringResource> = mapOf(
     MagesSettingsKeys.AUTO_JOIN_ROOM_INVITES_DESCRIPTION to Res.string.setting_auto_join_room_invites_description,
     MagesSettingsKeys.SEND_PUBLIC_READ_RECEIPTS_DESCRIPTION to Res.string.setting_send_public_read_receipts_description,
     MagesSettingsKeys.SEND_TYPING_INDICATORS_DESCRIPTION to Res.string.setting_send_typing_indicators_description,
+    MagesSettingsKeys.BLOCK_INVITES_DESCRIPTION to Res.string.setting_block_invites_description,
+    MagesSettingsKeys.LINK_PREVIEWS_DESCRIPTION to Res.string.setting_link_previews_description,
     MagesSettingsKeys.PRESENCE_DESCRIPTION to Res.string.setting_presence_description,
     MagesSettingsKeys.STATUS_MESSAGE_DESCRIPTION to Res.string.setting_status_message_description,
     MagesSettingsKeys.APP_LOCK_DESCRIPTION to Res.string.setting_app_lock_description,
@@ -186,6 +190,7 @@ private val arrayResources: Map<String, StringArrayResource> = mapOf(
     MagesSettingsKeys.APP_LOCK_TIMEOUT_OPTIONS to Res.array.setting_app_lock_timeout_options,
     MagesSettingsKeys.PRESENCE_OPTIONS to Res.array.setting_presence_options,
     MagesSettingsKeys.BLOCK_MEDIA_PREVIEWS_OPTIONS to Res.array.setting_media_previews_options,
+    MagesSettingsKeys.LINK_PREVIEWS_OPTIONS to Res.array.setting_link_previews_options,
 )
 
 @Composable

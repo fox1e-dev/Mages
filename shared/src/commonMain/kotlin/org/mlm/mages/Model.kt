@@ -69,6 +69,21 @@ data class ReplyPreview(
     val sticker: StickerInfo? = null,
 )
 
+/** OpenGraph data for a link; [imageMxcUri] is an MXC URI, not an HTTP URL. */
+@Serializable
+data class LinkPreview(
+    val url: String,
+    val title: String? = null,
+    val description: String? = null,
+    val siteName: String? = null,
+    val imageMxcUri: String? = null,
+    val imageMimeType: String? = null,
+    val imageAlt: String? = null,
+    val imageWidth: Int? = null,
+    val imageHeight: Int? = null,
+    val imageSizeBytes: Long? = null,
+)
+
 @Serializable
 enum class ShieldLevel { Red, Grey }
 

@@ -57,6 +57,8 @@ object MagesSettingsKeys {
     const val AUTO_JOIN_ROOM_INVITES = "mages.settings.auto_join_room_invites"
     const val SEND_PUBLIC_READ_RECEIPTS = "mages.settings.send_public_read_receipts"
     const val SEND_TYPING_INDICATORS = "mages.settings.send_typing_indicators"
+    const val BLOCK_INVITES = "mages.settings.block_invites"
+    const val LINK_PREVIEWS = "mages.settings.link_previews"
     const val PRESENCE = "mages.settings.presence"
     const val STATUS_MESSAGE = "mages.settings.status_message"
     const val APP_LOCK = "mages.settings.app_lock"
@@ -119,6 +121,8 @@ object MagesSettingsKeys {
     const val AUTO_JOIN_ROOM_INVITES_DESCRIPTION = "mages.settings.auto_join_room_invites.description"
     const val SEND_PUBLIC_READ_RECEIPTS_DESCRIPTION = "mages.settings.send_public_read_receipts.description"
     const val SEND_TYPING_INDICATORS_DESCRIPTION = "mages.settings.send_typing_indicators.description"
+    const val BLOCK_INVITES_DESCRIPTION = "mages.settings.block_invites.description"
+    const val LINK_PREVIEWS_DESCRIPTION = "mages.settings.link_previews.description"
     const val PRESENCE_DESCRIPTION = "mages.settings.presence.description"
     const val STATUS_MESSAGE_DESCRIPTION = "mages.settings.status_message.description"
     const val APP_LOCK_DESCRIPTION = "mages.settings.app_lock.description"
@@ -143,4 +147,5 @@ object MagesSettingsKeys {
     const val APP_LOCK_TIMEOUT_OPTIONS = "mages.settings.app_lock_timeout.options"
     const val PRESENCE_OPTIONS = "mages.settings.presence.options"
     const val BLOCK_MEDIA_PREVIEWS_OPTIONS = "mages.settings.media_previews.options"
+    const val LINK_PREVIEWS_OPTIONS = "mages.settings.link_previews.options"
 }

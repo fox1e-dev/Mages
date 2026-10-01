@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">Bergabung ke ruang secara otomatis saat diundang</string>
     <string name="setting_send_public_read_receipts_description">Jika diaktifkan, pengguna lain dapat melihat kapan Anda telah membaca pesan mereka</string>
     <string name="setting_send_typing_indicators_description">Saat dinonaktifkan, Mages tidak akan mengirimkan notifikasi pengetikan</string>
+    <string name="setting_block_invites">Blokir undangan ruangan</string>
+    <string name="setting_block_invites_description">Tolak secara otomatis semua undangan ruangan yang dikirimkan kepada Anda. Disinkronkan dengan perangkat Anda lainnya</string>
+    <string name="setting_link_previews">Tampilkan pratinjau tautan</string>
+    <string name="setting_link_previews_description">Minta homeserver Anda membuat pratinjau untuk tautan yang diposting di pesan. URL diberikan kepada homeserver untuk itu, sehingga ruangan terenkripsi tidak dibuatkan pratinjau kecuali Anda memilih Selalu</string>
     <string name="setting_presence_description">Tetapkan status kehadiran global</string>
     <string name="setting_app_lock_description">Memerlukan biometrik atau PIN perangkat untuk membuka</string>
     <string name="setting_app_lock_timeout_description">Kunci setelah sekian lama di latar belakang</string>
@@ -567,6 +571,11 @@
         <item>Hanya di DM</item>
         <item>Tidak pernah</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Selalu</item>
+        <item>Kecuali di ruangan terenkripsi</item>
+        <item>Tidak pernah</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">Ruang di dalam spasi disembunyikan</string>
     <string name="rooms_hidden_in_spaces_subtitle">Buka Spasi untuk menelusuri ruang di dalam spasi Anda</string>
     <string name="find_users_and_public_rooms">Temukan pengguna dan ruang publik</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">Ganti foto</string>
     <string name="profile_remove_photo">Hapus foto</string>
     <string name="profile_load_failed">Tidak dapat memuat profil Anda</string>
+    <string name="profile_fields">Field profil</string>
+    <string name="add_profile_field">Tambah field profil</string>
+    <string name="edit_profile_field">Ubah field profil</string>
+    <string name="profile_field_name">Nama field</string>
+    <string name="profile_field_value">Nilai</string>
+    <string name="time_zone">Zona waktu</string>
+    <string name="profile_field_was_rejected">Field profil ditolak</string>
+    <string name="profile_field_could_not_be_removed">Field profil tidak dapat dihapus</string>
     <string name="picker_no_sticker_packs">Tidak ada paket stiker</string>
     <string name="picker_no_reaction_images">Tidak ada emoji atau stiker untuk bereaksi</string>
     <string name="picker_search_images">Cari emoji dan stiker</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">Gagal mengirim lampiran</string>
     <string name="failed_to_send_check_your_internet">Gagal mengirim. Periksa internet Anda?</string>
     <string name="failed_to_send_invitation">Gagal mengirim undangan</string>
+    <string name="invite_blocked">Pengguna ini tidak menerima undangan</string>
+    <string name="user_limit_exceeded">Akun Anda telah mencapai batas pada homeserver Anda.</string>
     <string name="failed_to_send_message">Gagal mengirim pesan</string>
     <string name="failed_to_send_sticker">Gagal mengirim stiker</string>
     <string name="failed_to_share_location">Gagal membagikan lokasi</string>
@@ -1218,6 +1237,10 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d balasan</item>        <item quantity="other">%1$d balasan</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d ruang bersama</item>
+        <item quantity="other">%1$d ruang bersama</item>
     </plurals>
     <string name="call">Panggilan</string>
     <string name="dms">DM</string>

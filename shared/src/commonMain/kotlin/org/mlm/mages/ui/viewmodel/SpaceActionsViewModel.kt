@@ -7,6 +7,7 @@ import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.StringResource
 import mages.shared.generated.resources.Res
 import org.mlm.mages.MatrixService
+import org.mlm.mages.matrix.isInviteBlocked
 import org.mlm.mages.ui.SpaceActionsUiState
 
 class SpaceActionsViewModel(
@@ -153,11 +154,14 @@ class SpaceActionsViewModel(
             return
         }
 
-        runSavingBooleanAction(
-            successMessage = Res.string.invitation_sent,
+        runSavingResultAction(
             errorMessage = Res.string.failed_to_invite_user,
-            onSuccess = { updateState { copy(showInviteUser = false, inviteUserId = "") } }
-        ) { service.spaceInviteUser(currentState.spaceId, userId).isSuccess }
+            errorMessageFor = { if (it.isInviteBlocked()) getString(Res.string.invite_blocked) else null },
+            onSuccess = {
+                updateState { copy(showInviteUser = false, inviteUserId = "") }
+                _events.send(Event.ShowSuccess(getString(Res.string.invitation_sent)))
+            },
+        ) { runSafe { service.spaceInviteUser(currentState.spaceId, userId) } }
     }
 
     //  Private Methods
@@ -226,13 +230,15 @@ class SpaceActionsViewModel(
 
     private fun runSavingResultAction(
         errorMessage: StringResource,
+        errorMessageFor: suspend (Throwable) -> String? = { null },
         onSuccess: (suspend () -> Unit)? = null,
         block: suspend () -> Result<Unit>?,
     ) {
         launch(
             onError = { t ->
                 updateState { copy(isSaving = false) }
-                launch { _events.send(Event.ShowError(t.message ?: getString(errorMessage))) }
+                val message = errorMessageFor(t) ?: t.failureMessage(getString(errorMessage))
+                launch { _events.send(Event.ShowError(message)) }
             }
         ) {
             updateState { copy(isSaving = true) }
@@ -242,7 +248,8 @@ class SpaceActionsViewModel(
             if (result?.isSuccess == true) {
                 onSuccess?.invoke()
             } else {
-                _events.send(Event.ShowError(result.toUserMessage(getString(errorMessage))))
+                val specific = result?.exceptionOrNull()?.let { errorMessageFor(it) }
+                _events.send(Event.ShowError(specific ?: result.toUserMessage(getString(errorMessage))))
             }
         }
     }

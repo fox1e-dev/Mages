@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">招待されたときに自動的にルームに参加する</string>
     <string name="setting_send_public_read_receipts_description">有効にすると、他のユーザーはあなたがメッセージを読んだことを確認できるようになります</string>
     <string name="setting_send_typing_indicators_description">無効にすると、Mages は入力通知を送信しません</string>
+    <string name="setting_block_invites">ルームへの招待をブロック</string>
+    <string name="setting_block_invites_description">あなたに送られるすべてのルーム招待を自動的に拒否します。他のデバイスと同期されます</string>
+    <string name="setting_link_previews">リンクプレビューを表示</string>
+    <string name="setting_link_previews_description">メッセージに投稿されたリンクのプレビューをホームサーバーに依頼します。プレビューの取得には URL がホームサーバーに渡されるため、「常に」を選択しない限り暗号化されたルームはプレビューされません</string>
     <string name="setting_presence_description">グローバルプレゼンスステータスを設定する</string>
     <string name="setting_app_lock_description">開くには生体認証またはデバイス PIN が必要</string>
     <string name="setting_app_lock_timeout_description">_バックグラウンドでこの時間が経過したらロック</string>
@@ -567,6 +571,11 @@
         <item>DM のみ</item>
         <item>なし</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>常に</item>
+        <item>暗号化されたルームを除く</item>
+        <item>なし</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">スペース内のルームは非表示</string>
     <string name="rooms_hidden_in_spaces_subtitle">スペースを開くと、その中のルームを閲覧できます</string>
     <string name="find_users_and_public_rooms">ユーザーとパブリックルームを検索</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">写真を変更</string>
     <string name="profile_remove_photo">写真を削除</string>
     <string name="profile_load_failed">プロフィールを読み込めませんでした</string>
+    <string name="profile_fields">プロフィールフィールド</string>
+    <string name="add_profile_field">プロフィールフィールドを追加</string>
+    <string name="edit_profile_field">プロフィールフィールドを編集</string>
+    <string name="profile_field_name">フィールド名</string>
+    <string name="profile_field_value">値</string>
+    <string name="time_zone">タイムゾーン</string>
+    <string name="profile_field_was_rejected">プロフィールフィールドが拒否されました</string>
+    <string name="profile_field_could_not_be_removed">プロフィールフィールドを削除できませんでした</string>
     <string name="picker_no_sticker_packs">利用できるステッカーパックがありません</string>
     <string name="picker_no_reaction_images">リアクションに使える絵文字やステッカーがありません</string>
     <string name="picker_search_images">絵文字とステッカーを検索</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">添付の送信に失敗しました</string>
     <string name="failed_to_send_check_your_internet">送信に失敗しました。インターネット接続を確認してください</string>
     <string name="failed_to_send_invitation">招待の送信に失敗しました</string>
+    <string name="invite_blocked">このユーザーは招待を受け付けません</string>
+    <string name="user_limit_exceeded">アカウントがホームサーバーの上限に達しています。</string>
     <string name="failed_to_send_message">メッセージの送信に失敗しました</string>
     <string name="failed_to_send_sticker">ステッカーの送信に失敗しました</string>
     <string name="failed_to_share_location">位置情報の共有に失敗しました</string>
@@ -1218,6 +1237,9 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="other">%1$d 件の返信</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="other">%1$d 件の共通ルーム</item>
     </plurals>
     <string name="call">通話</string>
     <string name="dms">DM</string>

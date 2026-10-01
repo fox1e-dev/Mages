@@ -11,6 +11,7 @@ import mages.shared.generated.resources.*
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.ActionAvailability
 import org.mlm.mages.matrix.ActionPresentation
+import org.mlm.mages.matrix.isInviteBlocked
 import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.matrix.KnockRequestSummary
 import org.mlm.mages.matrix.RoomDirectoryVisibility
@@ -418,6 +419,7 @@ class RoomInfoViewModel(
         errorMessage: StringResource,
         refreshOnSuccess: Boolean = false,
         onSuccess: (suspend () -> Unit)? = null,
+        errorMessageFor: suspend (Throwable) -> String? = { null },
         block: suspend () -> Result<Unit>?,
     ) {
         launch {
@@ -429,7 +431,8 @@ class RoomInfoViewModel(
                 onSuccess?.invoke()
                 _events.send(Event.ShowSuccess(successText))
             } else {
-                _events.send(Event.ShowError(result.toUserMessage(errorText)))
+                val specific = result?.exceptionOrNull()?.let { errorMessageFor(it) }
+                _events.send(Event.ShowError(specific ?: result.toUserMessage(errorText)))
             }
         }
     }
@@ -768,7 +771,8 @@ class RoomInfoViewModel(
             successMessage = Res.string.invitation_sent,
             errorMessage = Res.string.failed_to_send_invitation,
             refreshOnSuccess = true,
-            onSuccess = { updateState { copy(showInviteDialog = false) } }
+            onSuccess = { updateState { copy(showInviteDialog = false) } },
+            errorMessageFor = { if (it.isInviteBlocked()) getString(Res.string.invite_blocked) else null },
         ) { runSafe { service.port.inviteUser(roomId, userId) } }
     }
 
@@ -777,6 +781,7 @@ class RoomInfoViewModel(
             successMessage = Res.string.knock_request_accepted,
             errorMessage = Res.string.failed_to_accept_knock_request,
             refreshOnSuccess = true,
+            errorMessageFor = { if (it.isInviteBlocked()) getString(Res.string.invite_blocked) else null },
         ) { runSafe { service.port.acceptKnockRequest(roomId, userId) } }
     }
 

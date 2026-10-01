@@ -292,8 +292,8 @@ pub struct UploadedPackImage {
 
 /// Upload one image for a pack and describe it for the pack's `info`.
 ///
-/// Pack media is never encrypted — the MSC puts E2EE of packs explicitly out
-/// of scope — so this is always a plain upload.
+/// Pack media is never encrypted: the MSC puts E2EE of packs explicitly out
+/// of scope, so this is always a plain upload.
 ///
 /// `w`/`h` come from the file header rather than a decode: nothing in the
 /// client needs pixel data, since previews are fetched through the homeserver's
@@ -312,7 +312,11 @@ pub(crate) async fn upload_pack_image(
 
     let byte_len = bytes.len();
     let dimensions = imagesize::blob_size(&bytes).ok();
-    let upload = client.media().upload(&parsed, bytes, None).await.ffi()?;
+    let upload = client
+        .media()
+        .upload(&parsed, bytes, None)
+        .await
+        .map_err(FfiError::from)?;
 
     // A client that cannot tell whether an image animates should leave the flag
     // unset, so only the formats that can animate claim to.

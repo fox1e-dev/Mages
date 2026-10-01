@@ -38,6 +38,9 @@ enum class PresenceMode { Online, Offline, Unavailable }
 enum class MediaPreviewsMode { On, Private, Off }
 
 @Serializable
+enum class LinkPreviewsMode { On, UnencryptedOnly, Off }
+
+@Serializable
 enum class AppLockTimeout {
     Immediate,
     OneMinute,
@@ -602,6 +605,28 @@ data class AppSettings(
         type = Toggle::class
     )
     val sendTypingIndicators: Boolean = true,
+
+    @Setting(
+        title = "Block room invites",
+        titleKey = MagesSettingsKeys.BLOCK_INVITES,
+        description = "Automatically reject every room invite sent to you. Synced to your other devices",
+        descriptionKey = MagesSettingsKeys.BLOCK_INVITES_DESCRIPTION,
+        category = Privacy::class,
+        type = Toggle::class
+    )
+    val blockInvites: Boolean = false,
+
+    @Setting(
+        title = "Show link previews",
+        titleKey = MagesSettingsKeys.LINK_PREVIEWS,
+        description = "Ask your homeserver to preview links posted in messages. It is handed the URL to do so, so encrypted rooms are left unpreviewed unless you choose Always",
+        descriptionKey = MagesSettingsKeys.LINK_PREVIEWS_DESCRIPTION,
+        category = Privacy::class,
+        type = Dropdown::class,
+        options = ["Always", "Except in encrypted rooms", "Never"],
+        optionsKey = MagesSettingsKeys.LINK_PREVIEWS_OPTIONS,
+    )
+    val linkPreviews: LinkPreviewsMode = LinkPreviewsMode.UnencryptedOnly,
 
     @Setting(
         title = "Presence",

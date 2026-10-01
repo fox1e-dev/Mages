@@ -176,6 +176,9 @@ delegate_unit_result! {
     update_power_level_for_user(room_id: String, user_id: String, power_level: i64);
     ignore_user(user_id: String);
     unignore_user(user_id: String);
+    set_invite_blocked(blocked: bool);
+    set_profile_field(name: String, value: String);
+    delete_profile_field(name: String);
     report_content(room_id: String, event_id: String, score: Option<i32>, reason: Option<String>);
     report_room(room_id: String, reason: Option<String>);
     send_poll_response(room_id: String, poll_event_id: String, answers: Vec<String>);
@@ -219,6 +222,7 @@ delegate_result! { Vec<RoomProfile>; list_invited(); }
 delegate_result! { Vec<String>; ignored_users(); }
 delegate_result! { Vec<DirectoryUser>; search_users(search_term: String, limit: u64); }
 delegate_result! { DirectoryUser; get_user_profile(user_id: String); }
+delegate_result! { MutualRooms; mutual_rooms(user_id: String); }
 delegate_result! { PublicRoomsPage; public_rooms(server: Option<String>, search: Option<String>, limit: u32, since: Option<String>); }
 delegate_result! { RoomPowerLevels; room_power_levels(room_id: String); }
 delegate_result! { RoomDirectoryVisibility; room_directory_visibility(room_id: String); }
@@ -238,6 +242,9 @@ delegate_result! { bool; can_user_ban(room_id: String, user_id: String); can_use
 delegate_option! { FfiRoomNotificationMode; room_notification_mode(room_id: String); }
 delegate_result! { bool; is_push_rule_enabled(kind: FfiPushRuleKind, rule_id: String); }
 delegate_result! { bool; is_reaction_notifications_enabled(); }
+delegate_result! { bool; can_set_profile_fields(); }
+delegate_result! { Vec<ProfileField>; own_profile_fields(); }
+delegate_option! { bool; invite_blocked(); }
 delegate_result! { FfiRoomNotificationMode; get_default_room_notification_mode(is_encrypted: bool, is_one_to_one: bool); }
 delegate_option! { UnreadStats; room_unread_stats(room_id: String); }
 delegate_option! { RoomCallState; room_call_state(room_id: String); }
@@ -251,6 +258,7 @@ delegate_option! { bool; is_marked_unread(room_id: String); }
 delegate_plain! { Vec<MessageEvent>; recent_events(room_id: String, limit: u32); }
 delegate_plain! { (); apply_sync_presence(state: Presence); }
 delegate_option! { MediaPreviewMode; media_preview_config(); }
+delegate_option! { LinkPreview; get_link_preview(url: String); }
 delegate_unit_result! { set_media_preview_config(previews: MediaPreviewMode); }
 delegate_result! { Option<MessageEvent>; event_details(room_id: String, event_id: String); }
 delegate_result! { ForwardResult; forward_event(source_room_id: String, event_id: String, target_room_ids: Vec<String>); }

@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">Unisciti automaticamente alle stanze quando ricevi un invito</string>
     <string name="setting_send_public_read_receipts_description">Se attivo, gli altri possono vedere quando hai letto i loro messaggi</string>
     <string name="setting_send_typing_indicators_description">Se disattivato, Mages non invia notifiche di digitazione</string>
+    <string name="setting_block_invites">Blocca gli inviti alle stanze</string>
+    <string name="setting_block_invites_description">Rifiuta automaticamente tutti gli inviti alle stanze che ricevi. Sincronizzato con gli altri tuoi dispositivi</string>
+    <string name="setting_link_previews">Mostra anteprime dei link</string>
+    <string name="setting_link_previews_description">Chiedi al tuo homeserver di creare un\'anteprima per i link pubblicati nei messaggi. Gli viene passato l\'URL a tale scopo, quindi le stanze crittografate restano senza anteprima a meno che tu non scelga Sempre</string>
     <string name="setting_presence_description">Imposta uno stato di presenza globale</string>
     <string name="setting_app_lock_description">Richiedi dati biometrici o PIN del dispositivo per aprire</string>
     <string name="setting_app_lock_timeout_description">Blocca dopo questo tempo in background</string>
@@ -567,6 +571,11 @@
         <item>Solo nei DM</item>
         <item>Mai</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Sempre</item>
+        <item>Eccetto nelle stanze crittografate</item>
+        <item>Mai</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">Le stanze negli spazi sono nascoste</string>
     <string name="rooms_hidden_in_spaces_subtitle">Apri gli spazi per sfogliare le stanze al loro interno</string>
     <string name="find_users_and_public_rooms">Trova utenti e stanze pubbliche</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">Cambia foto</string>
     <string name="profile_remove_photo">Rimuovi foto</string>
     <string name="profile_load_failed">Impossibile caricare il tuo profilo</string>
+    <string name="profile_fields">Campi del profilo</string>
+    <string name="add_profile_field">Aggiungi campo del profilo</string>
+    <string name="edit_profile_field">Modifica campo del profilo</string>
+    <string name="profile_field_name">Nome del campo</string>
+    <string name="profile_field_value">Valore</string>
+    <string name="time_zone">Fuso orario</string>
+    <string name="profile_field_was_rejected">Il campo del profilo è stato rifiutato</string>
+    <string name="profile_field_could_not_be_removed">Impossibile eliminare il campo del profilo</string>
     <string name="picker_no_sticker_packs">Nessun pacchetto di adesivi disponibile</string>
     <string name="picker_no_reaction_images">Nessuna emoji o adesivo per reagire</string>
     <string name="picker_search_images">Cerca emoji e adesivi</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">Impossibile inviare l\'allegato</string>
     <string name="failed_to_send_check_your_internet">Invio non riuscito. Controlli la tua connessione?</string>
     <string name="failed_to_send_invitation">Impossibile inviare l\'invito</string>
+    <string name="invite_blocked">Questo utente non accetta inviti</string>
+    <string name="user_limit_exceeded">Il tuo account ha raggiunto un limite sul tuo server.</string>
     <string name="failed_to_send_message">Impossibile inviare il messaggio</string>
     <string name="failed_to_send_sticker">Impossibile inviare l\'adesivo</string>
     <string name="failed_to_share_location">Impossibile condividere la posizione</string>
@@ -1218,6 +1237,10 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d risposta</item>        <item quantity="other">%1$d risposte</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d stanza in comune</item>
+        <item quantity="other">%1$d stanze in comune</item>
     </plurals>
     <string name="call">Chiamata</string>
     <string name="dms">DM</string>

@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">پیوستن خودکار به اتاق‌ها هنگام دعوت</string>
     <string name="setting_send_public_read_receipts_description">اگر فعال باشد، دیگران می‌توانند ببینند چه زمانی پیام‌هایشان را خوانده‌اید</string>
     <string name="setting_send_typing_indicators_description">اگر غیرفعال باشد، Mages اعلان نوشتن ارسال نمی‌کند</string>
+    <string name="setting_block_invites">مسدودکردن دعوت‌نامه‌های اتاق</string>
+    <string name="setting_block_invites_description">رد همه دعوت‌نامه‌های اتاق که برایتان ارسال می‌شود. با دستگاه‌های دیگر شما همگام‌سازی می‌شود</string>
+    <string name="setting_link_previews">نمایش پیش‌نمایش پیوندها</string>
+    <string name="setting_link_previews_description">از سرور خانه بخواهید پیش‌نمایش پیوندهای موجود در پیام‌ها را نمایش دهد. نشانی URL برای این کار در اختیار آن قرار می‌گیرد، بنابراین اتاق‌های رمزگذاری‌شده پیش‌نمایش داده نمی‌شوند مگر اینکه همیشه را انتخاب کنید</string>
     <string name="setting_presence_description">تنظیم وضعیت حضور سراسری</string>
     <string name="setting_app_lock_description">برای باز کردن، بیومتریک یا PIN دستگاه لازم است</string>
     <string name="setting_app_lock_timeout_description">پس از این مدت در پس‌زمینه قفل کن</string>
@@ -567,6 +571,11 @@
         <item>فقط در DMs</item>
         <item>هرگز</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>همیشه</item>
+        <item>به‌جز در اتاق‌های رمزگذاری‌شده</item>
+        <item>هرگز</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">اتاق‌های موجود در فضاها پنهان شده‌اند</string>
     <string name="rooms_hidden_in_spaces_subtitle">برای مرور اتاق‌های فضاهای خود، فضاها را باز کنید</string>
     <string name="find_users_and_public_rooms">یافتن کاربران و اتاق‌های عمومی</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">تغییر تصویر</string>
     <string name="profile_remove_photo">حذف تصویر</string>
     <string name="profile_load_failed">بارگیری نمایه شما انجام نشد</string>
+    <string name="profile_fields">فیلدهای نمایه</string>
+    <string name="add_profile_field">افزودن فیلد نمایه</string>
+    <string name="edit_profile_field">ویرایش فیلد نمایه</string>
+    <string name="profile_field_name">نام فیلد</string>
+    <string name="profile_field_value">مقدار</string>
+    <string name="time_zone">منطقه زمانی</string>
+    <string name="profile_field_was_rejected">فیلد نمایه رد شد</string>
+    <string name="profile_field_could_not_be_removed">حذف فیلد نمایه ممکن نبود</string>
     <string name="picker_no_sticker_packs">بسته استیکری موجود نیست</string>
     <string name="picker_no_reaction_images">هیچ ایموجی یا استیکری برای واکنش وجود ندارد</string>
     <string name="picker_search_images">جستجوی ایموجی‌ها و استیکرها</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">ارسال پیوست انجام نشد</string>
     <string name="failed_to_send_check_your_internet">ارسال انجام نشد. اینترنت خود را بررسی کنید؟</string>
     <string name="failed_to_send_invitation">ارسال دعوت‌نامه انجام نشد</string>
+    <string name="invite_blocked">این کاربر دعوت‌نامه‌ها را نمی‌پذیرد</string>
+    <string name="user_limit_exceeded">حساب شما به سقفی در سرور خانگی شما رسیده است.</string>
     <string name="failed_to_send_message">ارسال پیام انجام نشد</string>
     <string name="failed_to_send_sticker">ارسال استیکر انجام نشد</string>
     <string name="failed_to_share_location">اشتراک‌گذاری موقعیت انجام نشد</string>
@@ -1218,6 +1237,10 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d پاسخ</item>        <item quantity="other">%1$d پاسخ</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d اتاق مشترک</item>
+        <item quantity="other">%1$d اتاق مشترک</item>
     </plurals>
     <string name="call">تماس</string>
     <string name="dms">DMs</string>

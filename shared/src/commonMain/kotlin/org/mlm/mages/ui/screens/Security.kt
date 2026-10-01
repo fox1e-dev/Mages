@@ -33,6 +33,7 @@ import org.koin.compose.koinInject
 import org.mlm.mages.matrix.DeviceSummary
 import org.mlm.mages.matrix.MatrixPort
 import org.mlm.mages.matrix.OwnProfile
+import org.mlm.mages.matrix.ProfileField
 import org.mlm.mages.platform.toTransferItem
 import org.mlm.mages.settings.*
 import org.mlm.mages.ui.AvatarEdit
@@ -58,6 +59,8 @@ private sealed interface SecuritySheet {
     data class SetupRecovery(val isChange: Boolean) : SecuritySheet
     data object EnterRecoveryKey : SecuritySheet
 }
+
+private const val TIME_ZONE_FIELD = "m.tz"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -215,7 +218,12 @@ fun SecurityScreen(
                     onSave = viewModel::saveProfile,
                     onRetry = viewModel::loadProfile,
                     onUnignore = viewModel::unignoreUser,
-                    onOpenAccountManagement = { url -> uriHandler.openUri(url) }
+                    onOpenAccountManagement = { url -> uriHandler.openUri(url) },
+                    canSetProfileFields = state.canSetProfileFields,
+                    profileFields = state.profileFields,
+                    isSavingField = state.isSavingProfileField,
+                    onSaveField = viewModel::saveProfileField,
+                    onDeleteField = viewModel::deleteProfileField
                 )
 
                 2 -> SettingsTab(
@@ -309,7 +317,12 @@ private fun ProfileTab(
     onSave: (String, AvatarEdit) -> Unit,
     onRetry: () -> Unit,
     onUnignore: (String) -> Unit,
-    onOpenAccountManagement: (String) -> Unit
+    onOpenAccountManagement: (String) -> Unit,
+    canSetProfileFields: Boolean,
+    profileFields: List<ProfileField>,
+    isSavingField: Boolean,
+    onSaveField: (String, String) -> Unit,
+    onDeleteField: (String) -> Unit
 ) {
     var displayName by remember(accountId, profile?.displayName) {
         mutableStateOf(profile?.displayName.orEmpty())
@@ -317,6 +330,10 @@ private fun ProfileTab(
     var avatarEdit by remember(accountId, profile?.avatarUrl) {
         mutableStateOf<AvatarEdit>(AvatarEdit.None)
     }
+    var fieldEditorOpen by remember(accountId) { mutableStateOf(false) }
+    var fieldEditorExisting by remember(accountId) { mutableStateOf(false) }
+    var fieldEditorName by remember(accountId) { mutableStateOf("") }
+    var fieldEditorValue by remember(accountId) { mutableStateOf("") }
 
     if (isLoading && profile == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -341,6 +358,60 @@ private fun ProfileTab(
         is AvatarEdit.Replace -> edit.path
         AvatarEdit.Remove -> null
         AvatarEdit.None -> avatarPath
+    }
+
+    if (fieldEditorOpen) {
+        AlertDialog(
+            onDismissRequest = { fieldEditorOpen = false },
+            title = {
+                Text(
+                    stringResource(
+                        if (fieldEditorExisting) Res.string.edit_profile_field
+                        else Res.string.add_profile_field
+                    )
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    OutlinedTextField(
+                        value = fieldEditorName,
+                        onValueChange = { fieldEditorName = it },
+                        enabled = !fieldEditorExisting,
+                        singleLine = true,
+                        label = { Text(stringResource(Res.string.profile_field_name)) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (!fieldEditorExisting && fieldEditorName.isBlank()) {
+                        TextButton(onClick = { fieldEditorName = TIME_ZONE_FIELD }) {
+                            Text(stringResource(Res.string.time_zone))
+                        }
+                    }
+                    OutlinedTextField(
+                        value = fieldEditorValue,
+                        onValueChange = { fieldEditorValue = it },
+                        singleLine = true,
+                        label = { Text(stringResource(Res.string.profile_field_value)) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        fieldEditorOpen = false
+                        onSaveField(fieldEditorName, fieldEditorValue)
+                    },
+                    enabled = fieldEditorName.isNotBlank() && !isSavingField
+                ) {
+                    Text(stringResource(Res.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { fieldEditorOpen = false }) {
+                    Text(stringResource(Res.string.cancel))
+                }
+            }
+        )
     }
 
     LazyColumn(
@@ -426,6 +497,74 @@ private fun ProfileTab(
                 } else {
                     Text(stringResource(Res.string.save))
                 }
+            }
+        }
+
+        if (canSetProfileFields) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.lg),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(Res.string.profile_fields),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    TextButton(
+                        onClick = {
+                            fieldEditorExisting = false
+                            fieldEditorName = ""
+                            fieldEditorValue = ""
+                            fieldEditorOpen = true
+                        },
+                        enabled = !isSaving && !isSavingField
+                    ) {
+                        Icon(Icons.Default.Add, null)
+                        Text(stringResource(Res.string.add))
+                    }
+                }
+            }
+
+            items(profileFields, key = { it.name }) { field ->
+                ListItem(
+                    headlineContent = {
+                        Text(
+                            if (field.name == TIME_ZONE_FIELD) stringResource(Res.string.time_zone)
+                            else field.name,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    supportingContent = {
+                        Text(field.value, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    },
+                    trailingContent = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = {
+                                    fieldEditorExisting = true
+                                    fieldEditorName = field.name
+                                    fieldEditorValue = field.value
+                                    fieldEditorOpen = true
+                                },
+                                enabled = !isSaving && !isSavingField
+                            ) {
+                                Icon(Icons.Default.Edit, stringResource(Res.string.edit))
+                            }
+                            IconButton(
+                                onClick = { onDeleteField(field.name) },
+                                enabled = !isSaving && !isSavingField
+                            ) {
+                                Icon(Icons.Default.DeleteOutline, stringResource(Res.string.delete))
+                            }
+                        }
+                    }
+                )
             }
         }
 

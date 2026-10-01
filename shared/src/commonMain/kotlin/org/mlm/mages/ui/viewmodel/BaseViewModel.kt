@@ -12,7 +12,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.mlm.mages.MatrixService
 import org.mlm.mages.matrix.SpaceChildInfo
+import org.mlm.mages.matrix.isUserLimitExceeded
 import org.koin.core.component.KoinComponent
+import org.jetbrains.compose.resources.getString
+import mages.shared.generated.resources.*
+import mages.shared.generated.resources.Res
 
 /**
  * Base ViewModel providing common patterns for state management.
@@ -53,15 +57,18 @@ abstract class BaseViewModel<S>(initialState: S) : ViewModel(), KoinComponent {
     }
 
     /**
-     * Returns [userMessage] if successful, otherwise returns the exception message.
+     * Returns [userMessage] if successful, otherwise returns the exception message, or a
+     * localized explanation for failures that carry no usable message of their own.
      */
-    protected fun Result<*>.toUserMessage(userMessage: String): String {
-        return exceptionOrNull()?.message ?: userMessage
-    }
+    protected suspend fun Result<*>.toUserMessage(userMessage: String): String =
+        exceptionOrNull()?.failureMessage(userMessage) ?: userMessage
 
-    protected fun Result<*>?.toUserMessage(userMessage: String): String {
-        return this?.exceptionOrNull()?.message ?: userMessage
-    }
+    protected suspend fun Result<*>?.toUserMessage(userMessage: String): String =
+        this?.exceptionOrNull()?.failureMessage(userMessage) ?: userMessage
+
+    /** Text to show for [this] failed operation, or [fallback] when it has none. */
+    protected suspend fun Throwable.failureMessage(fallback: String): String =
+        if (isUserLimitExceeded()) getString(Res.string.user_limit_exceeded) else message ?: fallback
 
     protected fun resolveAvatar(
         service: MatrixService,

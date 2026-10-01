@@ -167,7 +167,8 @@ class LoginViewModel(
 
         launch(onError = { t ->
             val loginFailedFallback = getString(Res.string.login_failed)
-            updateState { copy(isBusy = false, error = t.message ?: loginFailedFallback) }
+            val message = t.failureMessage(loginFailedFallback)
+            updateState { copy(isBusy = false, error = message) }
         }) {
             updateState { copy(isBusy = true, error = null) }
 
@@ -247,7 +248,8 @@ class LoginViewModel(
             } catch (e: Exception) {
                 runCatching { port.close() }
                 val loginFailedFallback22 = getString(Res.string.login_failed)
-                updateState { copy(isBusy = false, error = e.message ?: loginFailedFallback22) }
+                val message = e.failureMessage(loginFailedFallback22)
+                updateState { copy(isBusy = false, error = message) }
             }
         }
     }

@@ -49,7 +49,7 @@ import org.mlm.mages.calls.answerIncomingCall
 import org.mlm.mages.calls.declineIncomingCall
 import org.mlm.mages.matrix.Presence
 import org.mlm.mages.matrix.SasPhase
-import org.mlm.mages.matrix.mediaPreviewSettingsSync
+import org.mlm.mages.matrix.accountDataSettingsSync
 import org.mlm.mages.matrix.MatrixPort.CallDeclineObserver
 import org.mlm.mages.matrix.RoomCallState
 import org.mlm.mages.matrix.MatrixPort.RoomCallStateObserver
@@ -354,11 +354,11 @@ private fun AppContent(
                     }
             }
 
-            // MSC4278. The sync adopts the account data preference if another client ever set
-            // one, then keeps account data in step with the local setting. There is no account
-            // data change notification, so a change made elsewhere is picked up the next time
-            // this account is opened.
-            val remoteSettings = remember { mediaPreviewSettingsSync(settingsRepository) { service.port } }
+            // MSC4278 media previews and MSC4380 invite blocking. The sync adopts the account
+            // data preference if another client ever set one, then keeps account data in step
+            // with the local setting. There is no account data change notification, so a change
+            // made elsewhere is picked up the next time this account is opened.
+            val remoteSettings = remember { accountDataSettingsSync(settingsRepository) { service.port } }
             val remoteStates by remoteSettings.states.collectAsState()
             LaunchedEffect(activeId) {
                 if (activeId == null || !service.isLoggedInSuspend()) return@LaunchedEffect

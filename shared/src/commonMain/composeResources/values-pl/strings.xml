@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">Automatycznie dołączaj do pokoi po zaproszeniu</string>
     <string name="setting_send_public_read_receipts_description">Po włączeniu inni mogą widzieć, kiedy przeczytałeś ich wiadomości</string>
     <string name="setting_send_typing_indicators_description">Po wyłączeniu Mages nie wysyła powiadomień o pisaniu</string>
+    <string name="setting_block_invites">Blokuj zaproszenia do pokoi</string>
+    <string name="setting_block_invites_description">Automatycznie odrzucaj wszystkie zaproszenia do pokoi, które otrzymujesz. Synchronizowane z innymi urządzeniami</string>
+    <string name="setting_link_previews">Pokazuj podglądy linków</string>
+    <string name="setting_link_previews_description">Poproś serwer domowy o pokazanie podglądów linków wpisanych w wiadomościach. W tym celu przekazywany jest mu adres URL, więc szyfrowane pokoje nie mają podglądu, chyba że wybierzesz Zawsze</string>
     <string name="setting_presence_description">Ustaw globalny stan obecności</string>
     <string name="setting_app_lock_description">Wymagaj biometrii lub PIN urządzenia do otwarcia</string>
     <string name="setting_app_lock_timeout_description">Zablokuj po tym czasie w tle</string>
@@ -337,7 +341,7 @@
     <string name="no_messages_yet">Nie ma jeszcze żadnych wiadomości</string>
     <string name="send_message_to_start">Wyślij wiadomość, aby rozpocząć rozmowę</string>
     <string name="drop_file_to_send">Upuść plik do wysłania</string>
-    <string name="offline_queued">Offline — wiadomości będą umieszczane w kolejce</string>
+    <string name="offline_queued">Offline - wiadomości będą umieszczane w kolejce</string>
     <string name="share">Udział</string>
     <string name="forward">Do przodu</string>
     <string name="delete">Usuwać</string>
@@ -567,6 +571,11 @@
         <item>Tylko w DM-ach</item>
         <item>Nigdy</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Zawsze</item>
+        <item>Za wyjątkiem szyfrowanych pokoi</item>
+        <item>Nigdy</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">Pokoje w przestrzeniach są ukryte</string>
     <string name="rooms_hidden_in_spaces_subtitle">Otwórz przestrzenie, aby przeglądać pokoje w swoich przestrzeniach</string>
     <string name="find_users_and_public_rooms">Znajdź użytkowników i pokoje publiczne</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">Zmień zdjęcie</string>
     <string name="profile_remove_photo">Usuń zdjęcie</string>
     <string name="profile_load_failed">Nie udało się wczytać profilu</string>
+    <string name="profile_fields">Pola profilu</string>
+    <string name="add_profile_field">Dodaj pole profilu</string>
+    <string name="edit_profile_field">Edytuj pole profilu</string>
+    <string name="profile_field_name">Nazwa pola</string>
+    <string name="profile_field_value">Wartość</string>
+    <string name="time_zone">Strefa czasowa</string>
+    <string name="profile_field_was_rejected">Pole profilu zostało odrzucone</string>
+    <string name="profile_field_could_not_be_removed">Nie udało się usunąć pola profilu</string>
     <string name="picker_no_sticker_packs">Brak dostępnych pakietów naklejek</string>
     <string name="picker_no_reaction_images">Brak emotek i naklejek do reagowania</string>
     <string name="picker_search_images">Szukaj emotek i naklejek</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">Nie udało się wysłać załącznika</string>
     <string name="failed_to_send_check_your_internet">Nie udało się wysłać. Sprawdź połączenie z internetem?</string>
     <string name="failed_to_send_invitation">Nie udało się wysłać zaproszenia</string>
+    <string name="invite_blocked">Ten użytkownik nie przyjmuje zaproszeń</string>
+    <string name="user_limit_exceeded">Twoje konto osiągnęło limit na twoim homeserverze.</string>
     <string name="failed_to_send_message">Nie udało się wysłać wiadomości</string>
     <string name="failed_to_send_sticker">Nie udało się wysłać naklejki</string>
     <string name="failed_to_share_location">Nie udało się udostępnić lokalizacji</string>
@@ -1218,6 +1237,12 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d odpowiedź</item>        <item quantity="few">%1$d odpowiedzi</item>        <item quantity="many">%1$d odpowiedzi</item>        <item quantity="other">%1$d odpowiedzi</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d wspólny pokój</item>
+        <item quantity="few">%1$d wspólne pokoje</item>
+        <item quantity="many">%1$d wspólnych pokojów</item>
+        <item quantity="other">%1$d wspólnego pokoju</item>
     </plurals>
     <string name="call">Połączenie</string>
     <string name="dms">DM</string>

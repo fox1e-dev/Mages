@@ -23,6 +23,7 @@ use matrix_sdk::{
         events::{
             AnyMessageLikeEventContent, Mentions,
             ignored_user_list::IgnoredUserListEventContent,
+            invite_permission_config::InvitePermissionConfigEventContent,
             key::verification::request::ToDeviceKeyVerificationRequestEvent,
             poll::{
                 unstable_end::UnstablePollEndEventContent,
@@ -63,8 +64,10 @@ use tracing::{info, warn};
 use crate::{
     ActionAvailability, ActionPresentation, AttachmentInfo, AttachmentKind, DirectoryUser,
     FfiError, FfiPushRuleKind, FfiRoomNotificationMode, ImagePackSummary, KnockRequestSummary,
-    MemberActionState, MemberSummary, MessageActionState, MessageEvent, OwnProfile, OwnReceipt,
-    PasswordLoginKind, PollDefinition,
+    LinkPreview, MemberActionState, MemberSummary, MessageActionState, MessageEvent, MutualRooms,
+    OwnProfile,
+    OwnReceipt,
+    PasswordLoginKind, PollDefinition, ProfileField,
     PredecessorRoomInfo, Presence, PresenceInfo, PublicRoom, PublicRoomsPage, ReactionSummary,
     RecentEmojiEntry, RoomActionState, RoomCallState, RoomDirectoryVisibility, RoomHistoryVisibility,
     RoomInfoSnapshot, RoomJoinRule, RoomListEntry, RoomListMembership, RoomPowerLevelChanges,
@@ -244,6 +247,95 @@ fn media_preview_mode(
         Some(MediaPreviews::Private) => MediaPreviewMode::Private,
         _ => MediaPreviewMode::On,
     }
+}
+
+/// Reads the OpenGraph object behind `GET /_matrix/client/v1/media/preview_url`;
+/// `None` when the reply holds nothing worth a card.
+fn parse_link_preview(url: &str, data: &str) -> Option<LinkPreview> {
+    let value: serde_json::Value = serde_json::from_str(data).ok()?;
+    let obj = value.as_object()?;
+
+    let text = |key: &str| -> Option<String> {
+        obj.get(key)
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_owned)
+    };
+    // OpenGraph spells sizes as strings, the spec's example spells them as numbers.
+    let number = |key: &str| -> Option<u64> {
+        let raw = obj.get(key)?;
+        let n = raw
+            .as_u64()
+            .or_else(|| raw.as_str().and_then(|s| s.parse().ok()))?;
+        (n > 0).then_some(n)
+    };
+
+    let host_of = |raw: &str| {
+        matrix_sdk::reqwest::Url::parse(raw)
+            .ok()
+            .and_then(|u| u.host_str().map(str::to_owned))
+    };
+
+    fn same_text(a: Option<&str>, b: Option<&str>) -> bool {
+        a.zip(b).is_some_and(|(x, y)| x.eq_ignore_ascii_case(y))
+    }
+
+    let mut title = text("og:title");
+    let mut description = text("og:description");
+    let site_name = text("og:site_name");
+    let og_url = text("og:url");
+    let image_mxc_uri = text("og:image").filter(|mxc| mxc.starts_with("mxc://"));
+
+    let site_name = site_name
+        .or_else(|| og_url.as_deref().and_then(|raw| host_of(raw)))
+        .or_else(|| host_of(url));
+
+    // Homeservers answer with the URL itself when a page has no title of its own.
+    if same_text(title.as_deref(), Some(url)) {
+        title = None;
+    }
+    if same_text(title.as_deref(), site_name.as_deref()) {
+        title = None;
+    }
+    if same_text(description.as_deref(), site_name.as_deref()) {
+        description = None;
+    }
+
+    if title.is_none() && description.is_none() && image_mxc_uri.is_none() {
+        return None;
+    }
+
+    if title.is_none() {
+        title = description.take();
+    }
+
+    Some(LinkPreview {
+        url: url.to_owned(),
+        title,
+        description,
+        site_name,
+        image_mxc_uri,
+        image_mime_type: text("og:image:type"),
+        image_alt: text("og:image:alt"),
+        image_width: number("og:image:width").and_then(|n| u32::try_from(n).ok()),
+        image_height: number("og:image:height").and_then(|n| u32::try_from(n).ok()),
+        image_size_bytes: number("matrix:image:size"),
+    })
+}
+
+/// Surfaces `M_INVITE_BLOCKED` (MSC4380) as a typed error so callers can explain the
+/// rejection instead of showing a raw server message.
+fn map_invite_result(result: Result<(), matrix_sdk::Error>) -> Result<(), FfiError> {
+    use matrix_sdk::ruma::api::error::ErrorKind;
+
+    result.map_err(|e| {
+        if matches!(e.client_api_error_kind(), Some(ErrorKind::InviteBlocked)) {
+            FfiError::InviteBlocked
+        } else {
+            FfiError::from(e)
+        }
+    })
 }
 
 pub(crate) fn call_member_min_level(
@@ -688,7 +780,7 @@ impl CoreClient {
             builder = builder.initial_device_display_name(name);
         }
 
-        builder.send().await.ffi()?;
+        builder.send().await.map_err(FfiError::from)?;
         Ok(())
     }
 
@@ -2353,17 +2445,64 @@ impl CoreClient {
             .ok_or_else(|| FfiError::Msg("room not found".into()))?;
         let uid = OwnedUserId::try_from(user_id.as_str())
             .map_err(|_| FfiError::Msg("invalid user id".into()))?;
-        room.invite_user_by_id(uid.as_ref()).await.ffi()
+        map_invite_result(room.invite_user_by_id(uid.as_ref()).await)
+    }
+
+    pub async fn invite_blocked(&self) -> Result<Option<bool>, FfiError> {
+        use matrix_sdk::ruma::events::invite_permission_config::InvitePermissionAction;
+
+        Ok(self
+            .read_invite_permission_config()
+            .await?
+            .default_action
+            .map(|action| matches!(action, InvitePermissionAction::Block)))
+    }
+
+    pub async fn set_invite_blocked(&self, blocked: bool) -> Result<(), FfiError> {
+        use matrix_sdk::ruma::events::invite_permission_config::InvitePermissionAction;
+
+        let mut content = self.read_invite_permission_config().await?;
+        content.default_action = blocked.then_some(InvitePermissionAction::Block);
+        self.sdk.account().set_account_data(content).await.ffi()?;
+        Ok(())
+    }
+
+    async fn read_invite_permission_config(
+        &self,
+    ) -> Result<InvitePermissionConfigEventContent, FfiError> {
+        Ok(self
+            .sdk
+            .account()
+            .account_data::<InvitePermissionConfigEventContent>()
+            .await
+            .ffi()?
+            .and_then(|raw| raw.deserialize().ok())
+            .unwrap_or_default())
     }
 
     pub async fn accept_invite(&self, room_id: String) -> Result<(), FfiError> {
         let rid = OwnedRoomId::try_from(room_id.as_str())
             .map_err(|_| FfiError::Msg("invalid room id".into()))?;
-        self.sdk.join_room_by_id(&rid).await.ffi().map(|_| ())
+        self.sdk
+            .join_room_by_id(&rid)
+            .await
+            .map_err(FfiError::from)
+            .map(|_| ())
     }
 
     pub async fn leave_room(&self, room_id: String) -> Result<(), FfiError> {
-        self.require_room(&room_id)?.leave().await.ffi()
+        let room = self.require_room(&room_id)?;
+        room.leave().await.ffi()?;
+        let server_forgets = self
+            .sdk
+            .homeserver_capabilities()
+            .forgets_room_when_leaving()
+            .await
+            .unwrap_or(true);
+        if !server_forgets {
+            let _ = room.forget().await;
+        }
+        Ok(())
     }
 
     pub async fn decline_call(
@@ -2385,7 +2524,7 @@ impl CoreClient {
     ) -> Result<(), FfiError> {
         let room = self.require_room(&room_id)?;
         let uid = Self::parse_uid(&user_id)?;
-        room.invite_user_by_id(&uid).await.ffi()
+        map_invite_result(room.invite_user_by_id(&uid).await)
     }
 
     pub async fn decline_knock_request(
@@ -2553,7 +2692,12 @@ impl CoreClient {
         let parsed: mime::Mime = mime
             .parse()
             .map_err(|_| FfiError::Msg(format!("unsupported media type {mime:?}")))?;
-        let response = self.sdk.media().upload(&parsed, bytes, None).await.ffi()?;
+        let response = self
+            .sdk
+            .media()
+            .upload(&parsed, bytes, None)
+            .await
+            .map_err(FfiError::from)?;
         Ok(response.content_uri.to_string())
     }
 
@@ -3088,6 +3232,18 @@ impl CoreClient {
         })
     }
 
+    pub async fn mutual_rooms(&self, user_id: String) -> Result<MutualRooms, FfiError> {
+        use matrix_sdk::ruma::api::client::membership::get_mutual_rooms;
+
+        let uid = Self::parse_uid(&user_id)?;
+        let req = get_mutual_rooms::v1::Request::new(uid);
+        let resp = self.sdk.send(req).await.ffi()?;
+        Ok(MutualRooms {
+            count: resp.count.into(),
+            room_ids: resp.joined.iter().map(|r| r.to_string()).collect(),
+        })
+    }
+
     pub async fn public_rooms(
         &self,
         server: Option<String>,
@@ -3154,7 +3310,7 @@ impl CoreClient {
         self.sdk
             .join_room_by_id_or_alias(&target, &via)
             .await
-            .ffi()?;
+            .map_err(FfiError::from)?;
         Ok(())
     }
 
@@ -3226,7 +3382,11 @@ impl CoreClient {
         } else {
             Self::parse_via_servers(via)?
         };
-        self.sdk.knock(target, None, via).await.ffi().map(|_| ())
+        self.sdk
+            .knock(target, None, via)
+            .await
+            .map_err(FfiError::from)
+            .map(|_| ())
     }
 
     pub async fn resolve_room_id(&self, id_or_alias: String) -> Result<Option<String>, FfiError> {
@@ -3247,7 +3407,7 @@ impl CoreClient {
         if let Some(room) = self.sdk.get_dm_room(&uid) {
             return Ok(room.room_id().to_string());
         }
-        let room = self.sdk.create_dm(&uid).await.ffi()?;
+        let room = self.sdk.create_dm(&uid).await.map_err(FfiError::from)?;
         Ok(room.room_id().to_string())
     }
 
@@ -3298,7 +3458,7 @@ impl CoreClient {
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(|e: matrix_sdk::ruma::IdParseError| FfiError::Msg(e.to_string()))?;
         }
-        let resp = self.sdk.send(req).await.ffi()?;
+        let resp = self.sdk.send(req).await.map_err(FfiError::from)?;
         Ok(resp.room_id.to_string())
     }
 
@@ -3336,7 +3496,7 @@ impl CoreClient {
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(|e: matrix_sdk::ruma::IdParseError| FfiError::Msg(e.to_string()))?;
         }
-        let resp = self.sdk.send(req).await.ffi()?;
+        let resp = self.sdk.send(req).await.map_err(FfiError::from)?;
         Ok(resp.room_id.to_string())
     }
 
@@ -3711,6 +3871,16 @@ impl CoreClient {
         Ok(())
     }
 
+    pub async fn get_link_preview(&self, url: String) -> Result<Option<LinkPreview>, FfiError> {
+        let parsed = matrix_sdk::reqwest::Url::parse(&url).ffi()?;
+        if !matches!(parsed.scheme(), "http" | "https") {
+            return Err(ffi_err!("unsupported URL scheme: {}", parsed.scheme()));
+        }
+
+        let data = self.sdk.media().get_media_preview(&url, None).await.ffi()?;
+        Ok(data.and_then(|raw| parse_link_preview(&url, raw.get())))
+    }
+
     pub async fn get_presence(&self, user_id: String) -> Result<PresenceInfo, FfiError> {
         let uid = Self::parse_uid(&user_id)?;
         let req = get_presence_v3::Request::new(uid);
@@ -3961,7 +4131,7 @@ impl CoreClient {
             .ok_or_else(|| FfiError::Msg("space not found".into()))?;
         let uid = OwnedUserId::try_from(user_id.as_str())
             .map_err(|_| FfiError::Msg("invalid user id".into()))?;
-        room.invite_user_by_id(&uid).await.ffi()
+        map_invite_result(room.invite_user_by_id(&uid).await)
     }
 
     pub async fn start_live_location(
@@ -4179,12 +4349,62 @@ impl CoreClient {
             return Err(FfiError::Msg(format!("{mime} is not an image")));
         }
 
-        let mxc = self.sdk.account().upload_avatar(&parsed, bytes).await.ffi()?;
+        let mxc = self
+            .sdk
+            .account()
+            .upload_avatar(&parsed, bytes)
+            .await
+            .map_err(FfiError::from)?;
         Ok(mxc.to_string())
     }
 
     pub async fn remove_avatar(&self) -> Result<(), FfiError> {
         self.sdk.account().set_avatar_url(None).await.ffi()
+    }
+
+    /// Whether the homeserver lets this account set extended profile fields (MSC4133).
+    pub async fn can_set_profile_fields(&self) -> Result<bool, FfiError> {
+        Ok(self
+            .sdk
+            .homeserver_capabilities()
+            .extended_profile_fields()
+            .await
+            .ffi()?
+            .enabled)
+    }
+
+    pub async fn own_profile_fields(&self) -> Result<Vec<ProfileField>, FfiError> {
+        let profile = self.sdk.account().fetch_user_profile().await.ffi()?;
+        Ok(profile
+            .iter()
+            .filter(|(name, _)| name.as_str() != "displayname" && name.as_str() != "avatar_url")
+            .map(|(name, value)| ProfileField {
+                name: name.clone(),
+                value: match value {
+                    serde_json::Value::String(text) => text.clone(),
+                    other => other.to_string(),
+                },
+            })
+            .collect())
+    }
+
+    pub async fn set_profile_field(&self, name: String, value: String) -> Result<(), FfiError> {
+        use matrix_sdk::ruma::profile::ProfileFieldValue;
+
+        let name = name.trim().to_owned();
+        if name.is_empty() {
+            return Err(ffi_err!("profile field name is empty"));
+        }
+        let field = ProfileFieldValue::new(&name, serde_json::Value::String(value))
+            .map_err(|e| FfiError::Msg(format!("invalid profile field value: {e}")))?;
+        self.sdk.account().set_profile_field(field).await.ffi()
+    }
+
+    pub async fn delete_profile_field(&self, name: String) -> Result<(), FfiError> {
+        use matrix_sdk::ruma::profile::ProfileFieldName;
+
+        let field: ProfileFieldName = name.trim().into();
+        self.sdk.account().delete_profile_field(field).await.ffi()
     }
 
     pub async fn thread_replies(

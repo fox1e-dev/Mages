@@ -111,6 +111,10 @@
     <string name="setting_auto_join_room_invites_description">Συνδεθείτε αυτόματα στα δωμάτια όταν προσκληθείτε</string>
     <string name="setting_send_public_read_receipts_description">Όταν είναι ενεργοποιημένη, οι άλλοι χρήστες μπορούν να δουν πότε έχετε διαβάσει τα μηνύματά τους</string>
     <string name="setting_send_typing_indicators_description">Όταν απενεργοποιηθεί, οι Μάγοι δεν θα στέλνουν ειδοποιήσεις πληκτρολόγησης</string>
+    <string name="setting_block_invites">Αποκλεισμός προσκλήσεων δωματίων</string>
+    <string name="setting_block_invites_description">Αυτόματη απόρριψη όλων των προσκλήσεων δωματίων που σας στέλνονται. Συγχρονισμένο με τις άλλες συσκευές σας</string>
+    <string name="setting_link_previews">Εμφάνιση προεπισκοπήσεων συνδέσμων</string>
+    <string name="setting_link_previews_description">Ζητήστε από τον διακομιστή σας να δημιουργήσει προεπισκόπηση των συνδέσμων που δημοσιεύονται στα μηνύματα. Το URL του παραδίδεται για αυτή την εργασία, οπότε τα κρυπτογραφημένα δωμάτια δεν έχουν προεπισκόπηση εκτός αν επιλέξετε Πάντα</string>
     <string name="setting_presence_description">Ορίστε μια παγκόσμια κατάσταση παρουσίας</string>
     <string name="setting_app_lock_description">Απαιτούνται βιομετρικά στοιχεία ή ΚΑΡΦΙΤΣΑ συσκευής για το άνοιγμα</string>
     <string name="setting_app_lock_timeout_description">Κλείδωμα μετά από τόσο καιρό στο παρασκήνιο</string>
@@ -567,6 +571,11 @@
         <item>Μόνο σε DMs</item>
         <item>Ποτέ</item>
     </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Πάντα</item>
+        <item>Εκτός από κρυπτογραφημένα δωμάτια</item>
+        <item>Ποτέ</item>
+    </string-array>
     <string name="rooms_hidden_in_spaces">Τα δωμάτια στους χώρους είναι κρυμμένα</string>
     <string name="rooms_hidden_in_spaces_subtitle">Ανοίξτε τους χώρους για να δείτε τα δωμάτια μέσα στους χώρους σας</string>
     <string name="find_users_and_public_rooms">Εύρεση χρηστών και δημόσιων δωματίων</string>
@@ -579,6 +588,14 @@
     <string name="profile_change_photo">Αλλαγή φωτογραφίας</string>
     <string name="profile_remove_photo">Αφαίρεση φωτογραφίας</string>
     <string name="profile_load_failed">Δεν ήταν δυνατή η φόρτωση του προφίλ σας</string>
+    <string name="profile_fields">Πεδία προφίλ</string>
+    <string name="add_profile_field">Προσθήκη πεδίου προφίλ</string>
+    <string name="edit_profile_field">Επεξεργασία πεδίου προφίλ</string>
+    <string name="profile_field_name">Όνομα πεδίου</string>
+    <string name="profile_field_value">Τιμή</string>
+    <string name="time_zone">Ζώνη ώρας</string>
+    <string name="profile_field_was_rejected">Το πεδίο προφίλ απορρίφθηκε</string>
+    <string name="profile_field_could_not_be_removed">Δεν ήταν δυνατή η κατάργηση του πεδίου προφίλ</string>
     <string name="picker_no_sticker_packs">Δεν υπάρχουν διαθέσιμα πακέτα αυτοκόλλητων</string>
     <string name="picker_no_reaction_images">Δεν υπάρχουν emotes ή αυτοκόλλητα για αντιδράσεις</string>
     <string name="picker_search_images">Αναζήτηση emotes και αυτοκόλλητων</string>
@@ -780,6 +797,8 @@
     <string name="failed_to_send_attachment">Η αποστολή συνημμένου απέτυχε</string>
     <string name="failed_to_send_check_your_internet">Η αποστολή απέτυχε. Ελέγξτε τη σύνδεσή σας;</string>
     <string name="failed_to_send_invitation">Η αποστολή πρόσκλησης απέτυχε</string>
+    <string name="invite_blocked">Αυτός ο χρήστης δεν δέχεται προσκλήσεις</string>
+    <string name="user_limit_exceeded">Ο λογαριασμός σας έφτασε στο ανώτατο όριο στον διακομιστή σας.</string>
     <string name="failed_to_send_message">Η αποστολή μηνύματος απέτυχε</string>
     <string name="failed_to_send_sticker">Η αποστολή αυτοκόλλητου απέτυχε</string>
     <string name="failed_to_share_location">Η κοινή χρήση τοποθεσίας απέτυχε</string>
@@ -1218,6 +1237,10 @@
     </plurals>
     <plurals name="reply_count">
         <item quantity="one">%1$d απάντηση</item>        <item quantity="other">%1$d απαντήσεις</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d κοινό δωμάτιο</item>
+        <item quantity="other">%1$d κοινά δωμάτια</item>
     </plurals>
     <string name="call">Κλήση</string>
     <string name="dms">DMs</string>

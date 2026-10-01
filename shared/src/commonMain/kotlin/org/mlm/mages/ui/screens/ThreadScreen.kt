@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import org.mlm.mages.LinkPreview
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.matrix.ReactionSummary
 import org.mlm.mages.ui.ThreadUiState
@@ -321,6 +322,8 @@ fun ThreadScreen(
                                         avatarByUserId = state.avatarByUserId,
                                         replyThumbByEvent = state.replyThumbByEvent,
                                         thumbByEvent = state.thumbByEvent,
+                                        linkPreviewByEvent = state.linkPreviewByEvent,
+                                        linkPreviewImageByEvent = state.linkPreviewImageByEvent,
                                         emotePaths = state.emotePathByMxc,
                                         reactionImagePaths = state.reactionImagePathByMxc,
                                         reactionShortcodes = reactionShortcodes,
@@ -680,6 +683,8 @@ private fun ThreadReplyMessage(
     avatarByUserId: Map<String, String>,
     replyThumbByEvent: Map<String, String>,
     thumbByEvent: Map<String, String>,
+    linkPreviewByEvent: Map<String, LinkPreview?>,
+    linkPreviewImageByEvent: Map<String, String>,
     emotePaths: Map<String, String>,
     reactionImagePaths: Map<String, String>,
     reactionShortcodes: Map<String, String>,
@@ -729,6 +734,8 @@ private fun ThreadReplyMessage(
                     variant = MessageBubbleVariant.ThreadReply,
                     resolvedPreviewPath = thumbByEvent[event.eventId],
                     resolvedReplyPreviewPath = event.replyToEventId?.let { replyThumbByEvent[it] },
+                    resolvedLinkPreview = linkPreviewByEvent[event.eventId],
+                    resolvedLinkPreviewImage = linkPreviewImageByEvent[event.eventId],
                     senderVisible = !grouped,
                     reactionImagePaths = reactionImagePaths,
                     reactionShortcodes = reactionShortcodes,

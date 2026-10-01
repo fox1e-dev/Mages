@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import kotlinx.serialization.Serializable
 import mages.shared.generated.resources.*
 import org.mlm.mages.AttachmentKind
+import org.mlm.mages.LinkPreview
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.ReplyPreview
 import org.mlm.mages.ReplyPreviewKind
@@ -20,6 +21,7 @@ import org.mlm.mages.matrix.SpaceParentInfo
 import org.mlm.mages.matrix.MemberSummary
 import org.mlm.mages.matrix.MatrixPort
 import org.mlm.mages.matrix.OwnProfile
+import org.mlm.mages.matrix.ProfileField
 import org.mlm.mages.matrix.RoomNotificationMode
 import org.mlm.mages.matrix.RoomPowerLevels
 import org.mlm.mages.matrix.RoomJoinRule
@@ -313,6 +315,10 @@ data class RoomUiState(
     val audioFileByEvent: Map<String, String> = emptyMap(),
     val waveformByEvent: Map<String, List<Float>> = emptyMap(),
 
+    /** Preview for the link in an event, keyed by event id; null is a remembered miss. */
+    val linkPreviewByEvent: Map<String, LinkPreview?> = emptyMap(),
+    val linkPreviewImageByEvent: Map<String, String> = emptyMap(),
+
     val liveLocationShares: Map<String, LiveLocationShare> = emptyMap(),
     val liveLocationSubToken: ULong? = null,
 
@@ -490,6 +496,9 @@ data class SecurityUiState(
     val isLoadingProfile: Boolean = false,
     val isSavingProfile: Boolean = false,
     val ownAvatarPath: String? = null,
+    val canSetProfileFields: Boolean = false,
+    val profileFields: List<ProfileField> = emptyList(),
+    val isSavingProfileField: Boolean = false,
 )
 
 sealed interface AvatarEdit {
@@ -638,6 +647,9 @@ data class ThreadUiState(
     val imagePacks: List<ImagePackSummary> = emptyList(),
     val emotePathByMxc: Map<String, String> = emptyMap(),
     val reactionImagePathByMxc: Map<String, String> = emptyMap(),
+    /** See [RoomUiState.linkPreviewByEvent]. */
+    val linkPreviewByEvent: Map<String, LinkPreview?> = emptyMap(),
+    val linkPreviewImageByEvent: Map<String, String> = emptyMap(),
     val isRoomEncrypted: Boolean = false,
 ) {
     val messageCount: Int get() = (if (rootMessage != null) 1 else 0) + replies.size

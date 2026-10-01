@@ -170,6 +170,14 @@
     <string name="profile_change_photo">Change photo</string>
     <string name="profile_remove_photo">Remove photo</string>
     <string name="profile_load_failed">Could not load your profile</string>
+    <string name="profile_fields">Profile fields</string>
+    <string name="add_profile_field">Add profile field</string>
+    <string name="edit_profile_field">Edit profile field</string>
+    <string name="profile_field_name">Field name</string>
+    <string name="profile_field_value">Value</string>
+    <string name="time_zone">Time zone</string>
+    <string name="profile_field_was_rejected">Profile field was rejected</string>
+    <string name="profile_field_could_not_be_removed">Profile field could not be removed</string>
     <string name="appearance">Appearance</string>
     <string name="timeline">Timeline</string>
     <string name="calls">Calls</string>
@@ -591,6 +599,10 @@
     <string name="setting_send_public_read_receipts_description">When enabled, other users can see when you&apos;ve read their messages</string>
     <string name="setting_send_typing_indicators">Send typing indicators</string>
     <string name="setting_send_typing_indicators_description">When disabled, Mages will not send typing notifications</string>
+    <string name="setting_block_invites">Block room invites</string>
+    <string name="setting_block_invites_description">Automatically reject every room invite sent to you. Synced to your other devices</string>
+    <string name="setting_link_previews">Show link previews</string>
+    <string name="setting_link_previews_description">Ask your homeserver to preview links posted in messages. It is handed the URL to do so, so encrypted rooms are left unpreviewed unless you choose Always</string>
     <string name="setting_presence">Presence</string>
     <string name="setting_presence_description">Set a global presence status</string>
     <string name="setting_app_lock">App lock</string>
@@ -680,6 +692,11 @@
     <string-array name="setting_media_previews_options">
         <item>Always</item>
         <item>Only in private rooms</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="setting_link_previews_options">
+        <item>Always</item>
+        <item>Except in encrypted rooms</item>
         <item>Never</item>
     </string-array>
     <string name="abuse">Abuse</string>
@@ -855,6 +872,8 @@
     <string name="failed_to_send_attachment">Failed to send attachment</string>
     <string name="failed_to_send_check_your_internet">Failed to send. Check your internet?</string>
     <string name="failed_to_send_invitation">Failed to send invitation</string>
+    <string name="invite_blocked">This user doesn&apos;t accept invites</string>
+    <string name="user_limit_exceeded">Your account has reached a limit on your homeserver.</string>
     <string name="failed_to_send_message">Failed to send message</string>
     <string name="failed_to_send_sticker">Failed to send sticker</string>
     <string name="failed_to_share_location">Failed to share location</string>
@@ -1296,6 +1315,10 @@
     <plurals name="reply_count">
         <item quantity="one">%1$d reply</item>
         <item quantity="other">%1$d replies</item>
+    </plurals>
+    <plurals name="shared_rooms_count">
+        <item quantity="one">%1$d shared room</item>
+        <item quantity="other">%1$d shared rooms</item>
     </plurals>
     <string name="call">Call</string>
     <string name="dms">DMs</string>
