@@ -375,7 +375,7 @@ private fun insertMentionInternal(current: TextFieldValue, member: MemberSummary
     return TextFieldValue(newText, selection = TextRange(newCursor))
 }
 
-private data class EmoteQueryInternal(
+internal data class EmoteQueryInternal(
     val start: Int,
     val end: Int,
     val query: String,
@@ -387,20 +387,21 @@ private data class EmoteQueryInternal(
  * must start a word, which is what keeps a time such as `12:30` or a URL from
  * opening the picker.
  */
-private fun findEmoteQueryInternal(value: TextFieldValue): EmoteQueryInternal? {
+internal fun findEmoteQueryInternal(value: TextFieldValue): EmoteQueryInternal? {
     val text = value.text
     val cursor = value.selection.start
     if (cursor < 1 || cursor > text.length) return null
 
     var start = cursor
-    while (start > 0 && isShortcodeChar(text[start - 1])) {
+    while (start > 0 && (isShortcodeChar(text[start - 1]) || text[start - 1] == ':')) {
         start--
     }
     if (start >= text.length || text[start] != ':') return null
     if (start > 0 && !text[start - 1].isWhitespace()) return null
+    if (start >= cursor) return null
 
-    var end = cursor
-    while (end < text.length && isShortcodeChar(text[end])) {
+    var end = start + 1
+    while (end < text.length && (isShortcodeChar(text[end]) || text[end] == ':')) {
         end++
     }
 
@@ -409,21 +410,21 @@ private fun findEmoteQueryInternal(value: TextFieldValue): EmoteQueryInternal? {
 
 private fun isShortcodeChar(c: Char): Boolean = c.isLetterOrDigit() || c == '-' || c == '_'
 
-private fun filterEmoteSuggestionsInternal(
+internal fun filterEmoteSuggestionsInternal(
     suggestions: List<EmoteSuggestion>,
     query: String
 ): List<EmoteSuggestion> {
-    val normalized = query.lowercase()
+    val normalized = query.trim(':').lowercase()
     return suggestions
         .asSequence()
         .filter {
-            normalized.isEmpty() || it.shortcode.lowercase().startsWith(normalized)
+            normalized.isEmpty() || it.shortcode.trim(':').lowercase().startsWith(normalized)
         }
         .take(24)
         .toList()
 }
 
-private fun insertEmoteInternal(
+internal fun insertEmoteInternal(
     current: TextFieldValue,
     suggestion: EmoteSuggestion,
     query: EmoteQueryInternal
