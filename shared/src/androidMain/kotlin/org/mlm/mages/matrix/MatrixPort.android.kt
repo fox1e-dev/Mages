@@ -762,6 +762,11 @@ class RustMatrixPort : MatrixPort, VerificationService {
             runWithFfiResult { withClient { it.retryByTxn(roomId, txnId) } }.isSuccess
         }
 
+    override suspend fun cancelByTxn(roomId: String, txnId: String): Boolean =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.cancelByTxn(roomId, txnId) } }.isSuccess
+        }
+
     override fun enterForeground() {
         withClient { it.enterForeground() }
     }
@@ -785,6 +790,7 @@ class RustMatrixPort : MatrixPort, VerificationService {
         voiceDurationMs: Long?,
         voiceWaveform: List<Float>?,
         isVoice: Boolean?,
+        txnId: String?,
         onProgress: ((Long, Long?) -> Unit)?
     ): Boolean {
         val request = mages.SendAttachmentRequest(
@@ -797,7 +803,8 @@ class RustMatrixPort : MatrixPort, VerificationService {
             replyToEventId = replyToEventId,
             voiceDurationMs = voiceDurationMs?.toULong(),
             voiceWaveform = voiceWaveform,
-            isVoice = isVoice
+            isVoice = isVoice,
+            txnId = txnId
         )
         val cb = if (onProgress != null) object : mages.ProgressObserver {
             override fun onProgress(sent: ULong, total: ULong?) {

@@ -190,6 +190,7 @@ pub struct SendAttachmentRequest {
     pub voice_duration_ms: Option<u64>,
     pub voice_waveform: Option<Vec<f32>>,
     pub is_voice: Option<bool>,
+    pub txn_id: Option<String>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Record)]

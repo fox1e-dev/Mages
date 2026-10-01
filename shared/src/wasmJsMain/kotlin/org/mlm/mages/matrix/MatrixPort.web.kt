@@ -234,6 +234,22 @@ private external fun retryByTxnInterop(
   txnId: String
 ): Promise<JsAny?>
 
+@JsFun("""(client, roomId, txnId) => {
+  if (!client) return Promise.resolve(false);
+  const fn = client.cancelByTxn || client.cancel_by_txn;
+  if (typeof fn !== 'function') return Promise.resolve(false);
+  try {
+    return Promise.resolve(fn.call(client, roomId, txnId));
+  } catch (_) {
+    return Promise.resolve(false);
+  }
+}""")
+private external fun cancelByTxnInterop(
+  client: WasmClient,
+  roomId: String,
+  txnId: String
+): Promise<JsAny?>
+
 private suspend fun Promise<JsAny?>.awaitBoolLike(): Boolean {
   val value = await<JsAny?>() ?: return false
   val obj = value.toJsonObject()
@@ -666,6 +682,11 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
             retryByTxnInterop(requireClient(), roomId, txnId).awaitBoolLike()
         }.getOrDefault(false)
 
+    override suspend fun cancelByTxn(roomId: String, txnId: String): Boolean =
+        runCatching {
+            cancelByTxnInterop(requireClient(), roomId, txnId).awaitBoolLike()
+        }.getOrDefault(false)
+
     override fun stopTypingObserver(token: ULong) {
         requireClient().unobserveTyping(token.toDouble())
     }
@@ -813,6 +834,7 @@ class WebStubMatrixPort : MatrixPort, VerificationService {
         voiceDurationMs: Long?,
         voiceWaveform: List<Float>?,
         isVoice: Boolean?,
+        txnId: String?,
         onProgress: ((Long, Long?) -> Unit)?
     ): Boolean {
         val bytes = retrieveWebBlob(path) ?: throw Exception("Blob not found for path: $path")

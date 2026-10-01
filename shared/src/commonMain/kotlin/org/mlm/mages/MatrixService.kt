@@ -191,9 +191,10 @@ class MatrixService(
         voiceDurationMs: Long? = null,
         voiceWaveform: List<Float>? = null,
         isVoice: Boolean? = null,
+        txnId: String? = null,
         onProgress: ((sent: Long, total: Long?) -> Unit)? = null,
     ): Result<Unit> = runCatching {
-        val ok = port.sendAttachmentFromPath(roomId, path, mime, filename, caption, formattedCaption, replyToEventId, voiceDurationMs, voiceWaveform, isVoice, onProgress)
+        val ok = port.sendAttachmentFromPath(roomId, path, mime, filename, caption, formattedCaption, replyToEventId, voiceDurationMs, voiceWaveform, isVoice, txnId, onProgress)
         check(ok) { getString(Res.string.failed_to_send_attachment) }
     }
 
@@ -220,6 +221,11 @@ class MatrixService(
     suspend fun retryByTxn(roomId: String, txnId: String): Result<Unit> = runCatching {
         val ok = port.retryByTxn(roomId, txnId)
         check(ok) { getString(Res.string.retry_failed) }
+    }
+
+    suspend fun cancelSend(roomId: String, txnId: String): Result<Unit> = runCatching {
+        val ok = port.cancelByTxn(roomId, txnId)
+        check(ok) { getString(Res.string.delete_failed) }
     }
 
     suspend fun isSpace(roomId: String): Boolean =

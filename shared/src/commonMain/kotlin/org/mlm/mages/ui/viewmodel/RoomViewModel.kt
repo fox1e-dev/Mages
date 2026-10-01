@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import kotlin.uuid.Uuid
 import mages.shared.generated.resources.*
 import org.koin.core.component.inject
 import org.mlm.mages.*
@@ -233,6 +234,7 @@ class RoomViewModel(
     private var remoteCallActiveForRoom = false
     private var dmPeer: String? = null
     private var uploadJob: Job? = null
+    private var uploadTxnId: String? = null
     private var typingJob: Job? = null
     private var draftJob: Job? = null
     private var hasTimelineSnapshot = false
@@ -937,7 +939,17 @@ class RoomViewModel(
     //  Delete/Retry
 
     fun delete(event: MessageEvent) {
-        if (event.eventId.isBlank()) return
+        if (event.eventId.isBlank()) {
+            val txnId = event.txnId
+            if (txnId.isNullOrBlank()) return
+            launch {
+                val result = service.cancelSend(currentState.roomId, txnId)
+                if (result.isFailure) {
+                    _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.delete_failed))))
+                }
+            }
+            return
+        }
         launch {
             val result = service.redact(currentState.roomId, event.eventId, null)
             if (result?.isSuccess != true) {
@@ -1402,6 +1414,8 @@ class RoomViewModel(
 
                 val result = when (data.mode) {
                     OutgoingMediaMode.Attachment -> {
+                        val txn = Uuid.random().toString()
+                        uploadTxnId = txn
                         service.sendAttachmentFromPath(
                             roomId = currentState.roomId,
                             path = data.path,
@@ -1409,7 +1423,8 @@ class RoomViewModel(
                             filename = data.fileName,
                             caption = cap,
                             formattedCaption = fCap,
-                            replyToEventId = replyId
+                            replyToEventId = replyId,
+                            txnId = txn,
                         ) { sent, totalBytes ->
                             val denom = (totalBytes ?: data.sizeBytes).coerceAtLeast(1L).toFloat()
                             val p = (sent.toFloat() / denom).coerceIn(0f, 1f)
@@ -1428,6 +1443,7 @@ class RoomViewModel(
                     }
 
                     OutgoingMediaMode.Sticker -> {
+                        uploadTxnId = null
                         service.sendStickerFromPath(
                             roomId = currentState.roomId,
                             path = data.path,
@@ -1463,6 +1479,7 @@ class RoomViewModel(
                             attachments = remaining
                         )
                     }
+                    uploadTxnId = null
                     _events.send(Event.ShowError(result.toUserMessage(getString(Res.string.upload_failed_named, data.fileName))))
                     return@launch
                 }
@@ -1476,12 +1493,18 @@ class RoomViewModel(
                     uploadingFileName = null
                 )
             }
+            uploadTxnId = null
         }
     }
 
     fun cancelAttachmentUpload() {
+        val txnId = uploadTxnId
+        uploadTxnId = null
         uploadJob?.cancel()
         uploadJob = null
+        if (!txnId.isNullOrBlank()) {
+            launch { service.cancelSend(currentState.roomId, txnId) }
+        }
         updateState {
             copy(
                 isUploadingAttachment = false,
@@ -2954,12 +2977,13 @@ class RoomViewModel(
         ensureReplyThumbnail(event)
         ensureEmotes(event)
         if (!mediaPreviewsAllowed()) return
-        if (event.eventId.isBlank()) return
-        if (currentState.thumbByEvent.containsKey(event.eventId)) return
-        if (event.eventId in thumbnailFetchInFlight) return
+        val key = event.thumbKey ?: return
+        if (currentState.thumbByEvent.containsKey(key)) return
+        if (key in thumbnailFetchInFlight) return
 
         val a = event.attachment
         val s = event.sticker
+        if (event.eventId.isBlank() && a?.kind == AttachmentKind.Video) return
         val hasValidMedia = when {
             a != null -> {
                 if (a.kind != AttachmentKind.Image && a.kind != AttachmentKind.Video && a.thumbnailMxcUri == null) false
@@ -2969,7 +2993,7 @@ class RoomViewModel(
             else -> false
         }
         if (!hasValidMedia) return
-        if (!thumbnailFetchInFlight.add(event.eventId)) return
+        if (!thumbnailFetchInFlight.add(key)) return
 
         launch {
             try {
@@ -2977,11 +3001,11 @@ class RoomViewModel(
                     ?: s?.let { service.downloadStickerToCache(it) }
                 thumbRequest?.onSuccess { path ->
                     updateState {
-                        copy(thumbByEvent = thumbByEvent + (event.eventId to path))
+                        copy(thumbByEvent = thumbByEvent + (key to path))
                     }
                 }
             } finally {
-                thumbnailFetchInFlight.remove(event.eventId)
+                thumbnailFetchInFlight.remove(key)
             }
         }
     }

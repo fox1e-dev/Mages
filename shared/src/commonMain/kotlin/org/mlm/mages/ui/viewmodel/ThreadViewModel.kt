@@ -15,6 +15,7 @@ import org.mlm.mages.LinkPreview
 import org.mlm.mages.MatrixService
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.ReplyPreviewKind
+import org.mlm.mages.thumbKey
 import org.mlm.mages.matrix.ImagePackSummary
 import org.mlm.mages.matrix.LINK_PREVIEW_IMAGE_PX
 import org.mlm.mages.matrix.TimelineDiff
@@ -602,13 +603,13 @@ class ThreadViewModel(
 
     fun ensureThumbnail(event: MessageEvent) {
         if (!mediaPreviewsAllowed()) return
-        val id = event.eventId
-        if (id.isBlank()) return
-        if (currentState.thumbByEvent.containsKey(id)) return
-        if (!thumbnailFetchInFlight.add(id)) return
+        val key = event.thumbKey ?: return
+        if (currentState.thumbByEvent.containsKey(key)) return
+        if (key in thumbnailFetchInFlight) return
 
         val attachment = event.attachment
         val sticker = event.sticker
+        if (event.eventId.isBlank() && attachment?.kind == AttachmentKind.Video) return
         val hasValidMedia = when {
             attachment != null ->
                 attachment.kind == AttachmentKind.Image ||
@@ -618,16 +619,17 @@ class ThreadViewModel(
             else -> false
         }
         if (!hasValidMedia) return
+        if (!thumbnailFetchInFlight.add(key)) return
 
         launch {
             try {
                 val path = attachment?.let { service.thumbnailToCache(it, 320, 320, true).getOrNull() }
                     ?: sticker?.let { service.port.downloadStickerToCache(it).getOrNull() }
                 if (!path.isNullOrBlank()) {
-                    updateState { copy(thumbByEvent = thumbByEvent + (id to path)) }
+                    updateState { copy(thumbByEvent = thumbByEvent + (key to path)) }
                 }
             } finally {
-                thumbnailFetchInFlight.remove(id)
+                thumbnailFetchInFlight.remove(key)
             }
         }
     }
@@ -820,7 +822,15 @@ class ThreadViewModel(
      * Delete a message.
      */
     suspend fun delete(event: MessageEvent): Boolean {
-        if (event.eventId.isBlank()) return false
+        if (event.eventId.isBlank()) {
+            val txnId = event.txnId
+            if (txnId.isNullOrBlank()) return false
+            val cancelResult = service.cancelSend(roomId, txnId)
+            if (cancelResult.isFailure) {
+                _events.send(Event.ShowError(cancelResult.toUserMessage(getString(Res.string.failed_to_delete_message))))
+            }
+            return cancelResult.isSuccess
+        }
 
         val result = runSafe { service.redact(roomId, event.eventId, null) }
         if (result?.isSuccess != true) {

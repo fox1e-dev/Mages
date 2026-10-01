@@ -41,6 +41,16 @@ data class MessageEvent(
     var utd: UtdInfo? = null,
 )
 
+val MessageEvent.thumbKey: String?
+    get() {
+        val pending = txnId ?: itemId
+        return when {
+            eventId.isNotBlank() -> eventId
+            pending.isNotBlank() -> "pending:$pending"
+            else -> null
+        }
+    }
+
 @Serializable
 enum class ReplyPreviewKind {
     Text,

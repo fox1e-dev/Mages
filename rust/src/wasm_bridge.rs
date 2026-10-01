@@ -497,6 +497,11 @@ wasm_delegate! { webffi_bool;
     "isUserIgnored"        => is_user_ignored(user_id: String);
 }
 
+wasm_delegate! { |b: bool| webffi_bool(Ok::<_, crate::FfiError>(b));
+    "retryByTxn"           => retry_by_txn(room_id: String, txn_id: String);
+    "cancelByTxn"          => cancel_by_txn(room_id: String, txn_id: String);
+}
+
 wasm_delegate! { webffi_unit;
     "markRead"             => mark_read(room_id: String, send_public_receipt: bool);
     "markReadAt"           => mark_read_at(room_id: String, event_id: String, send_public_receipt: bool);

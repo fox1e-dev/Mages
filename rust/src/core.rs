@@ -869,6 +869,36 @@ impl CoreClient {
         false
     }
 
+    pub async fn cancel_by_txn(&self, room_id: String, txn_id: String) -> bool {
+        if room_id.trim().is_empty() || txn_id.trim().is_empty() {
+            return false;
+        }
+
+        let Ok(rid) = OwnedRoomId::try_from(room_id.as_str()) else {
+            return false;
+        };
+        let Some(room) = self.sdk.get_room(&rid) else {
+            return false;
+        };
+
+        let Ok((local_echoes, _)) = room.send_queue().subscribe().await else {
+            return false;
+        };
+        for local in local_echoes.iter().rev() {
+            if local.transaction_id.as_str() != txn_id {
+                continue;
+            }
+            if let matrix_sdk::send_queue::LocalEchoContent::Event { send_handle, .. } =
+                &local.content
+            {
+                return matches!(send_handle.abort().await, Ok(true));
+            }
+            return false;
+        }
+
+        false
+    }
+
     pub async fn send_message(
         &self,
         room_id: String,

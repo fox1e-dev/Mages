@@ -40,6 +40,7 @@ import kotlinx.coroutines.launch
 import org.mlm.mages.AttachmentKind
 import org.mlm.mages.MessageEvent
 import org.mlm.mages.ReplyPreviewKind
+import org.mlm.mages.thumbKey
 import org.mlm.mages.matrix.SendState
 import org.mlm.mages.platform.*
 import org.mlm.mages.ui.components.AttachmentData
@@ -1422,7 +1423,7 @@ private fun RoomBottomBar(
             editing = state.editing,
             onCancelReply = onCancelReply,
             onCancelEdit = onCancelEdit,
-            resolvedPreviewPath = (state.editing ?: state.replyingTo)?.eventId?.let { state.thumbByEvent[it] },
+            resolvedPreviewPath = (state.editing ?: state.replyingTo)?.thumbKey?.let { state.thumbByEvent[it] },
         )
 
         if (state.isUploadingAttachment) {
@@ -1568,10 +1569,10 @@ private fun MessageItem(
 
         LaunchedEffect(
             event.eventId,
-            state.thumbByEvent[event.eventId],
+            event.thumbKey?.let { state.thumbByEvent[it] },
             event.replyToEventId?.let { state.replyThumbByEvent[it] ?: state.thumbByEvent[it] },
         ) {
-            val hasThumb = state.thumbByEvent.containsKey(event.eventId)
+            val hasThumb = event.thumbKey?.let { state.thumbByEvent.containsKey(it) } == true
             val hasReplyThumb = event.replyToEventId?.let {
                 state.replyThumbByEvent.containsKey(it) || state.thumbByEvent.containsKey(it)
             } ?: true
@@ -1716,7 +1717,7 @@ private fun MessageItem(
                             reactionShortcodes = viewModel.reactionShortcodes,
                             threadCount = state.threadCount[event.eventId],
                             variant = MessageBubbleVariant.Timeline,
-                            resolvedPreviewPath = state.thumbByEvent[event.eventId],
+                            resolvedPreviewPath = event.thumbKey?.let { state.thumbByEvent[it] },
                             resolvedReplyPreviewPath = event.replyToEventId?.let {
                                 state.replyThumbByEvent[it] ?: state.thumbByEvent[it]
                             },

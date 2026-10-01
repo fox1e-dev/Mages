@@ -971,6 +971,8 @@ interface MatrixPort {
 
     suspend fun retryByTxn(roomId: String, txnId: String): Boolean
 
+    suspend fun cancelByTxn(roomId: String, txnId: String): Boolean
+
     fun stopTypingObserver(token: ULong)
 
     suspend fun paginateBack(roomId: String, count: Int): Result<Boolean>
@@ -1033,6 +1035,7 @@ interface MatrixPort {
         voiceDurationMs: Long? = null,
         voiceWaveform: List<Float>? = null,
         isVoice: Boolean? = null,
+        txnId: String? = null,
         onProgress: ((Long, Long?) -> Unit)? = null,
     ): Boolean
 

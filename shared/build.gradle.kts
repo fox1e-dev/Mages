@@ -22,6 +22,7 @@ kotlin {
             "androidx.compose.foundation.ExperimentalFoundationApi",
             "androidx.compose.foundation.layout.ExperimentalLayoutApi",
             "kotlin.js.ExperimentalWasmJsInterop",
+            "kotlin.uuid.ExperimentalUuidApi",
 
         ))
         freeCompilerArgs.add("-Xexpect-actual-classes")

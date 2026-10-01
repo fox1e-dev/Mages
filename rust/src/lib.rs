@@ -287,6 +287,7 @@ delegate! { option RoomProfile; room_profile(room_id: String); }
 delegate! { plain Vec<SpaceUnread>; space_unread_counts(); }
 delegate! { plain_option RoomUpgradeLinks; room_upgrade_links(room_id: String); }
 delegate! { plain bool; backup_exists_on_server(fetch: bool); set_key_backup_enabled(enabled: bool); retry_by_txn(room_id: String, txn_id: String);
+    cancel_by_txn(room_id: String, txn_id: String);
     is_user_verified(user_id: String);
     cancel_verification(flow_id: String, other_user_id: Option<String>);
     confirm_sas(flow_id: String, other_user_id: Option<String>);
@@ -1493,7 +1494,6 @@ impl Client {
                 {
                     let _ = svc.stop().await;
                 }
-                self.core.sdk.send_queue().set_enabled(false).await;
             });
         }
         if prev == 0 {
@@ -2475,6 +2475,7 @@ impl Client {
                 voice_duration_ms,
                 voice_waveform,
                 is_voice,
+                txn_id,
             } = request;
             let Ok(rid) = OwnedRoomId::try_from(room_id) else {
                 return false;
@@ -2530,6 +2531,9 @@ impl Client {
                         add_mentions: matrix_sdk::ruma::events::room::message::AddMentions::Yes,
                     }));
                 }
+            }
+            if let Some(t) = txn_id.filter(|t| !t.trim().is_empty()) {
+                config.txn_id = Some(t.into());
             }
             queue_send_attachment(&room, fname, mime_type, data, config, progress).await
         })

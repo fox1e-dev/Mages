@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.mlm.mages.LinkPreview
 import org.mlm.mages.MessageEvent
+import org.mlm.mages.thumbKey
 import org.mlm.mages.matrix.ReactionSummary
 import org.mlm.mages.ui.ThreadUiState
 import org.mlm.mages.ui.displayPreview
@@ -732,7 +733,7 @@ private fun ThreadReplyMessage(
                     reactions = reactionSummaries,
                     threadCount = null,
                     variant = MessageBubbleVariant.ThreadReply,
-                    resolvedPreviewPath = thumbByEvent[event.eventId],
+                    resolvedPreviewPath = event.thumbKey?.let { thumbByEvent[it] },
                     resolvedReplyPreviewPath = event.replyToEventId?.let { replyThumbByEvent[it] },
                     resolvedLinkPreview = linkPreviewByEvent[event.eventId],
                     resolvedLinkPreviewImage = linkPreviewImageByEvent[event.eventId],
