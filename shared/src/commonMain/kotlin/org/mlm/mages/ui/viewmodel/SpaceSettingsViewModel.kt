@@ -16,8 +16,8 @@ import org.jetbrains.compose.resources.StringResource
 private fun List<SpaceChildInfo>.withoutSpace(spaceId: String): List<SpaceChildInfo> =
     filter { it.roomId != spaceId }
 
-private const val CHILDREN_RELOAD_ATTEMPTS = 4
-private const val CHILDREN_RELOAD_DELAY_MS = 1_500L
+internal const val CHILDREN_RELOAD_ATTEMPTS = 4
+internal const val CHILDREN_RELOAD_DELAY_MS = 1_500L
 
 class SpaceSettingsViewModel(
     private val service: MatrixService,
@@ -373,8 +373,8 @@ class SpaceSettingsViewModel(
         }
     }
 
-    private suspend fun loadChildrenNow() {
-        updateState { copy(isLoading = true, error = null) }
+    private suspend fun loadChildrenNow(silent: Boolean = false) {
+        if (!silent) updateState { copy(isLoading = true, error = null) }
 
         val result = service.spaceHierarchy(
             spaceId = currentState.spaceId,
@@ -404,7 +404,7 @@ class SpaceSettingsViewModel(
             }
 
             updateState { copy(children = children, isLoading = false) }
-        } else {
+        } else if (!silent) {
             val message = result.toUserMessage(getString(Res.string.failed_to_load_children))
             updateState { copy(isLoading = false, error = message) }
         }
@@ -418,7 +418,7 @@ class SpaceSettingsViewModel(
                 if (attempt > 0) {
                     delay(CHILDREN_RELOAD_DELAY_MS * attempt)
                 }
-                loadChildrenNow()
+                loadChildrenNow(silent = true)
                 if (currentState.children.any { it.roomId == roomId }) return@launch
             }
         }

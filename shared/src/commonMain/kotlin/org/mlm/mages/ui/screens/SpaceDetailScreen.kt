@@ -59,7 +59,7 @@ fun SpaceDetailScreen(
             when (event) {
                 is SpaceActionsViewModel.Event.ShowError -> postError(event.message)
                 is SpaceActionsViewModel.Event.ShowSuccess -> snackbarManager.show(event.message)
-                is SpaceActionsViewModel.Event.ChildAdded -> viewModel.refresh()
+                is SpaceActionsViewModel.Event.ChildAdded -> viewModel.refreshUntilRoomPresent(event.roomId)
             }
         }
     }

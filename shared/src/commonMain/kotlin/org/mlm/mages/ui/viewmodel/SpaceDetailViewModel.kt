@@ -1,6 +1,8 @@
 package org.mlm.mages.ui.viewmodel
 
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.receiveAsFlow
 import mages.shared.generated.resources.*
 import org.mlm.mages.MatrixService
@@ -51,6 +53,16 @@ class SpaceDetailViewModel(
     fun refresh() {
         loadSpaceInfo()
         loadHierarchy()
+    }
+
+    fun refreshUntilRoomPresent(roomId: String) {
+        launch {
+            repeat(CHILDREN_RELOAD_ATTEMPTS) { attempt ->
+                if (attempt > 0) delay(CHILDREN_RELOAD_DELAY_MS * attempt)
+                loadHierarchy(silent = true).join()
+                if (currentState.hierarchy.any { it.roomId == roomId }) return@launch
+            }
+        }
     }
 
     fun loadMore() {
@@ -128,21 +140,23 @@ class SpaceDetailViewModel(
         }
     }
 
-    private fun loadHierarchy(from: String? = null) {
+    private fun loadHierarchy(from: String? = null, silent: Boolean = false): Job =
         launch(
             onError = { t ->
-                val text = t.message ?: getString(Res.string.failed_to_load_hierarchy)
-                updateState { 
-                    copy(
-                        isLoading = false,
-                        isLoadingMore = false,
-                        error = text
-                    ) 
+                if (!silent) {
+                    val text = t.message ?: getString(Res.string.failed_to_load_hierarchy)
+                    updateState {
+                        copy(
+                            isLoading = false,
+                            isLoadingMore = false,
+                            error = text
+                        )
+                    }
                 }
             }
         ) {
             if (from == null) {
-                updateState { copy(isLoading = true, error = null) }
+                if (!silent) updateState { copy(isLoading = true, error = null) }
             } else {
                 updateState { copy(isLoadingMore = true) }
             }
@@ -192,16 +206,15 @@ class SpaceDetailViewModel(
                         isLoadingMore = false
                     )
                 }
-            } else {
+            } else if (!silent) {
                 val text = result.toUserMessage(getString(Res.string.failed_to_load_space_contents))
-                updateState { 
+                updateState {
                     copy(
                         isLoading = false,
                         isLoadingMore = false,
                         error = text
-                    ) 
+                    )
                 }
             }
         }
-    }
 }
