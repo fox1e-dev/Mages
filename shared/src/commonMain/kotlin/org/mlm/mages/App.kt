@@ -1034,7 +1034,9 @@ private fun AppContent(
                 }
             }
 
-            if (verState.sasFlowId != null && verState.sasPhase != null) {
+            if (verState.sasPhase != null &&
+                (verState.sasFlowId != null || verState.sasError != null)
+            ) {
                 val showAcceptRequest =
                     verState.sasIncoming && verState.sasPhase == SasPhase.Requested
 

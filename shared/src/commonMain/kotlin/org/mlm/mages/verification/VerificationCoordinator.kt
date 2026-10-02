@@ -215,16 +215,16 @@ class VerificationCoordinator(
             is VerifEvent.Done -> {
                 _state.value = _state.value.copy(
                     sasPhase = SasPhase.Done,
-                    sasError = null
+                    sasError = null,
+                    sasActionInFlight = false
                 )
-                _state.value = VerificationUiState()
             }
             is VerifEvent.Cancelled -> {
                 _state.value = _state.value.copy(
                     sasPhase = SasPhase.Cancelled,
-                    sasError = event.reason
+                    sasError = event.reason,
+                    sasActionInFlight = false
                 )
-                _state.value = VerificationUiState()
             }
             is VerifEvent.Error -> {
                 _state.value = _state.value.copy(
@@ -277,18 +277,34 @@ class VerificationCoordinator(
     }
 
     fun cancel() {
-        val flowId = _state.value.sasFlowId ?: return
-        val otherUser = _state.value.sasOtherUser
+        val current = _state.value
+        val flowId = current.sasFlowId
+        val otherUser = current.sasOtherUser
+        val phase = current.sasPhase
+        val terminal =
+            phase == SasPhase.Done || phase == SasPhase.Cancelled || phase == SasPhase.Failed
 
-        scope.launch {
-            val ok = verificationService?.cancelVerification(flowId, otherUser) ?: false
-            if (!ok) {
-                _state.value = _state.value.copy(sasError = getString(Res.string.cancel_failed))
-            } else {
-                flowJob?.cancel()
-                flowJob = null
-                _state.value = VerificationUiState()
+        if (flowId != null && !terminal) {
+            scope.launch {
+                val ok = verificationService?.cancelVerification(flowId, otherUser) ?: false
+                if (!ok) {
+                    _state.value = _state.value.copy(sasError = getString(Res.string.cancel_failed))
+                } else {
+                    flowJob?.cancel()
+                    flowJob = null
+                    _state.value = VerificationUiState()
+                }
+            }
+            return
+        }
+
+        if (phase == SasPhase.Failed && flowId != null) {
+            scope.launch {
+                runCatching { verificationService?.cancelVerification(flowId, otherUser) }
             }
         }
+        flowJob?.cancel()
+        flowJob = null
+        _state.value = VerificationUiState()
     }
 }

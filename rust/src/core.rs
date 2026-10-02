@@ -2888,7 +2888,8 @@ impl CoreClient {
         };
         let me = self.sdk.user_id();
         let mut out = Vec::new();
-        if let Some(reactions) = item.content().reactions() {
+        let reactions = item.reactions();
+        if !reactions.is_empty() {
             for (key, by_sender) in reactions.iter() {
                 let live: Vec<_> = by_sender
                     .iter()
@@ -2943,7 +2944,8 @@ impl CoreClient {
                 continue;
             };
             let mut summaries = Vec::new();
-            if let Some(reactions) = item.content().reactions() {
+            let reactions = item.reactions();
+            if !reactions.is_empty() {
                 for (key, senders) in reactions.iter() {
                     let live: Vec<_> = senders
                         .iter()
@@ -4577,7 +4579,7 @@ impl CoreClient {
             .await
             .ffi()?;
         let mut hits = Vec::new();
-        for (_score, eid) in event_ids.iter() {
+        for (_score, eid) in event_ids.events.iter() {
             if let Some(mev) =
                 map_event_id_via_timeline(&self.timeline_mgr, &self.sdk, &rid, eid).await
             {
@@ -4683,6 +4685,7 @@ impl CoreClient {
                         if let SyncRoomMessageEvent::Original(o) = ev {
                             if own_user.as_ref() == Some(&o.sender) { continue; }
                             if let MessageType::VerificationRequest(c) = &o.content.msgtype {
+                                if own_user.as_ref() != Some(&c.to) { continue; }
                                 let flow_id = o.event_id.to_string();
                                 let from_user = o.sender.to_string();
                                 let from_device = c.from_device.to_string();
