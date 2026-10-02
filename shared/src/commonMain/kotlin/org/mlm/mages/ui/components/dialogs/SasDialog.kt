@@ -36,9 +36,15 @@ fun SasDialog(
     onConfirm: () -> Unit,
     onCancel: () -> Unit
 ) {
+    val dismissable =
+        phase == SasPhase.Done || phase == SasPhase.Cancelled || phase == SasPhase.Failed
     Dialog(
-        onDismissRequest = onCancel,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        onDismissRequest = { if (dismissable) onCancel() },
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = dismissable,
+            dismissOnClickOutside = dismissable
+        )
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(0.9f).wrapContentHeight(),

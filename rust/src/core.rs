@@ -4663,6 +4663,7 @@ impl CoreClient {
         let mut ir_sub = ir_handler.subscribe();
         let own_user = self.sdk.user_id().map(|u| u.to_owned());
         let own_device = self.sdk.device_id().map(|d| d.to_owned());
+        let mut seen_flow_ids = HashSet::new();
         loop {
             tokio::select! {
                 maybe = td_sub.next() => {
@@ -4673,6 +4674,9 @@ impl CoreClient {
                             continue;
                         }
                         let flow_id = ev.content.transaction_id.to_string();
+                        if !seen_flow_ids.insert(flow_id.clone()) {
+                            continue;
+                        }
                         let from_user = ev.sender.to_string();
                         let from_device = ev.content.from_device.to_string();
                         safe_call(|| observer.on_request(flow_id, from_user, from_device));
@@ -4685,6 +4689,9 @@ impl CoreClient {
                             if let MessageType::VerificationRequest(c) = &o.content.msgtype {
                                 if own_user.as_ref() != Some(&c.to) { continue; }
                                 let flow_id = o.event_id.to_string();
+                                if !seen_flow_ids.insert(flow_id.clone()) {
+                                    continue;
+                                }
                                 let from_user = o.sender.to_string();
                                 let from_device = c.from_device.to_string();
                                 safe_call(|| observer.on_request(flow_id, from_user, from_device));

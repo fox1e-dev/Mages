@@ -1,5 +1,7 @@
 package org.mlm.mages.verification
 
+import kotlin.concurrent.Volatile
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -44,6 +46,9 @@ class VerificationCoordinator(
 
     private var flowJob: Job? = null
 
+    @Volatile
+    private var flowEpoch: Long = 0
+
     private var verificationService: VerificationService? = null
 
     init {
@@ -65,23 +70,28 @@ class VerificationCoordinator(
         verificationService = port?.asVerificationService()
     }
 
+    private fun killFlowJob() {
+        flowJob?.cancel()
+        flowJob = null
+        flowEpoch++
+    }
+
     private fun reset() {
         inboxToken?.let { token ->
             runCatching { service.portOrNull?.stopVerificationInbox(token) }
         }
         inboxToken = null
-        flowJob?.cancel()
-        flowJob = null
+        killFlowJob()
         _state.value = VerificationUiState()
     }
 
-    private fun startFlow(previous: VerificationUiState, block: suspend CoroutineScope.() -> Unit) {
-        flowJob?.cancel()
+    private fun startFlow(previous: VerificationUiState, block: suspend CoroutineScope.(Long) -> Unit) {
+        val epoch = flowEpoch
         flowJob = scope.launch {
             previous.sasFlowId?.let { flowId ->
                 runCatching { verificationService?.cancelVerification(flowId, previous.sasOtherUser) }
             }
-            block()
+            block(epoch)
         }
     }
 
@@ -91,8 +101,31 @@ class VerificationCoordinator(
 
         inboxToken = port.startVerificationInbox(object : MatrixPort.VerificationInboxObserver {
             override fun onRequest(flowId: String, fromUser: String, fromDevice: String) {
-                flowJob?.cancel()
-                flowJob = null
+                val current = _state.value
+                val phase = current.sasPhase
+                val live = phase != null && phase != SasPhase.Done &&
+                    phase != SasPhase.Cancelled && phase != SasPhase.Failed
+                if (live) {
+                    if (current.sasFlowId == flowId) return
+                    if (phase == SasPhase.Emojis || phase == SasPhase.Confirmed) return
+                    val me = runCatching { service.portOrNull?.whoami() }.getOrNull()
+                    val keepOurs = when {
+                        me == null -> true
+                        me != fromUser -> me < fromUser
+                        else -> {
+                            val ownFlow = current.sasFlowId
+                            ownFlow == null || ownFlow > flowId
+                        }
+                    }
+                    if (keepOurs) return
+                    current.sasFlowId?.let { activeId ->
+                        val activeUser = current.sasOtherUser
+                        scope.launch {
+                            runCatching { verificationService?.cancelVerification(activeId, activeUser) }
+                        }
+                    }
+                }
+                killFlowJob()
                 _state.value = _state.value.copy(
                     sasFlowId = flowId,
                     sasPhase = SasPhase.Requested,
@@ -114,6 +147,7 @@ class VerificationCoordinator(
     }
 
     fun startSelfVerify(deviceId: String) {
+        killFlowJob()
         val previous = _state.value
         _state.value = previous.copy(
             sasFlowId = null,
@@ -124,27 +158,34 @@ class VerificationCoordinator(
             sasError = null
         )
 
-        startFlow(previous) {
+        startFlow(previous) { epoch ->
             try {
                 verificationService?.startDeviceVerification(deviceId)?.collect { event ->
-                    handleVerifEvent(event)
+                    handleVerifEvent(epoch, event)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    sasPhase = SasPhase.Failed,
-                    sasError = e.message ?: getString(Res.string.verification_failed_to_start),
-                    sasActionInFlight = false
-                )
+                if (epoch == flowEpoch) {
+                    _state.value = _state.value.copy(
+                        sasPhase = SasPhase.Failed,
+                        sasError = e.message ?: getString(Res.string.verification_failed_to_start),
+                        sasActionInFlight = false
+                    )
+                }
             } ?: run {
-                _state.value = _state.value.copy(
-                    sasPhase = SasPhase.Failed,
-                    sasError = getString(Res.string.verification_service_unavailable)
-                )
+                if (epoch == flowEpoch) {
+                    _state.value = _state.value.copy(
+                        sasPhase = SasPhase.Failed,
+                        sasError = getString(Res.string.verification_service_unavailable)
+                    )
+                }
             }
         }
     }
 
     fun startUserVerify(userId: String) {
+        killFlowJob()
         val previous = _state.value
         _state.value = previous.copy(
             sasFlowId = null,
@@ -154,27 +195,34 @@ class VerificationCoordinator(
             sasError = null
         )
 
-        startFlow(previous) {
+        startFlow(previous) { epoch ->
             try {
                 verificationService?.startUserVerification(userId)?.collect { event ->
-                    handleVerifEvent(event)
+                    handleVerifEvent(epoch, event)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    sasPhase = SasPhase.Failed,
-                    sasError = e.message ?: getString(Res.string.verification_failed_to_start),
-                    sasActionInFlight = false
-                )
+                if (epoch == flowEpoch) {
+                    _state.value = _state.value.copy(
+                        sasPhase = SasPhase.Failed,
+                        sasError = e.message ?: getString(Res.string.verification_failed_to_start),
+                        sasActionInFlight = false
+                    )
+                }
             } ?: run {
-                _state.value = _state.value.copy(
-                    sasPhase = SasPhase.Failed,
-                    sasError = getString(Res.string.verification_service_unavailable)
-                )
+                if (epoch == flowEpoch) {
+                    _state.value = _state.value.copy(
+                        sasPhase = SasPhase.Failed,
+                        sasError = getString(Res.string.verification_service_unavailable)
+                    )
+                }
             }
         }
     }
 
-    private fun handleVerifEvent(event: VerifEvent) {
+    private fun handleVerifEvent(epoch: Long, event: VerifEvent) {
+        if (epoch != flowEpoch) return
         when (event) {
             is VerifEvent.Requested -> {
                 _state.value = _state.value.copy(
@@ -242,26 +290,33 @@ class VerificationCoordinator(
         if (flowId == null || previous.sasPhase != SasPhase.Requested) return
 
         val otherUser = previous.sasOtherUser
+        killFlowJob()
+        val epoch = flowEpoch
         _state.value = previous.copy(sasActionInFlight = true, sasError = null)
 
-        flowJob?.cancel()
         flowJob = scope.launch {
             try {
                 verificationService
                     ?.acceptAndObserveVerification(flowId, otherUser ?: "")
-                    ?.collect { event -> handleVerifEvent(event) }
+                    ?.collect { event -> handleVerifEvent(epoch, event) }
                     ?: run {
-                        _state.value = _state.value.copy(
-                            sasActionInFlight = false,
-                            sasError = getString(Res.string.verification_service_unavailable)
-                        )
+                        if (epoch == flowEpoch) {
+                            _state.value = _state.value.copy(
+                                sasActionInFlight = false,
+                                sasError = getString(Res.string.verification_service_unavailable)
+                            )
+                        }
                     }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    sasPhase = SasPhase.Failed,
-                    sasError = e.message ?: getString(Res.string.accept_failed),
-                    sasActionInFlight = false
-                )
+                if (epoch == flowEpoch) {
+                    _state.value = _state.value.copy(
+                        sasPhase = SasPhase.Failed,
+                        sasError = e.message ?: getString(Res.string.accept_failed),
+                        sasActionInFlight = false
+                    )
+                }
             }
         }
     }
@@ -269,10 +324,13 @@ class VerificationCoordinator(
     fun confirm() {
         val flowId = _state.value.sasFlowId ?: return
         val otherUser = _state.value.sasOtherUser
+        val epoch = flowEpoch
 
         scope.launch {
             val ok = verificationService?.confirmSas(flowId, otherUser) ?: false
-            if (!ok) _state.value = _state.value.copy(sasError = getString(Res.string.confirm_failed))
+            if (!ok && epoch == flowEpoch) {
+                _state.value = _state.value.copy(sasError = getString(Res.string.confirm_failed))
+            }
         }
     }
 
@@ -285,14 +343,15 @@ class VerificationCoordinator(
             phase == SasPhase.Done || phase == SasPhase.Cancelled || phase == SasPhase.Failed
 
         if (flowId != null && !terminal) {
+            killFlowJob()
+            val epoch = flowEpoch
             scope.launch {
                 val ok = verificationService?.cancelVerification(flowId, otherUser) ?: false
-                if (!ok) {
-                    _state.value = _state.value.copy(sasError = getString(Res.string.cancel_failed))
-                } else {
-                    flowJob?.cancel()
-                    flowJob = null
+                if (epoch != flowEpoch) return@launch
+                if (ok) {
                     _state.value = VerificationUiState()
+                } else {
+                    _state.value = _state.value.copy(sasError = getString(Res.string.cancel_failed))
                 }
             }
             return
@@ -303,8 +362,7 @@ class VerificationCoordinator(
                 runCatching { verificationService?.cancelVerification(flowId, otherUser) }
             }
         }
-        flowJob?.cancel()
-        flowJob = null
+        killFlowJob()
         _state.value = VerificationUiState()
     }
 }
