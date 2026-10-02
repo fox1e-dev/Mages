@@ -2888,8 +2888,7 @@ impl CoreClient {
         };
         let me = self.sdk.user_id();
         let mut out = Vec::new();
-        let reactions = item.reactions();
-        if !reactions.is_empty() {
+        if let Some(reactions) = item.content().reactions() {
             for (key, by_sender) in reactions.iter() {
                 let live: Vec<_> = by_sender
                     .iter()
@@ -2944,8 +2943,7 @@ impl CoreClient {
                 continue;
             };
             let mut summaries = Vec::new();
-            let reactions = item.reactions();
-            if !reactions.is_empty() {
+            if let Some(reactions) = item.content().reactions() {
                 for (key, senders) in reactions.iter() {
                     let live: Vec<_> = senders
                         .iter()
