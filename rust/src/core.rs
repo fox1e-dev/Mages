@@ -4661,10 +4661,17 @@ impl CoreClient {
         let mut td_sub = td_handler.subscribe();
         let ir_handler = self.sdk.observe_events::<SyncRoomMessageEvent, Room>();
         let mut ir_sub = ir_handler.subscribe();
+        let own_user = self.sdk.user_id().map(|u| u.to_owned());
+        let own_device = self.sdk.device_id().map(|d| d.to_owned());
         loop {
             tokio::select! {
                 maybe = td_sub.next() => {
                     if let Some((ev, ())) = maybe {
+                        if own_user.as_ref() == Some(&ev.sender)
+                            && own_device.as_ref() == Some(&ev.content.from_device)
+                        {
+                            continue;
+                        }
                         let flow_id = ev.content.transaction_id.to_string();
                         let from_user = ev.sender.to_string();
                         let from_device = ev.content.from_device.to_string();
@@ -4674,10 +4681,12 @@ impl CoreClient {
                 maybe = ir_sub.next() => {
                     if let Some((ev, _room)) = maybe {
                         if let SyncRoomMessageEvent::Original(o) = ev {
-                            if let MessageType::VerificationRequest(_) = &o.content.msgtype {
+                            if own_user.as_ref() == Some(&o.sender) { continue; }
+                            if let MessageType::VerificationRequest(c) = &o.content.msgtype {
                                 let flow_id = o.event_id.to_string();
                                 let from_user = o.sender.to_string();
-                                safe_call(|| observer.on_request(flow_id, from_user, String::new()));
+                                let from_device = c.from_device.to_string();
+                                safe_call(|| observer.on_request(flow_id, from_user, from_device));
                             }
                         }
                     } else { break; }
