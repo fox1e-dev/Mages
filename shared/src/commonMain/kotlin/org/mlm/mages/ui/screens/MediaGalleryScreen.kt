@@ -495,7 +495,7 @@ private fun MediaGridItem(
         // Video indicator
         if (event.attachment?.kind == AttachmentKind.Video) {
             Surface(
-                color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 shape = CircleShape,
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -514,7 +514,7 @@ private fun MediaGridItem(
             // Duration badge
             event.attachment!!.durationMs?.let { ms ->
                 Surface(
-                    color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     shape = MaterialTheme.shapes.extraSmall,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
