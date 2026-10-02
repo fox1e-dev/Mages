@@ -979,6 +979,7 @@ interface MatrixPort {
     suspend fun paginateForward(roomId: String, count: Int): Result<Boolean>
     suspend fun markRead(roomId: String, sendPublicReceipt: Boolean = false): Result<Unit>
     suspend fun markReadAt(roomId: String, eventId: String, sendPublicReceipt: Boolean = false): Result<Unit>
+    suspend fun setMarkUnread(roomId: String, unread: Boolean): Result<Unit>
     /**
      * Toggles a reaction keyed by [key]. When [key] is an mxc URI, [shortcode]
      * is sent as MSC4027's optional textual name alongside it.

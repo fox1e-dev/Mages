@@ -114,6 +114,8 @@ private val titleResources: Map<String, StringResource> = mapOf(
     MagesSettingsKeys.USE_PROXY to Res.string.setting_use_proxy,
     MagesSettingsKeys.PROXY_URL to Res.string.setting_proxy_url,
     MagesSettingsKeys.LIVE_LOCATION_UPDATE_INTERVAL to Res.string.setting_live_location_update_interval,
+    MagesSettingsKeys.ROOM_LIST_SWIPE_RIGHT to Res.string.setting_room_list_swipe_right,
+    MagesSettingsKeys.ROOM_LIST_SWIPE_LEFT to Res.string.setting_room_list_swipe_left,
 )
 
 private val descriptionResources: Map<String, StringResource> = mapOf(
@@ -181,6 +183,8 @@ private val descriptionResources: Map<String, StringResource> = mapOf(
     MagesSettingsKeys.USE_PROXY_DESCRIPTION to Res.string.setting_use_proxy_description,
     MagesSettingsKeys.PROXY_URL_DESCRIPTION to Res.string.setting_proxy_url_description,
     MagesSettingsKeys.LIVE_LOCATION_UPDATE_INTERVAL_DESCRIPTION to Res.string.setting_live_location_update_interval_description,
+    MagesSettingsKeys.ROOM_LIST_SWIPE_RIGHT_DESCRIPTION to Res.string.setting_room_list_swipe_right_description,
+    MagesSettingsKeys.ROOM_LIST_SWIPE_LEFT_DESCRIPTION to Res.string.setting_room_list_swipe_left_description,
 )
 
 private val arrayResources: Map<String, StringArrayResource> = mapOf(
@@ -191,6 +195,7 @@ private val arrayResources: Map<String, StringArrayResource> = mapOf(
     MagesSettingsKeys.PRESENCE_OPTIONS to Res.array.setting_presence_options,
     MagesSettingsKeys.BLOCK_MEDIA_PREVIEWS_OPTIONS to Res.array.setting_media_previews_options,
     MagesSettingsKeys.LINK_PREVIEWS_OPTIONS to Res.array.setting_link_previews_options,
+    MagesSettingsKeys.ROOM_LIST_SWIPE_OPTIONS to Res.array.setting_room_list_swipe_options,
 )
 
 @Composable

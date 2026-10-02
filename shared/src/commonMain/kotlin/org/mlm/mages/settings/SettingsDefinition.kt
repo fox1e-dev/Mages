@@ -63,6 +63,9 @@ fun AppLockTimeout.toSeconds(): Long = when (this) {
 enum class HideInRoomsMode { Never, PublicRooms, NonDMs, Always }
 
 @Serializable
+enum class RoomSwipeAction { MarkRead, MarkUnread, Nothing }
+
+@Serializable
 data class AppSettings(
     @Persisted
     val homeserver: String = "https://matrix.org",
@@ -419,6 +422,30 @@ data class AppSettings(
         type = Toggle::class,
     )
     val hideSpaceRoomsInRoomList: Boolean = false,
+
+    @Setting(
+        title = "Swipe right action",
+        titleKey = MagesSettingsKeys.ROOM_LIST_SWIPE_RIGHT,
+        description = "Action performed when swiping a room to the right in the room list",
+        descriptionKey = MagesSettingsKeys.ROOM_LIST_SWIPE_RIGHT_DESCRIPTION,
+        category = Timeline::class,
+        type = Dropdown::class,
+        options = ["Mark as read", "Mark as unread", "Nothing"],
+        optionsKey = MagesSettingsKeys.ROOM_LIST_SWIPE_OPTIONS,
+    )
+    val swipeRightAction: RoomSwipeAction = RoomSwipeAction.Nothing,
+
+    @Setting(
+        title = "Swipe left action",
+        titleKey = MagesSettingsKeys.ROOM_LIST_SWIPE_LEFT,
+        description = "Action performed when swiping a room to the left in the room list",
+        descriptionKey = MagesSettingsKeys.ROOM_LIST_SWIPE_LEFT_DESCRIPTION,
+        category = Timeline::class,
+        type = Dropdown::class,
+        options = ["Mark as read", "Mark as unread", "Nothing"],
+        optionsKey = MagesSettingsKeys.ROOM_LIST_SWIPE_OPTIONS,
+    )
+    val swipeLeftAction: RoomSwipeAction = RoomSwipeAction.Nothing,
 
     @Setting(
         title = "Chat bubbles",

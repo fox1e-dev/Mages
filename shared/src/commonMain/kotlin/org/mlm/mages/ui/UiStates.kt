@@ -33,6 +33,7 @@ import org.mlm.mages.matrix.SearchHit
 import org.mlm.mages.matrix.SeenByEntry
 import org.mlm.mages.matrix.SpaceChildInfo
 import org.mlm.mages.matrix.SpaceInfo
+import org.mlm.mages.settings.RoomSwipeAction
 import org.mlm.mages.ui.components.AttachmentData
 import org.mlm.mages.ui.util.nowMs
 import androidx.compose.runtime.Composable
@@ -68,6 +69,8 @@ data class RoomsUiState(
     val syncBanner: String? = null,
     val unreadOnly: Boolean = false,
     val typeFilter: RoomTypeFilter = RoomTypeFilter.All,
+    val swipeRightAction: RoomSwipeAction = RoomSwipeAction.Nothing,
+    val swipeLeftAction: RoomSwipeAction = RoomSwipeAction.Nothing,
     val isLoading: Boolean = false,
     val error: String? = null,
     val favourites: Set<String> = emptySet(),

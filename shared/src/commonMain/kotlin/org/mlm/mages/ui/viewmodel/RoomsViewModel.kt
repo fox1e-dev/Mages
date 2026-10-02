@@ -19,6 +19,7 @@ import org.mlm.mages.matrix.MatrixPort
 import org.mlm.mages.matrix.RoomListEntry
 import org.mlm.mages.platform.LiveLocationSharingCoordinator
 import org.mlm.mages.settings.AppSettings
+import org.mlm.mages.settings.RoomSwipeAction
 import org.mlm.mages.ui.LastMessageType
 import org.mlm.mages.ui.RoomListItemUi
 import org.mlm.mages.ui.RoomTypeFilter
@@ -53,7 +54,15 @@ class RoomsViewModel(
 
     init {
         launch {
-            settingsRepo.flow.collect { recomputeGroupedRooms() }
+            settingsRepo.flow.collect {
+                recomputeGroupedRooms()
+                updateState {
+                    copy(
+                        swipeRightAction = it.swipeRightAction,
+                        swipeLeftAction = it.swipeLeftAction
+                    )
+                }
+            }
         }
 
         observerJob = launch {
@@ -199,6 +208,30 @@ class RoomsViewModel(
                 }
                 recomputeGroupedRooms()
             }
+        }
+    }
+
+    fun markUnread(roomId: String) {
+        launch {
+            service.port.setMarkUnread(roomId, true).onSuccess {
+                updateState {
+                    copy(
+                        unread = unread + (roomId to 1),
+                        allItems = allItems.map { item ->
+                            if (item.roomId == roomId) item.copy(hasUnreadMessages = true) else item
+                        }
+                    )
+                }
+                recomputeGroupedRooms()
+            }
+        }
+    }
+
+    fun onListSwipeAction(action: RoomSwipeAction, roomId: String) {
+        when (action) {
+            RoomSwipeAction.MarkRead -> markRead(roomId)
+            RoomSwipeAction.MarkUnread -> markUnread(roomId)
+            RoomSwipeAction.Nothing -> Unit
         }
     }
 

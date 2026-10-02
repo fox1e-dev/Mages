@@ -36,6 +36,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.StringResource
 import mages.shared.generated.resources.*
 import org.mlm.mages.ui.components.common.InviteListItem
+import org.mlm.mages.ui.components.common.SwipeActionRow
 import org.mlm.mages.ui.components.dialogs.DeclineInviteDialog
 import mages.shared.generated.resources.Res
 
@@ -214,11 +215,17 @@ fun RoomsScreen(
                                 )
                             }
                             val resolved = state.roomAvatarPath[item.roomId] ?: item.avatarUrl
-                            RoomListItem(
-                                item = item.copy(avatarUrl = resolved),
-                                onClick = { viewModel.openRoom(RoomSummary(item.roomId, item.name)) },
-                                onLongClick = { selectedRoom = item.name to item.roomId }
-                            )
+                            SwipeActionRow(
+                                swipeRightAction = state.swipeRightAction,
+                                swipeLeftAction = state.swipeLeftAction,
+                                onAction = { viewModel.onListSwipeAction(it, item.roomId) }
+                            ) {
+                                RoomListItem(
+                                    item = item.copy(avatarUrl = resolved),
+                                    onClick = { viewModel.openRoom(RoomSummary(item.roomId, item.name)) },
+                                    onLongClick = { selectedRoom = item.name to item.roomId }
+                                )
+                            }
                         }
                     }
 
@@ -243,11 +250,17 @@ fun RoomsScreen(
                                 )
                             }
                             val resolved = state.roomAvatarPath[item.roomId] ?: item.avatarUrl
-                            RoomListItem(
-                                item = item.copy(avatarUrl = resolved),
-                                onClick = { viewModel.openRoom(RoomSummary(item.roomId, item.name)) },
-                                onLongClick = { selectedRoom = item.name to item.roomId }
-                            )
+                            SwipeActionRow(
+                                swipeRightAction = state.swipeRightAction,
+                                swipeLeftAction = state.swipeLeftAction,
+                                onAction = { viewModel.onListSwipeAction(it, item.roomId) }
+                            ) {
+                                RoomListItem(
+                                    item = item.copy(avatarUrl = resolved),
+                                    onClick = { viewModel.openRoom(RoomSummary(item.roomId, item.name)) },
+                                    onLongClick = { selectedRoom = item.name to item.roomId }
+                                )
+                            }
                         }
                     }
 
@@ -270,12 +283,18 @@ fun RoomsScreen(
                                 )
                             }
                             val resolved = state.roomAvatarPath[item.roomId] ?: item.avatarUrl
-                            RoomListItem(
-                                item = item.copy(avatarUrl = resolved),
-                                onClick = { viewModel.openRoom(RoomSummary(item.roomId, item.name)) },
-                                onLongClick = { selectedRoom = item.name to item.roomId },
+                            SwipeActionRow(
+                                swipeRightAction = state.swipeRightAction,
+                                swipeLeftAction = state.swipeLeftAction,
+                                onAction = { viewModel.onListSwipeAction(it, item.roomId) },
                                 modifier = Modifier.alpha(0.6f)
-                            )
+                            ) {
+                                RoomListItem(
+                                    item = item.copy(avatarUrl = resolved),
+                                    onClick = { viewModel.openRoom(RoomSummary(item.roomId, item.name)) },
+                                    onLongClick = { selectedRoom = item.name to item.roomId }
+                                )
+                            }
                         }
                     }
 

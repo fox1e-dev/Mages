@@ -1108,6 +1108,12 @@ impl CoreClient {
         tl.send(content.into()).await.ffi().map(|_| ())
     }
 
+    async fn clear_unread_flag(&self, room_id: &str) {
+        if let Some(room) = self.room(room_id) {
+            let _ = room.set_unread_flag(false).await;
+        }
+    }
+
     pub async fn mark_read(
         &self,
         room_id: String,
@@ -1122,7 +1128,9 @@ impl CoreClient {
         } else {
             ReceiptType::ReadPrivate
         };
-        tl.mark_as_read(receipt_type).await.ffi().map(|_| ())
+        tl.mark_as_read(receipt_type).await.ffi().map(|_| ())?;
+        self.clear_unread_flag(&room_id).await;
+        Ok(())
     }
 
     pub async fn mark_read_at(
@@ -1172,7 +1180,9 @@ impl CoreClient {
                 .private_read_receipt(eid.clone())
                 .fully_read_marker(eid)
         };
-        room.send_multiple_receipts(receipts).await.ffi()
+        room.send_multiple_receipts(receipts).await.ffi()?;
+        let _ = room.set_unread_flag(false).await;
+        Ok(())
     }
 
     pub async fn mark_room_seen_latest(
@@ -1191,7 +1201,9 @@ impl CoreClient {
             ReceiptType::ReadPrivate
         };
 
-        tl.mark_as_read(receipt_type).await.ffi()
+        let out = tl.mark_as_read(receipt_type).await.ffi()?;
+        self.clear_unread_flag(&room_id).await;
+        Ok(out)
     }
 
     pub async fn set_mark_unread(&self, room_id: String, unread: bool) -> Result<(), FfiError> {

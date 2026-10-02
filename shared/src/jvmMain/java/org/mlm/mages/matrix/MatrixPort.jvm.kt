@@ -380,6 +380,11 @@ class RustMatrixPort : MatrixPort, VerificationService {
             runWithFfiResult { withClient { it.markReadAt(roomId, eventId, sendPublicReceipt) } }
         }
 
+    override suspend fun setMarkUnread(roomId: String, unread: Boolean): Result<Unit> =
+        withContext(matrixDispatcher) {
+            runWithFfiResult { withClient { it.setMarkUnread(roomId, unread) } }
+        }
+
     override suspend fun react(
         roomId: String,
         eventId: String,
