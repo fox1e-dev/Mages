@@ -162,6 +162,13 @@ class VerificationCoordinator(
             try {
                 verificationService?.startDeviceVerification(deviceId)?.collect { event ->
                     handleVerifEvent(epoch, event)
+                } ?: run {
+                    if (epoch == flowEpoch) {
+                        _state.value = _state.value.copy(
+                            sasPhase = SasPhase.Failed,
+                            sasError = getString(Res.string.verification_service_unavailable)
+                        )
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -171,13 +178,6 @@ class VerificationCoordinator(
                         sasPhase = SasPhase.Failed,
                         sasError = e.message ?: getString(Res.string.verification_failed_to_start),
                         sasActionInFlight = false
-                    )
-                }
-            } ?: run {
-                if (epoch == flowEpoch) {
-                    _state.value = _state.value.copy(
-                        sasPhase = SasPhase.Failed,
-                        sasError = getString(Res.string.verification_service_unavailable)
                     )
                 }
             }
@@ -199,6 +199,13 @@ class VerificationCoordinator(
             try {
                 verificationService?.startUserVerification(userId)?.collect { event ->
                     handleVerifEvent(epoch, event)
+                } ?: run {
+                    if (epoch == flowEpoch) {
+                        _state.value = _state.value.copy(
+                            sasPhase = SasPhase.Failed,
+                            sasError = getString(Res.string.verification_service_unavailable)
+                        )
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -208,13 +215,6 @@ class VerificationCoordinator(
                         sasPhase = SasPhase.Failed,
                         sasError = e.message ?: getString(Res.string.verification_failed_to_start),
                         sasActionInFlight = false
-                    )
-                }
-            } ?: run {
-                if (epoch == flowEpoch) {
-                    _state.value = _state.value.copy(
-                        sasPhase = SasPhase.Failed,
-                        sasError = getString(Res.string.verification_service_unavailable)
                     )
                 }
             }
