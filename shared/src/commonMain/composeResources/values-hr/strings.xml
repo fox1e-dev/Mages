@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">Ispustite datoteku za slanje</string>
     <string name="offline_queued">Izvan mreže - poruke će biti stavljene u red čekanja</string>
     <string name="share">Udio</string>
+    <string name="share_profile">Podijeli profil</string>
     <string name="forward">Naprijed</string>
     <string name="delete">Izbrisati</string>
     <string name="replies">%1$d odgovara</string>

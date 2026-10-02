@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">Bestand neerzetten om te verzenden</string>
     <string name="offline_queued">Offline - Berichten worden in de wachtrij geplaatst</string>
     <string name="share">Deel</string>
+    <string name="share_profile">Profiel delen</string>
     <string name="forward">Vooruit</string>
     <string name="delete">Verwijderen</string>
     <string name="replies">%1$d antwoordt</string>

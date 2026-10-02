@@ -1,5 +1,6 @@
 package org.mlm.mages.ui.components.core
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,7 +44,8 @@ fun Avatar(
     size: Dp = Sizes.avatarSmall,
     shape: Shape = CircleShape,
     containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
-    contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer
+    contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    onClick: (() -> Unit)? = null
 ) {
     val initials = rememberSaveable(name) { extractInitials(name) }
     val ctx = LocalPlatformContext.current
@@ -54,7 +56,16 @@ fun Avatar(
         shape = shape,
         modifier = modifier.size(size)
     ) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = if (onClick == null) {
+                Modifier.fillMaxSize()
+            } else {
+                Modifier
+                    .fillMaxSize()
+                    .clickable { onClick?.invoke() }
+            },
+            contentAlignment = Alignment.Center
+        ) {
             if (showImage && !avatarPath.isNullOrBlank()) {
                 AsyncImage(
                     model = ImageRequest.Builder(ctx)

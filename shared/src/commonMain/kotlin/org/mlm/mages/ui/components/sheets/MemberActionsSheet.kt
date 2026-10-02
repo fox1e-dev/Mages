@@ -27,6 +27,12 @@ import org.mlm.mages.ui.theme.Spacing
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import mages.shared.generated.resources.Res
+import kotlinx.coroutines.launch
+import org.mlm.mages.nav.matrixToUserLink
+import org.mlm.mages.platform.ShareContent
+import org.mlm.mages.platform.ShareOutcome
+import org.mlm.mages.platform.rememberShareHandler
+import org.mlm.mages.ui.components.snackbar.SnackbarManager
 
 @Composable
 fun MemberActionsSheet(
@@ -38,6 +44,7 @@ fun MemberActionsSheet(
     onUnban: (reason: String?) -> Unit,
     onIgnore: () -> Unit,
     onVerify: (() -> Unit)? = null,
+    onAvatarClick: (() -> Unit)? = null,
     verified: Boolean = false,
     dmAction: ActionAvailabilityUi = ActionAvailabilityUi.Enabled,
     kickAction: ActionAvailabilityUi = ActionAvailabilityUi.Enabled,
@@ -61,6 +68,13 @@ fun MemberActionsSheet(
         }.getOrNull()
     }
 
+    val scope = rememberCoroutineScope()
+    val shareHandler = rememberShareHandler()
+    val snackbarManager: SnackbarManager = koinInject()
+    val copiedLabel = stringResource(Res.string.copied_to_clipboard)
+    val shareFailedLabel = stringResource(Res.string.share_failed)
+    val profileLink = remember(member.userId) { matrixToUserLink(member.userId) }
+
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
@@ -77,7 +91,8 @@ fun MemberActionsSheet(
                 Avatar(
                     name = member.displayName ?: member.userId,
                     avatarPath = member.avatarUrl,
-                    size = Sizes.avatarMedium
+                    size = Sizes.avatarMedium,
+                    onClick = if (member.avatarUrl.isNullOrBlank()) null else onAvatarClick
                 )
                 Spacer(Modifier.width(Spacing.md))
                 Column {
@@ -129,6 +144,24 @@ fun MemberActionsSheet(
                 ListItem(
                     headlineContent = { Text(stringResource(Res.string.verified), color = AppColors.Verified) },
                     leadingContent = { Icon(Icons.Default.VerifiedUser, null, tint = AppColors.Verified) }
+                )
+            }
+
+            if (profileLink != null) {
+                ActionItem(
+                    icon = Icons.Default.Share,
+                    title = stringResource(Res.string.share_profile),
+                    subtitle = profileLink,
+                    onClick = {
+                        val link = profileLink
+                        scope.launch {
+                            when (shareHandler(ShareContent(text = link))) {
+                                ShareOutcome.Shared -> Unit
+                                ShareOutcome.Copied -> snackbarManager.show(copiedLabel)
+                                ShareOutcome.Failed -> snackbarManager.showError(shareFailedLabel)
+                            }
+                        }
+                    }
                 )
             }
 

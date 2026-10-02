@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">Перетягніть файл, щоб надіслати</string>
     <string name="offline_queued">Офлайн – повідомлення будуть додані в чергу</string>
     <string name="share">Поділіться</string>
+    <string name="share_profile">Поділитися профілем</string>
     <string name="forward">вперед</string>
     <string name="delete">Видалити</string>
     <string name="replies">%1$d відповідає</string>

@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">برای ارسال فایل را رها کنید</string>
     <string name="offline_queued">آفلاین - پیام ها در صف قرار می گیرند</string>
     <string name="share">به اشتراک بگذارید</string>
+    <string name="share_profile">اشتراک‌گذاری نمایه</string>
     <string name="forward">به جلو</string>
     <string name="delete">حذف کنید</string>
     <string name="replies">%1$d پاسخ می دهد</string>

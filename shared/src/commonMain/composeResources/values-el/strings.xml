@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">Απόθεση αρχείου για αποστολή</string>
     <string name="offline_queued">Εκτός σύνδεσης - Τα μηνύματα θα μπουν στην ουρά</string>
     <string name="share">Μερίδιο</string>
+    <string name="share_profile">Κοινή χρήση προφίλ</string>
     <string name="forward">Προς τα εμπρός</string>
     <string name="delete">Διαγράφω</string>
     <string name="replies">Ο %1$d απαντά</string>

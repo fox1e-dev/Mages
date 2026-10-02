@@ -753,6 +753,16 @@ class RoomInfoViewModel(
         ) { runSafe { service.port.ignoreUser(userId) } }
     }
 
+    fun openAvatarExternally(member: MemberSummary, onOpen: (String, String?) -> Unit) {
+        openAvatarForViewing(
+            service = service,
+            userId = member.userId,
+            fallbackAvatarUrl = member.avatarUrl,
+            onOpen = onOpen,
+            onError = { _events.send(Event.ShowError(getString(Res.string.download_failed))) },
+        )
+    }
+
     fun startDmWith(userId: String) {
         launch {
             val dmRoomId = runSafe { service.port.ensureDm(userId) }

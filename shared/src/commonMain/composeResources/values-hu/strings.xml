@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">Dobja el a fájlt a küldéshez</string>
     <string name="offline_queued">Offline – Az üzenetek sorba kerülnek</string>
     <string name="share">Részesedés</string>
+    <string name="share_profile">Profil megosztása</string>
     <string name="forward">Előre</string>
     <string name="delete">Töröl</string>
     <string name="replies">%1$d válaszol</string>

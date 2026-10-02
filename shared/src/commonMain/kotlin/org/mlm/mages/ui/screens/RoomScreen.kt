@@ -1163,6 +1163,7 @@ fun RoomScreen(
             onBan = { reason -> viewModel.banUser(member.userId, reason) },
             onUnban = { reason -> viewModel.unbanUser(member.userId, reason) },
             onIgnore = { viewModel.ignoreUser(member.userId) },
+            onAvatarClick = { viewModel.openAvatarExternally(member) { path, mime -> openExternal(path, mime) } },
             isBanned = member.membership == "ban"
         )
     }

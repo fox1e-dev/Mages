@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">ファイルをドロップして送信する</string>
     <string name="offline_queued">オフライン - メッセージはキューに入れられます</string>
     <string name="share">共有</string>
+    <string name="share_profile">プロフィールを共有</string>
     <string name="forward">フォワード</string>
     <string name="delete">消去</string>
     <string name="replies">%1$d が返信する</string>

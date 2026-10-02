@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">Upuść plik do wysłania</string>
     <string name="offline_queued">Offline - wiadomości będą umieszczane w kolejce</string>
     <string name="share">Udział</string>
+    <string name="share_profile">Udostępnij profil</string>
     <string name="forward">Do przodu</string>
     <string name="delete">Usuwać</string>
     <string name="replies">Odpowiedzi %1$d</string>

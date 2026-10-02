@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">Jatuhkan file untuk dikirim</string>
     <string name="offline_queued">Offline - Pesan akan dimasukkan dalam antrean</string>
     <string name="share">Membagikan</string>
+    <string name="share_profile">Bagikan profil</string>
     <string name="forward">Maju</string>
     <string name="delete">Menghapus</string>
     <string name="replies">Balasan %1$d</string>

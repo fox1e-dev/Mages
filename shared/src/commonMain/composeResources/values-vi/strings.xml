@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">Thả tập tin để gửi</string>
     <string name="offline_queued">Ngoại tuyến - Tin nhắn sẽ được xếp hàng đợi</string>
     <string name="share">Chia sẻ</string>
+    <string name="share_profile">Chia sẻ hồ sơ</string>
     <string name="forward">Phía trước</string>
     <string name="delete">Xóa bỏ</string>
     <string name="replies">%1$d trả lời</string>

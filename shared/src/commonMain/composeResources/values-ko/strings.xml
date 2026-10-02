@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">보낼 파일을 드롭하세요.</string>
     <string name="offline_queued">오프라인 - 메시지가 대기열에 추가됩니다.</string>
     <string name="share">공유하다</string>
+    <string name="share_profile">프로필 공유</string>
     <string name="forward">앞으로</string>
     <string name="delete">삭제</string>
     <string name="replies">%1$d 답글</string>

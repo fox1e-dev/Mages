@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">Pudota tiedosto lähetettäväksi</string>
     <string name="offline_queued">Offline - Viestit asetetaan jonoon</string>
     <string name="share">Jakaa</string>
+    <string name="share_profile">Jaa profiili</string>
     <string name="forward">Eteenpäin</string>
     <string name="delete">Poistaa</string>
     <string name="replies">%1$d vastaa</string>

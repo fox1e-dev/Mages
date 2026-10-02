@@ -50,6 +50,7 @@ import org.mlm.mages.matrix.displayName
 import io.github.mlmgames.settings.core.annotations.SettingPlatform
 import io.github.mlmgames.settings.core.platform.currentPlatform
 import org.mlm.mages.platform.RoomPlatformShortcuts
+import org.mlm.mages.platform.rememberFileOpener
 import mages.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import mages.shared.generated.resources.Res
@@ -69,6 +70,7 @@ fun RoomInfoRoute(
     val verification: VerificationCoordinator = koinInject()
     val verState by verification.state.collectAsState()
     val postError = rememberErrorPoster(snackbarManager)
+    val openExternal = rememberFileOpener()
 
     LaunchedEffect(verState.sasFlowId) {
         viewModel.refreshVerificationState()
@@ -138,6 +140,7 @@ fun RoomInfoRoute(
         onAcceptKnockRequest = viewModel::acceptKnockRequest,
         onDeclineKnockRequest = viewModel::declineKnockRequest,
         onClearSelectedMember = viewModel::clearSelectedMember,
+        onOpenAvatar = { viewModel.openAvatarExternally(it) { path, mime -> openExternal(path, mime) } },
 
         showHomeScreenShortcut = currentPlatform == SettingPlatform.ANDROID && shortcutSupport.homeScreenShortcut,
         onAddHomeScreenShortcut = ::addHomeShortcut,
@@ -190,6 +193,7 @@ fun RoomInfoScreen(
     onAcceptKnockRequest: (String) -> Unit,
     onDeclineKnockRequest: (String, String?) -> Unit,
     onClearSelectedMember: () -> Unit,
+    onOpenAvatar: (MemberSummary) -> Unit,
 
     showHomeScreenShortcut: Boolean,
     onAddHomeScreenShortcut: () -> Unit,
@@ -675,6 +679,7 @@ fun RoomInfoScreen(
                 onBan = { reason -> onBanUser(member.userId, reason) },
                 onUnban = { reason -> onUnbanUser(member.userId, reason) },
                 onIgnore = { onIgnoreUser(member.userId) },
+                onAvatarClick = { onOpenAvatar(member) },
                 onVerify = if (!state.dmPartnerVerified && dmPartner?.userId == member.userId && state.profile?.isEncrypted == true) {
                     { onVerifyUser(member.userId) }
                 } else {

@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">删除要发送的文件</string>
     <string name="offline_queued">离线 - 消息将排队</string>
     <string name="share">分享</string>
+    <string name="share_profile">分享个人资料</string>
     <string name="forward">向前</string>
     <string name="delete">删除</string>
     <string name="replies">%1$d 回复</string>

@@ -216,6 +216,16 @@ class SpaceSettingsViewModel(
         ) { service.port.ignoreUser(userId) }
     }
 
+    fun openAvatarExternally(member: MemberSummary, onOpen: (String, String?) -> Unit) {
+        openAvatarForViewing(
+            service = service,
+            userId = member.userId,
+            fallbackAvatarUrl = member.avatarUrl,
+            onOpen = onOpen,
+            onError = { _events.send(Event.ShowError(getString(Res.string.download_failed))) },
+        )
+    }
+
     fun updateMemberRole(userId: String, powerLevel: Long) {
         runSavingResultAction(
             errorMessage = Res.string.could_not_change_the_role_try_again,

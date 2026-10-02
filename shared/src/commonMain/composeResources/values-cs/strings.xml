@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">Přetáhněte soubor k odeslání</string>
     <string name="offline_queued">Offline – zprávy budou zařazeny do fronty</string>
     <string name="share">Podíl</string>
+    <string name="share_profile">Sdílet profil</string>
     <string name="forward">Vpřed</string>
     <string name="delete">Vymazat</string>
     <string name="replies">%1$d odpovídá</string>

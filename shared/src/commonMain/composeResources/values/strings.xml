@@ -220,6 +220,7 @@
     <string name="drop_file_to_send">Drop file to send</string>
     <string name="offline_queued">Offline - Messages will be queued</string>
     <string name="share">Share</string>
+    <string name="share_profile">Share profile</string>
     <string name="forward">Forward</string>
     <string name="delete">Delete</string>
     <string name="replies">%1$d replies</string>

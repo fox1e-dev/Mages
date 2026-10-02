@@ -205,6 +205,7 @@
         name="offline_queued"
     >Sin conexión - Los mensajes se pondrán en cola</string>
     <string name="share">Compartir</string>
+    <string name="share_profile">Compartir perfil</string>
     <string name="forward">Reenviar</string>
     <string name="delete">Eliminar</string>
     <string name="replies">%1$d respuestas</string>

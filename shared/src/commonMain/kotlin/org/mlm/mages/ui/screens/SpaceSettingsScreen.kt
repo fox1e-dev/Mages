@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import org.mlm.mages.matrix.RoomJoinRule
 import org.mlm.mages.matrix.SpaceChildInfo
 import org.mlm.mages.matrix.SpaceInfo
+import org.mlm.mages.platform.rememberFileOpener
 import org.koin.compose.koinInject
 import org.mlm.mages.ui.components.dialogs.AddRoomToSpaceDialog
 import org.mlm.mages.ui.components.dialogs.CreateRoomInSpaceDialog
@@ -52,6 +53,7 @@ fun SpaceSettingsScreen(
     val actionsState by actionsViewModel.state.collectAsState()
     val snackbarManager: SnackbarManager = koinInject()
     val postError = rememberErrorPoster(snackbarManager)
+    val openExternal = rememberFileOpener()
 
     LaunchedEffect(state.error) {
         state.error?.let {
@@ -499,6 +501,7 @@ fun SpaceSettingsScreen(
             onBan = { reason -> viewModel.banMember(member.userId, reason) },
             onUnban = { reason -> viewModel.unbanMember(member.userId, reason) },
             onIgnore = { viewModel.ignoreMember(member.userId) },
+            onAvatarClick = { viewModel.openAvatarExternally(member) { path, mime -> openExternal(path, mime) } },
             isBanned = member.membership == "ban"
         )
     }

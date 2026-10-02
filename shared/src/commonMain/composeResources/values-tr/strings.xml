@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">Gönderilecek dosyayı bırakın</string>
     <string name="offline_queued">Çevrimdışı - Mesajlar sıraya alınacak</string>
     <string name="share">Paylaşmak</string>
+    <string name="share_profile">Profili paylaş</string>
     <string name="forward">İleri</string>
     <string name="delete">Silmek</string>
     <string name="replies">%1$d yanıtlar</string>

@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">Legen Sie die zu sendende Datei ab</string>
     <string name="offline_queued">Offline – Nachrichten werden in die Warteschlange gestellt</string>
     <string name="share">Aktie</string>
+    <string name="share_profile">Profil teilen</string>
     <string name="forward">Nach vorne</string>
     <string name="delete">Löschen</string>
     <string name="replies">%1$d antwortet</string>

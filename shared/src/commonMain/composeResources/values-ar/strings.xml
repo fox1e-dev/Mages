@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">قم بإسقاط الملف لإرساله</string>
     <string name="offline_queued">غير متصل - سيتم وضع الرسائل في قائمة الانتظار</string>
     <string name="share">يشارك</string>
+    <string name="share_profile">مشاركة الملف الشخصي</string>
     <string name="forward">إلى الأمام</string>
     <string name="delete">يمسح</string>
     <string name="replies">ردود %1$d</string>

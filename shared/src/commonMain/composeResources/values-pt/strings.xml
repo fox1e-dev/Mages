@@ -343,6 +343,7 @@
     <string name="drop_file_to_send">Solte o arquivo para enviar</string>
     <string name="offline_queued">Off-line - as mensagens serão enfileiradas</string>
     <string name="share">Compartilhar</string>
+    <string name="share_profile">Compartilhar perfil</string>
     <string name="forward">Avançar</string>
     <string name="delete">Excluir</string>
     <string name="replies">Respostas %1$d</string>

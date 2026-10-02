@@ -1582,6 +1582,16 @@ class RoomViewModel(
         }
     }
 
+    fun openAvatarExternally(member: MemberSummary, onOpen: (String, String?) -> Unit) {
+        openAvatarForViewing(
+            service = service,
+            userId = member.userId,
+            fallbackAvatarUrl = member.avatarUrl,
+            onOpen = onOpen,
+            onError = { _events.send(Event.ShowError(getString(Res.string.download_failed))) },
+        )
+    }
+
     fun shareMessage(event: MessageEvent) {
         launch {
             val text = (event.liveLocation?.geoUri ?: event.body).takeIf { it.isNotBlank() }

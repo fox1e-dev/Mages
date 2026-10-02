@@ -17,6 +17,14 @@ import org.koin.core.component.KoinComponent
 import org.jetbrains.compose.resources.getString
 import mages.shared.generated.resources.*
 import mages.shared.generated.resources.Res
+import org.mlm.mages.ui.util.guessMimeType
+
+private const val VIEWING_AVATAR_PX = 512
+private const val UNKNOWN_MIME = "application/octet-stream"
+
+/** Avatars whose bytes the platform cannot identify are cached with a `.img` extension. */
+private fun avatarMimeFor(path: String): String =
+    guessMimeType(path).takeIf { it != UNKNOWN_MIME } ?: "image/*"
 
 /**
  * Base ViewModel providing common patterns for state management.
@@ -80,6 +88,26 @@ abstract class BaseViewModel<S>(initialState: S) : ViewModel(), KoinComponent {
         launch {
             val path = service.avatars.resolve(avatar, px = px, crop = true) ?: return@launch
             updateState { update(path) }
+        }
+    }
+
+    protected fun openAvatarForViewing(
+        service: MatrixService,
+        userId: String,
+        fallbackAvatarUrl: String?,
+        onOpen: (String, String?) -> Unit,
+        onError: suspend () -> Unit = {},
+    ) {
+        launch {
+            val source = fallbackAvatarUrl?.takeIf { it.startsWith("mxc://") }
+                ?: runSafe { service.port.getUserProfile(userId)?.avatarUrl }
+                ?: fallbackAvatarUrl
+            val path = source?.let { runSafe { service.avatars.resolve(it, px = VIEWING_AVATAR_PX, crop = false) } }
+            if (path.isNullOrBlank()) {
+                onError()
+                return@launch
+            }
+            onOpen(path, avatarMimeFor(path))
         }
     }
 
