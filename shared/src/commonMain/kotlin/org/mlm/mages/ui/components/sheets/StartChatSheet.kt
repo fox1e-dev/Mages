@@ -73,8 +73,8 @@ fun StartChatSheet(
                 item {
                     ActionListItem(
                         icon = Icons.Default.Search,
-                        label = stringResource(Res.string.room_directory),
-                        description = stringResource(Res.string.browse_directory_desc),
+                        label = stringResource(Res.string.discover),
+                        description = stringResource(Res.string.search_users_or_rooms),
                         onClick = {
                             onDismiss()
                             onOpenDirectory()
